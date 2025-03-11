@@ -153,10 +153,11 @@ const OfferPage = () => {
     ];
 
     const getData = async () => {
+        const token = localStorage.getItem('token');
         try {
             const res = await axios.get(`${URL}/offer`,{
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${token}`
                 }   
             });
             return res.data.data;
