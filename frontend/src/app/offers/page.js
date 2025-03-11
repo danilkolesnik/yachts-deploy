@@ -27,7 +27,7 @@ const OfferPage = () => {
     const [createOrderModalIsOpen, setCreateOrderModalIsOpen] = useState(false);
     const [createServiceModalIsOpen, setCreateServiceModalIsOpen] = useState(false);
     const [createPartModalIsOpen, setCreatePartModalIsOpen] = useState(false);
-    const [role] = useState(localStorage.getItem('role'));
+    const [role, setRole] = useState(null);
     const [formData, setFormData] = useState({
         customerFullName: '',
         yachtName: '',
@@ -416,6 +416,14 @@ const OfferPage = () => {
             setUserOptions(options);
         }
     }, [users]);
+
+    useEffect(() => {
+        // Проверяем, что мы находимся в браузере
+        if (typeof window !== 'undefined') {
+            const storedRole = localStorage.getItem('role');
+            setRole(storedRole);
+        }
+    }, []);
 
     const handlePartsChange = (selectedOptions) => {
         setFormData({ ...formData, parts: selectedOptions });
