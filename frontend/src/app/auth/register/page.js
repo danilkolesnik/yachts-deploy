@@ -14,6 +14,7 @@ const Register = () => {
     const [errorMessage, setErrorMessage] = useState('');
 
     const handleSubmit = async(e) => {
+	console.log('env api', process.env.NEXT_PULIC_API_URL);
         e.preventDefault();
         
         if (password !== confirmPassword) {

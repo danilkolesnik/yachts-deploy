@@ -1,5 +1,6 @@
 # Используем официальный образ Node.js
-FROM node:18
+FROM node:22
+RUN apt-get update && apt-get install -y apparmor
 
 # Устанавливаем рабочую директорию
 WORKDIR /app
@@ -12,7 +13,7 @@ RUN npm install
 
 # Копируем весь проект
 COPY . .
-
+RUN npm run build
 # Открываем порт
 EXPOSE 5000
 
