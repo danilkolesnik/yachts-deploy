@@ -25,6 +25,7 @@ services:
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=postgres
       - DATABASE_NAME=yachts
+      - SERVER_URL=http://localhost:5000
     depends_on:
       - db
 
