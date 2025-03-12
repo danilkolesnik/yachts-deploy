@@ -76,11 +76,6 @@ const OrderPage = () => {
     });
 
     const sortedOrders = filteredOrders.sort((a, b) => {
-        if (sortField === 'client') {
-            return sortOrder === 'asc' 
-                ? (a.offer ? a.offer.customerFullName : '').localeCompare(b.offer ? b.offer.customerFullName : '') 
-                : (b.offer ? b.offer.customerFullName : '').localeCompare(a.offer ? a.offer.customerFullName : '');
-        }
         if (sortField === 'status') {
             return sortOrder === 'asc' 
                 ? a[sortField].localeCompare(b[sortField]) 
@@ -143,7 +138,7 @@ const OrderPage = () => {
                     <div className="text-blue-500 hover:underline">{row.id}</div>
             </Link>
         ), sortable: true },
-        { name: 'Customer', selector: row => row.offer && row.offer.customerFullName ? row.offer.customerFullName : '', sortable: true },
+        { name: 'Customer', selector: row => (row.offer && row.offer.customerFullName) ? row.offer.customerFullName : 'N/A', sortable: true },
         { name: 'Yacht', selector: row => row.offer && row.offer.yachtName ? row.offer.yachtName : '', sortable: true },
         { name: 'Responsible', selector: row => Array.isArray(row.assignedWorkers) 
             ? row.assignedWorkers.map(worker => worker.fullName).join(', ') 
@@ -220,7 +215,7 @@ const OrderPage = () => {
                                     <Option className="text-black" value="completed">Completed</Option>
                                     <Option className="text-black" value="closed">Closed</Option>
                                 </Select>
-                                <Select
+                                {/* <Select
                                     label="Client"
                                     name="client"
                                     onChange={(e) => handleFilterChange(e.target.value, 'client')}
@@ -228,10 +223,12 @@ const OrderPage = () => {
                                     labelProps={{ className: 'text-black' }}
                                 >
                                     <Option className="text-black" value="">All Clients</Option>
-                                    {[...new Set(orders.map(order => order.offer.customerFullName))].map(clientName => (
-                                        <Option key={clientName} className="text-black" value={clientName}>{clientName}</Option>
-                                    ))}
-                                </Select>
+                                    {[...new Set(orders.map(order => order.offer && order.offer.customerFullName ? order.offer.customerFullName : ''))]
+                                        .filter(clientName => clientName)
+                                        .map(clientName => (
+                                            <Option key={clientName} className="text-black" value={clientName}>{clientName}</Option>
+                                        ))}
+                                </Select> */}
                                 <input
                                     type="date"
                                     name="date"
