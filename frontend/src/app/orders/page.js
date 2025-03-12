@@ -29,7 +29,7 @@ const OrderPage = () => {
     const [editStatusModalIsOpen, setEditStatusModalIsOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [statusOptions, setStatusOptions] = useState(null);
-    const [role] = useState(localStorage.getItem('role'));
+    const [role, setRole] = useState(null);
 
     const fetchOrders = async () => {
 
@@ -179,6 +179,13 @@ const OrderPage = () => {
             button: true.toString(),
         }] : []),
     ];
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const storedRole = localStorage.getItem('role');
+            setRole(storedRole);
+        }
+    }, []);
 
     useEffect(() => {
         fetchOrders();
