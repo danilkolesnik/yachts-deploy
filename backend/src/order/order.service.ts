@@ -248,7 +248,7 @@ export class OrderService {
       folder = 'uploads/video';
     }
 
-    const fileUrl = `${process.env.SERVER_URL}/${folder}/${file.filename}`;
+    const fileUrl = `http://116.203.198.150:5000/${folder}/${file.filename}`;
     
     console.log(tab);
 
