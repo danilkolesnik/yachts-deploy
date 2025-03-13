@@ -248,10 +248,8 @@ export class OrderService {
       folder = 'uploads/video';
     }
 
-    const fileUrl = `http://116.203.198.150:5000/${folder}/${file.filename}`;
+    const fileUrl = `${process.env.SERVER_URL}/${folder}/${file.filename}`;
     
-    console.log(tab);
-
     if (tab === 'process') {
       if (isImage) {
         order.processImageUrls = order.processImageUrls ? [...order.processImageUrls, fileUrl] : [fileUrl];
