@@ -33,7 +33,7 @@ const WarehousePage = () => {
 
     const columns = [
         {
-            name: 'Country Code',
+            name: 'Boat Registration',
             selector: row => row.countryCode,
             sortable: true,
         },
@@ -266,7 +266,7 @@ const WarehousePage = () => {
                         required
                     />
                     <Input
-                        label="Country Code"
+                        label="Boat Registration"
                         name="countryCode"
                         value={formData.countryCode}
                         onChange={handleChange}

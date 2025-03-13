@@ -95,7 +95,7 @@ const OfferPage = () => {
             sortable: true,
         },
         {
-            name: 'Country Code',
+            name: 'Boat Registration',
             selector: row => row.countryCode,
             sortable: true,
         },
@@ -281,6 +281,7 @@ const OfferPage = () => {
     };
 
     const openModal = () => {
+        console.log('Opening main modal');
         setFormData({
             customerFullName: '',
             yachtName: '',
@@ -297,26 +298,39 @@ const OfferPage = () => {
     };
 
     const closeModal = () => {
+        console.log('Closing main modal');
         setModalIsOpen(false);
-        setEditMode(false);
-        setEditId(null);
     };
 
     const openCreateOrderModal = (row) => {
+        console.log('Opening create order modal');
         setSelectedRow(row);
         setCreateOrderFormData([]);
         setCreateOrderModalIsOpen(true);
     };
 
     const closeCreateOrderModal = () => {
+        console.log('Closing create order modal');
         setCreateOrderModalIsOpen(false);
     };
 
+    const openCreateServiceModal = () => {
+        console.log('Opening create service modal');
+        setCreateServiceModalIsOpen(true);
+    };
+
     const closeCreateServiceModal = () => {
+        console.log('Closing create service modal');
         setCreateServiceModalIsOpen(false);
     };
 
+    const openCreatePartModal = () => {
+        console.log('Opening create part modal');
+        setCreatePartModalIsOpen(true);
+    };
+
     const closeCreatePartModal = () => {
+        console.log('Closing create part modal');
         setCreatePartModalIsOpen(false);
     };
 
@@ -371,15 +385,6 @@ const OfferPage = () => {
             console.error("Ошибка при создании заказа:", error.response ? error.response.data : error.message);
         }
     };
-
-    const openCreateServiceModal = () => {
-        setCreateServiceModalIsOpen(true);
-    };
-
-    const openCreatePartModal = () => {
-        setCreatePartModalIsOpen(true);
-    };
-
 
     const handleHistoryClick = () => {
         router.push('/offersHistory');
@@ -484,7 +489,7 @@ const OfferPage = () => {
                                 option: (provided, state) => ({
                                     ...provided,
                                     color: 'black',
-                                    backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
+                                    backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
                                 }),
                             }}
                         />
@@ -502,14 +507,14 @@ const OfferPage = () => {
                             onChange={handleChange}
                             required
                         />
-                        <Input
+                        {/* <Input
                             label="Comment"
                             name="comment"
                             value={formData.comment}
                             onChange={handleChange}
-                        />
+                        /> */}
                         <Input
-                            label="Country Code"
+                            label="Boat Registration"
                             name="countryCode"
                             value={formData.countryCode}
                             onChange={handleChange}
@@ -664,14 +669,14 @@ const OfferPage = () => {
                             onChange={handleChange}
                             required
                         />
-                        <Input
+                        {/* <Input
                             label="Comment"
                             name="comment"
                             value={createPartFormData.comment}
                             onChange={handleChange}
-                        />
+                        /> */}
                         <Input
-                            label="Country Code"
+                            label="Boat Registration"
                             name="countryCode"
                             value={createPartFormData.countryCode}
                             onChange={handleChange}

@@ -7,7 +7,7 @@ import {
 
 const Modal = ({ isOpen, onClose, title, children }) => {
   return (
-    <Dialog open={isOpen} handler={onClose} dismiss={{ outsidePress: true }}>
+    <Dialog open={isOpen} handler={onClose} dismiss={{ outsidePress: false }}>
       <DialogHeader className="text-black">{title}</DialogHeader>
       <DialogBody>{children}</DialogBody>
     </Dialog>
