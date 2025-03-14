@@ -13,7 +13,8 @@ import Header from '@/component/header';
 import { useRouter } from 'next/navigation';
 import ReactSelect from 'react-select';
 import Link from 'next/link';
-
+import CreateOfferModal from '@/component/modal/CreateOfferModal';
+import EditOfferModal from '@/component/modal/EditOfferModal';
 
 const OfferPage = () => {
     const router = useRouter();
@@ -63,6 +64,18 @@ const OfferPage = () => {
     const [selectedRow, setSelectedRow] = useState(null);
     const [userOptions, setUserOptions] = useState([]);
     const [workerOptions, setWorkerOptions] = useState([]);
+    const [editModalIsOpen, setEditModalIsOpen] = useState(false);
+
+    const [editFormData, setEditFormData] = useState({
+        customerFullName: '',
+        yachtName: '',
+        yachtModel: '',
+        comment: '',
+        countryCode: '',
+        services: [],
+        parts: [],
+        status: 'created'
+    });
 
     const columns = [
         {
@@ -238,6 +251,16 @@ const OfferPage = () => {
                 await axios.put(`${URL}/offer/update/${editId}`, offerData);
             } else {
                 await axios.post(`${URL}/offer/create`, offerData);
+                setFormData({
+                    customerFullName: '',
+                    yachtName: '',
+                    yachtModel: '',
+                    comment: '',
+                    countryCode: '',
+                    services: [],
+                    parts: [],
+                    status: 'created'
+                });
             }
             getData()
                 .then((res) => {
@@ -247,17 +270,6 @@ const OfferPage = () => {
             setModalIsOpen(false);
             setEditMode(false);
             setEditId(null);
-            console.log('Form submitted successfully. Resetting form data.');
-            setFormData({
-                customerFullName: '',
-                yachtName: '',
-                yachtModel: '',
-                comment: '',
-                countryCode: '',
-                services: [],
-                parts: [],
-                status: 'created'
-            });
         } catch (error) {
             console.error(error);
         }
@@ -274,9 +286,19 @@ const OfferPage = () => {
             services: row.services,
             parts: row.parts,
         });
+        setEditFormData({
+            customerFullName: row.customerFullName,
+            yachtName: row.yachtName,
+            yachtModel: row.yachtModel,
+            comment: row.comment || '',
+            countryCode: row.countryCode,
+            services: row.services,
+            parts: row.parts,
+            status: row.status
+        });
         setEditMode(true);
         setEditId(row.id);
-        setModalIsOpen(true);
+        setEditModalIsOpen(true);
     };
 
     const handleDelete = async (id) => {
@@ -291,14 +313,13 @@ const OfferPage = () => {
         }
     };
 
-    const openModal = () => {
+    const openCreateModal = () => {
         setEditMode(false);
         setEditId(null);
         setModalIsOpen(true);
     };
 
-    const closeModal = () => {
-        console.log('Modal closed. Form data should remain unchanged:', formData);
+    const closeCreateModal = () => {
         setModalIsOpen(false);
     };
 
@@ -428,6 +449,39 @@ const OfferPage = () => {
         label: part.name
     }));
 
+    const closeEditModal = () => {
+        setEditModalIsOpen(false);
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const offerData = { ...editFormData, userId: id };
+            await axios.put(`${URL}/offer/update/${editId}`, offerData);
+            getData()
+                .then((res) => {
+                    setData(res);
+                });
+
+            setEditModalIsOpen(false);
+            setEditMode(false);
+            setEditId(null);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleEditChange = (e) => {
+        const { name, value } = e.target;
+        if (name in editFormData) {
+            setEditFormData({ ...editFormData, [name]: value });
+        }
+    };
+
+    const handleEditSelectChange = (value, name) => {
+        setEditFormData({ ...editFormData, [name]: value });
+    };
+
     return (
         <>
             <Header />
@@ -440,7 +494,7 @@ const OfferPage = () => {
                     <div className="w-full space-y-6 bg-white rounded shadow-md">
                         <div className="relative flex justify-between mb-4 p-4">
                             <div className="flex space-x-4">
-                                <Button onClick={openModal} color="blue">
+                                <Button onClick={openCreateModal} color="blue">
                                     Create
                                 </Button>
                                 <Button onClick={handleHistoryClick} color="green">
@@ -458,127 +512,32 @@ const OfferPage = () => {
                         />
                     </div>
                 )}
-                <Modal isOpen={modalIsOpen} onClose={closeModal} title={editMode ? "Edit" : "Create"}>
-                    <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto h-96">
-                        <ReactSelect
-                            options={userOptions}
-                            value={userOptions.find(option => option.label === formData.customerFullName) || null}
-                            onChange={selectedOption => setFormData({ ...formData, customerFullName: selectedOption ? selectedOption.label : '' })}
-                            placeholder="Select a customer..."
-                            isClearable
-                            isSearchable
-                            className="mb-4"
-                            styles={{
-                                control: (provided) => ({
-                                    ...provided,
-                                }),
-                                singleValue: (provided) => ({
-                                    ...provided,
-                                    color: 'black',
-                                }),
-                                option: (provided, state) => ({
-                                    ...provided,
-                                    color: 'black',
-                                    backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
-                                }),
-                            }}
-                        />
-                        <Input
-                            label="Yacht Name"
-                            name="yachtName"
-                            value={formData.yachtName}
-                            onChange={handleChange}
-                            required
-                        />
-                        <Input
-                            label="Yacht Model"
-                            name="yachtModel"
-                            value={formData.yachtModel}
-                            onChange={handleChange}
-                            required
-                        />
-                        {/* <Input
-                            label="Comment"
-                            name="comment"
-                            value={formData.comment}
-                            onChange={handleChange}
-                        /> */}
-                        <Input
-                            label="Boat Registration"
-                            name="countryCode"
-                            value={formData.countryCode}
-                            onChange={handleChange}
-                            required
-                        />
-                        <Select
-                            label="Services"
-                            value={formData.services}
-                            onChange={(value) => handleSelectChange(value, 'services')}
-                            required
-                            className="text-black"
-                            labelProps={{ className: "text-black" }}
-                        >
-                            {catagoryData.map((category) => (
-                                <Option key={category.id} value={category} className="text-black">
-                                    {`${category.serviceName} - ${category.priceInEuroWithoutVAT}€`}
-                                </Option>
-                            ))}
-                        </Select>
-                        <Button onClick={openCreateServiceModal} color="blue">
-                            Add Service
-                        </Button>
-                        <div className="mb-4">
-                            <label htmlFor="parts-select" className="block text-sm font-medium text-gray-700">
-                                Select Parts
-                            </label>
-                            <ReactSelect
-                                id="parts-select"
-                                isMulti
-                                options={partOptions}
-                                value={formData.parts}
-                                onChange={handlePartsChange}
-                                placeholder="Select parts..."
-                                className="mt-1"
-                                styles={{
-                                    control: (provided) => ({
-                                        ...provided,
-                                    }),
-                                    option: (provided, state) => ({
-                                        ...provided,
-                                        color: 'black',
-                                        backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
-                                    }),
-                                }}
-                            />
-                        </div>
-                        <Button onClick={openCreatePartModal} color="blue">
-                            Add Part
-                        </Button>
-
-                        <Select
-                            label="Status"
-                            value={formData.status}
-                            onChange={(value) => handleSelectChange(value, 'status')}
-                            required
-                            className="text-black"
-                            labelProps={{ className: "text-black" }}
-                        >
-                            <Option value="created" className="text-black">Created</Option>
-                            <Option value="sent" className="text-black">Sent</Option>
-                            <Option value="discussing" className="text-black">Discussing</Option>
-                            <Option value="confirmed" className="text-black">Confirmed</Option>
-                            <Option value="canceled" className="text-black">Canceled</Option>
-                        </Select>
-                        <div className="flex justify-end">
-                            <Button variant="text" color="red" onClick={closeModal} className="mr-1">
-                                <span>Cancel</span>
-                            </Button>
-                            <Button color="green" type="submit">
-                                <span>{editMode ? 'Update' : 'Add'}</span>
-                            </Button>
-                        </div>
-                    </form>
-                </Modal>
+                <CreateOfferModal
+                    isOpen={modalIsOpen}
+                    onClose={closeCreateModal}
+                    onSubmit={handleSubmit}
+                    formData={formData}
+                    handleChange={handleChange}
+                    handleSelectChange={handleSelectChange}
+                    userOptions={userOptions}
+                    catagoryData={catagoryData}
+                    partOptions={partOptions}
+                    openCreateServiceModal={openCreateServiceModal}
+                    openCreatePartModal={openCreatePartModal}
+                />
+                <EditOfferModal
+                    isOpen={editModalIsOpen}
+                    onClose={closeEditModal}
+                    onSubmit={handleEditSubmit}
+                    formData={editFormData}
+                    handleChange={handleEditChange}
+                    handleSelectChange={handleEditSelectChange}
+                    userOptions={userOptions}
+                    catagoryData={catagoryData}
+                    partOptions={partOptions}
+                    openCreateServiceModal={openCreateServiceModal}
+                    openCreatePartModal={openCreatePartModal}
+                />
                 <Modal isOpen={createOrderModalIsOpen} onClose={closeCreateOrderModal} title="Create Order">
                     <div className="space-y-4">
                         <ReactSelect
@@ -659,12 +618,6 @@ const OfferPage = () => {
                             onChange={handleChange}
                             required
                         />
-                        {/* <Input
-                            label="Comment"
-                            name="comment"
-                            value={createPartFormData.comment}
-                            onChange={handleChange}
-                        /> */}
                         <Input
                             label="Boat Registration"
                             name="countryCode"
