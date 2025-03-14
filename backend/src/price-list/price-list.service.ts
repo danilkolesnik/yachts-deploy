@@ -25,6 +25,7 @@ export class PricelistService {
           serviceName: data.serviceName,
           priceInEuroWithoutVAT: data.priceInEuroWithoutVAT,
           unitsOfMeasurement: data.unitsOfMeasurement,
+          description: data.description,
         })
       );
 

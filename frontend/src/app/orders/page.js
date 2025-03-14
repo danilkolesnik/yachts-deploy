@@ -130,14 +130,14 @@ const OrderPage = () => {
     };
 
     const columns = [
-        { name: 'Creation Date', selector: row => {
-            return new Date(row.createdAt).toLocaleString();
-        }, sortable: true },
         { name: 'Order Number', selector: row => (
             <Link href={`/orders/${row.id}`} className="text-black">
                     <div className="text-blue-500 hover:underline">{row.id}</div>
             </Link>
         ), sortable: true },
+        { name: 'Creation Date', selector: row => {
+            return new Date(row.createdAt).toLocaleString();
+        }, sortable: true },
         { name: 'Customer', selector: row => (row.offer && row.offer.customerFullName) ? row.offer.customerFullName : 'N/A', sortable: true },
         { name: 'Yacht', selector: row => row.offer && row.offer.yachtName ? row.offer.yachtName : '', sortable: true },
         { name: 'Responsible', selector: row => Array.isArray(row.assignedWorkers) 

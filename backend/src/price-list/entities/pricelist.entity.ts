@@ -13,4 +13,7 @@ export class Pricelist {
 
   @Column({ default: '' })
   unitsOfMeasurement: string;
+
+  @Column({ default: '' })
+  description: string;
 }
