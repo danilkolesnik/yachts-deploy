@@ -21,6 +21,11 @@ export class PriceListController {
     return this.pricelistService.update(id, data);
   }
 
+  @Get(':id')
+  async getPricelistById(@Param('id') id: string) {
+    return this.pricelistService.findById(id);
+  }
+
   @Get()
   async getAllPricelists() {
     return this.pricelistService.findAll();

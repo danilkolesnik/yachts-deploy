@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { offer } from './entities/offer.entity';
 import { CreateOfferhDto } from './dto/create-offer.dto';
 import { Request } from 'express';
 import generateRandomId from 'src/methods/generateRandomId';
 import { users } from 'src/auth/entities/users.entity';
+import { warehouse } from 'src/warehouse/entities/warehouse.entity';
 import { OfferHistory } from './entities/offer-history.entity';
 import { isEqual } from 'lodash';
 
@@ -20,6 +21,8 @@ export class OfferService {
     private readonly offerRepository: Repository<offer>,
     @InjectRepository(users)
     private readonly usersRepository: Repository<users>,
+    @InjectRepository(warehouse)
+    private readonly warehouseRepository: Repository<warehouse>,
     @InjectRepository(OfferHistory)
     private readonly offerHistoryRepository: Repository<OfferHistory>,
   ) {}
@@ -43,6 +46,21 @@ export class OfferService {
 
       const generateId = generateRandomId();
 
+      //@ts-expect-error: Assuming 'value' exists on 'data.parts' for mapping IDs
+      const partIds = data.parts.map(part => part.value);
+
+      const parts = await this.warehouseRepository.find({ where: { id: In(partIds) } });
+
+      for (const part of parts) {
+       //@ts-expect-error: Assuming 'value' exists on 'data.parts' for mapping IDs
+        const partData = data.parts.find(p => p.value === part.id);
+        if (part && partData) {
+         //@ts-expect-error: Assuming 'quantity' exists on 'part' for mapping IDs
+          part.quantity = (parseInt(part.quantity, 10) || 0) - 1; 
+          await this.warehouseRepository.save(part);
+        }
+      }
+  
       const result = await this.offerRepository.save(
         this.offerRepository.create({
           id: generateId,

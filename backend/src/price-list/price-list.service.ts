@@ -121,4 +121,12 @@ export class PricelistService {
       };
     }
   }
+
+  async findById(id: string) {
+    const pricelist = await this.pricelistRepository.findOne({ where: { id } });
+    return {
+      code: 200,
+      data: pricelist,
+    };
+  }
 }
