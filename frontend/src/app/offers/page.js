@@ -247,6 +247,17 @@ const OfferPage = () => {
             setModalIsOpen(false);
             setEditMode(false);
             setEditId(null);
+            console.log('Form submitted successfully. Resetting form data.');
+            setFormData({
+                customerFullName: '',
+                yachtName: '',
+                yachtModel: '',
+                comment: '',
+                countryCode: '',
+                services: [],
+                parts: [],
+                status: 'created'
+            });
         } catch (error) {
             console.error(error);
         }
@@ -281,56 +292,39 @@ const OfferPage = () => {
     };
 
     const openModal = () => {
-        console.log('Opening main modal');
-        setFormData({
-            customerFullName: '',
-            yachtName: '',
-            yachtModel: '',
-            comment: '',
-            countryCode: '',
-            services: [],
-            parts: [],
-            status: 'created'
-        });
         setEditMode(false);
         setEditId(null);
         setModalIsOpen(true);
     };
 
     const closeModal = () => {
-        console.log('Closing main modal');
+        console.log('Modal closed. Form data should remain unchanged:', formData);
         setModalIsOpen(false);
     };
 
     const openCreateOrderModal = (row) => {
-        console.log('Opening create order modal');
         setSelectedRow(row);
         setCreateOrderFormData([]);
         setCreateOrderModalIsOpen(true);
     };
 
     const closeCreateOrderModal = () => {
-        console.log('Closing create order modal');
         setCreateOrderModalIsOpen(false);
     };
 
     const openCreateServiceModal = () => {
-        console.log('Opening create service modal');
         setCreateServiceModalIsOpen(true);
     };
 
     const closeCreateServiceModal = () => {
-        console.log('Closing create service modal');
         setCreateServiceModalIsOpen(false);
     };
 
     const openCreatePartModal = () => {
-        console.log('Opening create part modal');
         setCreatePartModalIsOpen(true);
     };
 
     const closeCreatePartModal = () => {
-        console.log('Closing create part modal');
         setCreatePartModalIsOpen(false);
     };
 
@@ -347,10 +341,6 @@ const OfferPage = () => {
 
     const handleSelectChange = (value, name) => {
         setFormData({ ...formData, [name]: value });
-    };
-
-    const handleAssignedUsersChange = (selectedUsers) => {
-        setCreateOrderFormData(selectedUsers);
     };
 
     const createOrder = async () => {
@@ -423,7 +413,6 @@ const OfferPage = () => {
     }, [users]);
 
     useEffect(() => {
-        // Проверяем, что мы находимся в браузере
         if (typeof window !== 'undefined') {
             const storedRole = localStorage.getItem('role');
             setRole(storedRole);
@@ -473,6 +462,7 @@ const OfferPage = () => {
                     <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto h-96">
                         <ReactSelect
                             options={userOptions}
+                            value={userOptions.find(option => option.label === formData.customerFullName) || null}
                             onChange={selectedOption => setFormData({ ...formData, customerFullName: selectedOption ? selectedOption.label : '' })}
                             placeholder="Select a customer..."
                             isClearable
