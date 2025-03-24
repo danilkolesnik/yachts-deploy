@@ -17,8 +17,6 @@ import { useRouter } from 'next/navigation';
 const OrderPage = () => {
 
     const router = useRouter();
-    const token = localStorage.getItem('token');
-
     const [orders, setOrders] = useState([]);
     const [filters, setFilters] = useState({
         status: '',

@@ -16,9 +16,16 @@ const OrderDetail = ({ params }) => {
     const [order, setOrder] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
-    const [role, setRole] = useState(localStorage.getItem('role'));
+    const [role, setRole] = useState(null);
     const [selectedTab, setSelectedTab] = useState('Before');
     const router = useRouter();
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const storedRole = localStorage.getItem('role');
+            setRole(storedRole);
+        }
+    }, []);
 
     useEffect(() => {
         if (id) {
