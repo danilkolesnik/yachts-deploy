@@ -22,11 +22,13 @@ services:
     environment:
       - SECRET_KEY=gfgd@43435sdfggpp[[gdsf
       - NODE_ENV=production
-      - DATABASE_HOST=http://localhost:5432
+      - DATABASE_HOST=localhost
       - DATABASE_USER=postgres
-      - DATABASE_PASSWORD=postgres
+      - DATABASE_PASSWORD=12345678
       - DATABASE_NAME=yachts
       - SERVER_URL=http://localhost:5000
+      - ZOHO_APP_PASSWORD=fV3U2ZA#u4:6$Gg
+      - ZOHO_EMAIL=kiril.kuznetsov@gmail.com
     depends_on:
       - db
 
