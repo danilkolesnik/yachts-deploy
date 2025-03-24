@@ -24,6 +24,11 @@ export const statusStyles = {
         color: 'white',
         border: '1px solid #388e3c',
     },
+    confirmed:{
+        backgroundColor: '#4caf50',
+        color: 'white',
+        border: '1px solid #388e3c',
+    },
     closed: {
         backgroundColor: '#607d8b',
         color: 'white',

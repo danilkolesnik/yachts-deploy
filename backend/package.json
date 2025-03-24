@@ -28,6 +28,7 @@
     "@nestjs/serve-static": "^5.0.3",
     "@nestjs/swagger": "github:nestjs/swagger",
     "@nestjs/typeorm": "^11.0.0",
+    "@supabase/storage-js": "^2.7.1",
     "@types/ejs": "^3.1.5",
     "@types/pdf-parse": "^1.1.4",
     "@types/pdfkit": "^0.13.9",
@@ -36,6 +37,7 @@
     "ejs": "^3.1.10",
     "express": "^5.0.1",
     "fs": "^0.0.1-security",
+    "handlebars": "^4.7.8",
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.30.1",
     "multer": "^1.4.5-lts.1",
@@ -44,8 +46,10 @@
     "pdf-parse": "^1.1.1",
     "pdfkit": "^0.16.0",
     "pg": "^8.13.3",
+    "puppeteer": "^24.4.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "stream": "^0.0.3",
     "typeorm": "^0.3.20"
   },
   "devDependencies": {

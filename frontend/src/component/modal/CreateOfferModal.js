@@ -1,11 +1,14 @@
+import { useState } from "react";
+import { Button, Select, Option } from "@material-tailwind/react";
+import { ClipLoader } from 'react-spinners';
 import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
-import { Button, Select, Option } from "@material-tailwind/react";
 import ReactSelect from 'react-select';
 
-const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal }) => (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create Offer">
-        <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto h-96">
+const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal, loading }) => {
+    return(
+        <Modal isOpen={isOpen} onClose={onClose} title="Create Offer">
+        <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto h-full" style={{ height: '400px', overflowY: 'auto' }}>
             <ReactSelect
                 options={userOptions}
                 value={userOptions.find(option => option.label === formData.customerFullName) || null}
@@ -113,12 +116,13 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
                 <Button variant="text" color="red" onClick={onClose} className="mr-1">
                     <span>Cancel</span>
                 </Button>
-                <Button color="green" type="submit">
-                    <span>Add</span>
+                <Button color="green" type="submit" disabled={loading}>
+                    {loading ? <ClipLoader size={13} color={"#123abc"} /> : <span>Add</span>}
                 </Button>
             </div>
         </form>
     </Modal>
-);
+    )
+};
 
 export default CreateOfferModal;

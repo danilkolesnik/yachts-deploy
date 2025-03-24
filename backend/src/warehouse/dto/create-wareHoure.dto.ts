@@ -4,6 +4,7 @@ export class CreateWareHourehDto {
     inventory: string;
     comment: string;
     countryCode: string;
+    pricePerUnit: string;
     serviceCategory: {
       serviceName: string;
       priceInEuroWithoutVAT: number;

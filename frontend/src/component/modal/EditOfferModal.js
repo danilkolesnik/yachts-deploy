@@ -3,12 +3,13 @@ import Input from '@/ui/Input';
 import { Button, Select, Option } from "@material-tailwind/react";
 import ReactSelect from 'react-select';
 
-const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal }) => (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Offer">
-        <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto h-96">
+const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal }) => {
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Edit Offer">
+        <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto h-96" style={{ height: '400px', overflowY: 'auto' }}>
             <ReactSelect
                 options={userOptions}
-                value={userOptions.find(option => option.label === formData.customerFullName) || null}
+                value={userOptions.find(option => option.label === formData.customerFullName)}
                 onChange={selectedOption => handleChange({ target: { name: 'customerFullName', value: selectedOption ? selectedOption.label : '' } })}
                 placeholder="Select a customer..."
                 isClearable
@@ -116,9 +117,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                 <Button color="green" type="submit">
                     <span>Update</span>
                 </Button>
-            </div>
-        </form>
-    </Modal>
-);
+                </div>
+            </form>
+        </Modal>
+    );
+};
 
 export default EditOfferModal;

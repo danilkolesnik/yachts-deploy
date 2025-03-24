@@ -23,7 +23,8 @@ const WarehousePage = () => {
         inventory: '',
         comment: '',
         countryCode: '',
-        serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' }
+        serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
+        pricePerUnit: ''
     });
     const [filteredData, setFilteredData] = useState([]);
     const [search, setSearch] = useState('');
@@ -48,13 +49,13 @@ const WarehousePage = () => {
             sortable: true,
         },
         {
-            name: 'Inventory',
-            selector: row => row.inventory,
+            name: 'Comment',
+            selector: row => row.comment,
             sortable: true,
         },
         {
-            name: 'Comment',
-            selector: row => row.comment,
+            name: 'Price',
+            selector: row => row.pricePerUnit,
             sortable: true,
         },
         {
@@ -88,6 +89,7 @@ const WarehousePage = () => {
     const getData = async () => {
         try {
             const res = await axios.get('/api/warehouse');
+            console.log(res.data);
             return res.data;
         } catch (error) {
             console.log(error);
@@ -132,7 +134,8 @@ const WarehousePage = () => {
             inventory: row.inventory,
             comment: row.comment,
             countryCode: row.countryCode,
-            serviceCategory: row.serviceCategory
+            serviceCategory: row.serviceCategory,
+            pricePerUnit: row.pricePerUnit
         });
         setEditMode(true);
         setEditId(row.id);
@@ -142,29 +145,15 @@ const WarehousePage = () => {
     const handleDelete = async (id) => {
         try {
             await axios.post(`${URL}/warehouse/delete/${id}`);
-            getData();
+            getData().then((res) => {
+                setData(res);
+                setFilteredData(res);
+            })
         } catch (error) {
             console.log(error);
         }
     };
-
-    useEffect(() => {
-        Promise.all([getData(), getDataCatagory()])
-            .then(([res1, res2]) => {
-                setData(res1);
-                setFilteredData(res1);
-                setCatagoryData(res2);
-            });
-    }, []);
-
-    useEffect(() => {
-        const result = data.filter(item => 
-            (item.name && item.name.toLowerCase().includes(search.toLowerCase())) ||
-            (item.countryCode && item.countryCode.toLowerCase().includes(search.toLowerCase())) ||
-            (item.serviceCategory.serviceName && item.serviceCategory.serviceName.toLowerCase().includes(search.toLowerCase()))
-        );
-        setFilteredData(result);
-    }, [search, data]);
+;
 
     const openModal = () => {
         setFormData({
@@ -173,7 +162,8 @@ const WarehousePage = () => {
             inventory: '',
             comment: '',
             countryCode: '',
-            serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' }
+            serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
+            pricePerUnit: ''
         });
         setEditMode(false);
         setEditId(null);
@@ -203,6 +193,24 @@ const WarehousePage = () => {
     const handleHistoryClick = () => {
         router.push('/warehouseHistory');
     };
+
+    useEffect(() => {
+        Promise.all([getData(), getDataCatagory()])
+            .then(([res1, res2]) => {
+                setData(res1);
+                setFilteredData(res1);
+                setCatagoryData(res2);
+            });
+    }, []);
+
+    useEffect(() => {
+        const result = data.filter(item => 
+            (item.name && item.name.toLowerCase().includes(search.toLowerCase())) ||
+            (item.countryCode && item.countryCode.toLowerCase().includes(search.toLowerCase())) ||
+            (item.serviceCategory.serviceName && item.serviceCategory.serviceName.toLowerCase().includes(search.toLowerCase()))
+        );
+        setFilteredData(result);
+    }, [search, data])
 
     return (
         <>
@@ -251,13 +259,13 @@ const WarehousePage = () => {
                         onChange={handleChange}
                         required
                     />
-                    <Input
+                    {/* <Input
                         label="Inventory"
                         name="inventory"
                         value={formData.inventory}
                         onChange={handleChange}
                         required
-                    />
+                    /> */}
                     <Input
                         label="Comment"
                         name="comment"
@@ -269,6 +277,13 @@ const WarehousePage = () => {
                         label="Boat Registration"
                         name="countryCode"
                         value={formData.countryCode}
+                        onChange={handleChange}
+                        required
+                    />
+                    <Input
+                        label="Price"
+                        name="pricePerUnit"
+                        value={formData.pricePerUnit}
                         onChange={handleChange}
                         required
                     />

@@ -1,64 +1,55 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import ejs from 'ejs';
-import PDFDocument from 'pdfkit';
+import puppeteer from 'puppeteer';
 
-export async function createPdfFromTemplate(data: any): Promise<void> {
-  const outputPath = path.join(process.cwd(), 'documents', 'order.pdf');
+export async function createPdfBuffer(data: any): Promise<Buffer> {
+  const templatePath = path.join(process.cwd(), 'documents', 'offer.html');
+  let templateString = fs.readFileSync(templatePath, 'utf8');
 
-  const templateString = `
-    <h1><%= title %></h1>
-    <p><%= content %></p>
-  `;
+  const partsTableRows = data.parts.map((part: any, index: number) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${part.label}</td>
+      <td>${part.quantity}</td>
+      <td>${part.pricePerUnit}</td>
+      <td>${part.quantity * part.pricePerUnit}</td>
+    </tr>
+  `).join('');
 
-  const htmlContent = ejs.render(templateString, data);
+  const totalPrice = data.parts.reduce((acc: number, part: any) => acc + part.quantity * part.pricePerUnit, 0);
+  const totalPriceServices = Number(data.services.priceInEuroWithoutVAT) * Number(data.services.unitsOfMeasurement);
+  const totalPriceAllServices = Number(data.services.priceInEuroWithoutVAT) * Number(data.services.unitsOfMeasurement);
 
-  // Create a PDF document
-  const doc = new PDFDocument();
-  const writeStream = fs.createWriteStream(outputPath);
-  doc.pipe(writeStream);
+  const createdAt = new Date();
+  const createdAtString = isNaN(createdAt.getTime()) ? 'Invalid Date' : createdAt.toLocaleString();
 
-  // Add the rendered content to the PDF
-  doc.text(htmlContent, {
-    align: 'left'
-  });
+  const totalPriceAll = totalPrice + totalPriceServices;
 
-  // Finalize the PDF and end the stream
-  doc.end();
+  templateString = templateString.replace('{{offerId}}', String(data.id))
+    .replace('{{customerFullName}}', String(data.customerFullName))
+    .replace('{{yachtName}}', String(data.yachtName))
+    .replace('{{yachtModel}}', String(data.yachtModel))
+    .replace('{{countryCode}}', String(data.countryCode))
+    .replace('{{serviceName}}', String(data.services.serviceName))
+    .replace('{{serviceDescription}}', String(data.services.description))
+    .replace('{{status}}', String(data.status))
+    .replace('{{createdAt}}', createdAtString)
+    .replace('{{partsTableRows}}', String(partsTableRows))
+    .replace('{{totalPrice}}', String(totalPrice))
+    .replace('{{seriveName}}', String(data.services.serviceName))
+    .replace('{{servicePrice}}', String(data.services.priceInEuroWithoutVAT))
+    .replace('{{serviceQuantity}}', String(data.services.unitsOfMeasurement))
+    .replace('{{totalPriceServices}}', String(totalPriceServices))
+    .replace('{{totalPriceAll}}', String(totalPriceAll))
+    .replace('{{totalPriceAllServices}}', String(totalPriceAllServices));
 
-  // Return a promise that resolves when the file is fully written
-  return new Promise((resolve, reject) => {
-    writeStream.on('finish', resolve);
-    writeStream.on('error', reject);
-  });
-}
 
-export async function createTestPdf(): Promise<void> {
-  const outputPath = path.join(process.cwd(), 'documents', 'order.pdf');
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+  await page.setContent(templateString, { waitUntil: 'networkidle0' });
+  const pdfBuffer = await page.pdf({ format: 'A4' });
 
-  const templateString = `
-    <h1>Test PDF</h1>
-    <p>This is a test PDF document.</p>
-  `;
+  await browser.close();
 
-  const htmlContent = ejs.render(templateString);
-
-  // Create a PDF document
-  const doc = new PDFDocument();
-  const writeStream = fs.createWriteStream(outputPath);
-  doc.pipe(writeStream);
-
-  // Add the rendered content to the PDF
-  doc.text(htmlContent, {
-    align: 'left'
-  });
-
-  // Finalize the PDF and end the stream
-  doc.end();
-
-  // Return a promise that resolves when the file is fully written
-  return new Promise((resolve, reject) => {
-    writeStream.on('finish', resolve);
-    writeStream.on('error', reject);
-  });
+  return Buffer.from(pdfBuffer);
 }

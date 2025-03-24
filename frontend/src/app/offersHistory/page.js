@@ -1,20 +1,28 @@
 "use client"
 import React, { useEffect, useState } from 'react';
+import { Button } from "@material-tailwind/react";
+import { useRouter } from 'next/navigation';
 import { URL } from '@/utils/constants';
 import Header from '@/component/header';
 import axios from 'axios';
 import DataTable from 'react-data-table-component';
+import Loader from '@/ui/loader';
 
 
 const OffersHistoryPage = () => {
     const [offerHistory, setOfferHistory] = useState([]);
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
 
     const getOfferHistory = async () => {
         try {
+            setLoading(true);
             const res = await axios.get(`${URL}/offer/history`);
             setOfferHistory(res.data.data);
         } catch (error) {
             console.error(error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -37,7 +45,7 @@ const OffersHistoryPage = () => {
                 .map(([key, value]) => ({
                     offerId: entry.offerId,
                     changeDate: entry.changeDate,
-                    user: entry.user.fullName,
+                    user: entry.user?.fullName || 'Unknown User',
                     changedField: formatKey(key),
                     oldValue: typeof value.oldValue === 'object' && value.oldValue !== null ?
                         ('name' in value.oldValue ? value.oldValue.name :
@@ -85,9 +93,15 @@ const OffersHistoryPage = () => {
 
     return (
         <>
-            <Header />
-            <div className="min-h-screen bg-gray-100 p-8 font-sans text-black">
-                <h2 className="text-xl font-bold mb-4">Offer History</h2>
+          <Header />
+            <div className="min-h-screen bg-gray-100 p-8 font-sans">
+            {loading ? (
+                <div className="flex justify-center items-center min-h-screen">
+                    <Loader loading={loading} />
+                </div>
+            ) : (
+            <div className="w-full space-y-6 bg-white rounded shadow-md p-4">
+                <Button color="blue" onClick={() => router.push('/offers')}>Back</Button>
                 <DataTable
                     columns={columns}
                     data={flattenedData}
@@ -96,6 +110,8 @@ const OffersHistoryPage = () => {
                     striped
                 />
             </div>
+            )}
+        </div>
         </>
     );
 };

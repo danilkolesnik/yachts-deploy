@@ -1,8 +1,10 @@
 "use client"
 import React, { use, useState, useEffect } from 'react';
-import axios from 'axios';
 import { URL } from '@/utils/constants';
+import { Button } from "@material-tailwind/react";
 import { XMarkIcon } from '@heroicons/react/24/solid';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import Header from '@/component/header';
 import Loader from '@/ui/loader';
 import Image from 'next/image';
@@ -14,6 +16,7 @@ const OfferDetail = ({ params }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [role, setRole] = useState(localStorage.getItem('role'));
+    const router = useRouter();
 
     useEffect(() => {
         if (id) {
@@ -84,7 +87,8 @@ const OfferDetail = ({ params }) => {
         <div className="min-h-screen bg-gray-100">
             <Header />
             <div className="max-w-4xl mx-auto p-8 bg-white shadow-lg rounded-lg">
-                <h1 className="text-4xl font-extrabold mb-6 text-black">Offer Details</h1>
+                <Button color="blue" onClick={() => router.push('/offers')}>Back</Button>
+                <h1 className="text-4xl font-extrabold mb-6 text-black pt-4">Offer Details</h1>
                 <div className="space-y-6">
                     <div className="flex items-center">
                         <span className="font-semibold text-gray-800 pr-2">ID:</span>

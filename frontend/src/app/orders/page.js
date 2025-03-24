@@ -10,9 +10,14 @@ import Header from '@/component/header';
 import Loader from '@/ui/loader';
 import Modal from '@/ui/Modal';
 import Link from 'next/link';
+import WorkTimer from '@/component/workTimer/workTimer';
 import { statusStyles } from '@/utils/statusStyles';
+import { useRouter } from 'next/navigation';
 
 const OrderPage = () => {
+
+    const router = useRouter();
+    const token = localStorage.getItem('token');
 
     const [orders, setOrders] = useState([]);
     const [filters, setFilters] = useState({
@@ -51,7 +56,6 @@ const OrderPage = () => {
 
 
     const handleFilterChange = (value, name) => {
-        console.log(value, name);
         if (name) {
             setFilters({ ...filters, [name]: value });
         } else {
@@ -153,6 +157,15 @@ const OrderPage = () => {
             </span>
         ) },
         ...(role !== 'user' ? [{
+            name: 'Timers',
+            cell: row => (
+                <div className="flex justify-center">
+                    <WorkTimer orderId={row.id}/>
+                </div>
+            ),
+            ignoreRowClick: true,
+        }] : []),
+        ...(role !== 'user' ? [{
             name: 'Actions',
             cell: row => (
                 <div className="flex space-x-2">
@@ -239,6 +252,9 @@ const OrderPage = () => {
                                 />
                                 
                             </div>
+                            <Button color="green" onClick={() => router.push('/orders/history')}>
+                                <span>History</span>
+                            </Button>
                         </div>
                         <DataTable
                             columns={columns}

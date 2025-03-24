@@ -1,13 +1,15 @@
 "use client"
 import React, { use, useState, useEffect } from 'react';
-import axios from 'axios';
+import { Button } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import { XMarkIcon } from '@heroicons/react/24/solid';
+import { useRouter } from 'next/navigation';
+import { Tab } from '@headlessui/react';
 import Header from '@/component/header';
 import Loader from '@/ui/loader';
 import Image from 'next/image';
 import ReactPlayer from 'react-player';
-import { Tab } from '@headlessui/react';
+import axios from 'axios';
 
 const OrderDetail = ({ params }) => {
     const { id } = use(params);
@@ -16,6 +18,7 @@ const OrderDetail = ({ params }) => {
     const [uploading, setUploading] = useState(false);
     const [role, setRole] = useState(localStorage.getItem('role'));
     const [selectedTab, setSelectedTab] = useState('Before');
+    const router = useRouter();
 
     useEffect(() => {
         if (id) {
@@ -161,7 +164,8 @@ const OrderDetail = ({ params }) => {
         <div className="min-h-screen bg-gray-100">
             <Header />
             <div className="max-w-4xl mx-auto p-8 bg-white shadow-lg rounded-lg">
-                <h1 className="text-4xl font-extrabold mb-6 text-black">Order Details</h1>
+                <Button color="blue" onClick={() => router.push('/orders')}>Back</Button>
+                <h1 className="text-4xl font-extrabold mb-6 text-black pt-4">Order Details</h1>
                 <Tab.Group>
                     <Tab.List className="flex space-x-1 border-b-2 border-gray-300">
                         {['Before', 'In Progress', 'Result'].map((tab) => (

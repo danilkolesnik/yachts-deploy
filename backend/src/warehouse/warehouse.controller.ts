@@ -41,4 +41,9 @@ export class WarehouseController {
     async getAllWarehouseHistory() {
         return this.warehouseService.getAllHistory();
     }
+
+    @Get('in-stock')
+    async getInStock() {
+        return this.warehouseService.getInStock();
+    }
 }

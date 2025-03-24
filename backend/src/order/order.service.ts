@@ -7,6 +7,7 @@ import { offer } from 'src/offer/entities/offer.entity';
 import { users } from 'src/auth/entities/users.entity';
 import { order } from './entities/order.entity';
 import { File } from 'src/upload/entities/file.entity';
+import { OrderTimer } from './entities/order-timer.entity';
 import getBearerToken from 'src/methods/getBearerToken';
 
 import { JwtPayload } from 'jsonwebtoken';
@@ -24,6 +25,8 @@ export class OrderService {
     private readonly orderRepository: Repository<order>,
     @InjectRepository(File)
     private readonly fileRepository: Repository<File>,
+    @InjectRepository(OrderTimer)
+    private readonly orderTimerRepository: Repository<OrderTimer>,
   ) {}
 
   async create(data: CreateOrderDto) {
@@ -111,8 +114,12 @@ export class OrderService {
       let filteredOrders = ordersWithOffers;
 
       if (login.role === 'admin') {
-        filteredOrders = ordersWithOffers;
+
         /* eslint-disable @typescript-eslint/no-unsafe-argument */
+        return {
+          code: 200,
+          data: ordersWithOffers,
+        };
       } else if (userRoles.includes(login.role)) {
         filteredOrders = ordersWithOffers.filter(order =>
           order.assignedWorkers.some((worker: any) => String(worker.id) === String(login.id))
@@ -128,12 +135,12 @@ export class OrderService {
         };
       }
 
-      filteredOrders = ordersWithOffers;
 
       return {
         code: 200,
         data: filteredOrders,
       };
+  
     } catch (err) {
       return {
         code: 500,
@@ -318,6 +325,210 @@ export class OrderService {
     await this.orderRepository.save(order);
 
     return { message: 'Файл успешно удалён.', code: 200 };
+  }
+
+  async startTimer(orderId: string, req: Request): Promise<OrderTimer> {
+
+    const token = getBearerToken(req);
+
+    const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+
+    const timer = this.orderTimerRepository.create({
+      orderId,
+      userId: login.id,
+      startTime: new Date(),
+      status: 'In Progress',
+      isRunning: true,
+      isPaused: false
+    });
+
+    return this.orderTimerRepository.save(timer);
+  }
+
+  async pauseTimer(orderId: string): Promise<OrderTimer> {
+    const timer = await this.orderTimerRepository.findOne({
+      where: { orderId, isRunning: true, isPaused: false }
+    });
+  
+    if (!timer) {
+      throw new Error('No active timer found for this order');
+    }
+  
+    const now = new Date();
+    timer.isPaused = true;
+    timer.status = 'Paused';
+    timer.pauseTime = now;
+  
+    return this.orderTimerRepository.save(timer);
+  }
+
+  async resumeTimer(orderId: string): Promise<OrderTimer> {
+    const timer = await this.orderTimerRepository.findOne({
+      where: { orderId, isRunning: true, isPaused: true }
+    });
+
+    if (!timer) {
+      throw new Error('No paused timer found for this order');
+    }
+
+    if (timer.pauseTime) {
+      const pauseDuration = new Date().getTime() - timer.pauseTime.getTime();
+      timer.totalPausedTime = (timer.totalPausedTime || 0) + pauseDuration;
+    }
+
+    timer.isPaused = false;
+    timer.status = 'In Progress';
+    timer.pauseTime = new Date();
+
+    return this.orderTimerRepository.save(timer);
+  }
+
+  async stopTimer(orderId: string): Promise<OrderTimer> {
+    const timer = await this.orderTimerRepository.findOne({
+      where: { orderId, isRunning: true }
+    });
+
+    if (!timer) {
+      throw new Error('No active timer found for this order');
+    }
+
+    const now = new Date();
+    timer.endTime = now;
+    timer.isRunning = false;
+    timer.isPaused = false;
+    timer.status = 'Completed';
+    timer.totalDuration = now.getTime() - timer.startTime.getTime();
+
+    await this.orderTimerRepository.save(timer);
+
+    return await this.orderTimerRepository.save(
+      this.orderTimerRepository.create({
+        orderId: orderId,
+        isRunning: false,
+        isPaused: false,
+        status: 'Ready',
+        startTime: new Date(),
+        totalPausedTime: 0
+      })
+    );
+  }
+
+  async getTimerStatus(orderId: string): Promise<{
+    status: string;
+    startTime: Date;
+    currentDuration?: number;
+    endTime?: Date;
+    totalDuration?: number;
+    isPaused: boolean;
+  } | null> {
+    const timer = await this.orderTimerRepository.findOne({
+      where: { orderId },
+      order: { startTime: 'DESC' }
+    });
+  
+    if (!timer) {
+      return null;
+    }
+  
+    const result: any = {
+      status: timer.status,
+      startTime: timer.startTime,
+      isPaused: timer.isPaused
+    };
+  
+    if (timer.isRunning) {
+      const now = new Date().getTime();
+      let currentDuration = now - timer.startTime.getTime();
+      
+      // Если есть накопленное время пауз
+      if (timer.totalPausedTime) {
+        currentDuration -= timer.totalPausedTime;
+      }
+      
+      // Если сейчас на паузе
+      if (timer.isPaused && timer.pauseTime) {
+        const currentPauseDuration = now - timer.pauseTime.getTime();
+        currentDuration -= currentPauseDuration;
+      }
+  
+      // Проверяем, что длительность не отрицательная
+      result.currentDuration = Math.max(0, currentDuration);
+    } else {
+      result.endTime = timer.endTime;
+      result.totalDuration = timer.totalDuration;
+    }
+  
+    return result;
+  }
+
+  
+  async getActiveTimers(): Promise<OrderTimer[]> {
+    return this.orderTimerRepository.find({
+      where: { 
+        isRunning: true,
+        isPaused: false 
+      },
+      order: { 
+        startTime: 'DESC' 
+      }
+    });
+  }
+
+  async getTimerHistory(orderId: string): Promise<OrderTimer[]> {
+    return this.orderTimerRepository.find({
+      where: { orderId },
+      order: { startTime: 'DESC' }
+    });
+  }
+
+  async getAllTimers(){
+    const timers = await this.orderTimerRepository.find({
+      order: {
+        startTime: 'DESC',
+      },
+      where:{
+        status: 'Completed'
+      }
+    });
+
+
+    const assignedWorkers = await this.usersRepository.find({
+      where: {
+        id: In(timers.map(timer => timer.userId))
+      }
+    });
+
+    const timersWithWorkers = timers.map(timer => ({
+      ...timer,
+      worker: assignedWorkers.find(worker => worker.id === timer.userId)
+    }));
+
+    const orders = await this.orderRepository.find({
+      where: {
+        id: In(timers.map(timer => timer.orderId))
+      }
+    });
+
+    const timersWithOrders = timersWithWorkers.map(timer => ({
+      ...timer,
+      order: orders.find(order => order.id === timer.orderId)
+    }));
+
+    // const customers = await this.usersRepository.find({
+    //   where: {
+    //     id: In(orders.map(order => order.customerId))
+    //   }
+    // });
+
+    // const timersWithCustomers = timersWithOrders.map(timer => ({
+    //   ...timer,
+    //   customer: timer.order?.customerId ? customers.find(customer => customer.id === timer.order?.customerId) : null,
+    // }));
+    
+    return{
+      code: 200,
+      data: timersWithOrders
+    }
   }
 
 }

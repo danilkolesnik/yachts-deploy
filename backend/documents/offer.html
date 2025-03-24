@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+        * {
+            font-family: 'Roboto', sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        .content {
+            width: 460px;
+        }
+        .container {
+            width: 600px;
+            margin: 0 auto;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+        }
+        .row-title {
+            align-items: center;
+        }
+        .header-row:last-child {
+            border-bottom: none;
+        }
+        .header-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .title{
+            font-size: 35px;
+            font-weight: 500;
+        }
+        .header-item {
+            flex: 1;
+            padding: 5px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .header-item.full {
+            flex: 2;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            border: 1.2px solid black;
+        }
+        .row2 {
+            display: flex;
+            flex-direction: column;
+            padding: 0px;
+            padding-left: 5px;
+           
+        }
+        .row-3 {
+            border: 1.2px solid black;
+            padding: 0px;
+            margin-top: 20px;
+        }
+        .right {
+            border-right: 1.2px solid black;
+        }
+        .item {
+            font-size: 14px;
+            padding: 0px;
+        }
+        .row-4 {
+            flex-direction: column;
+            border-top: none;
+            padding: 0px;
+            border-right: 1.2px solid black;
+        }
+        .row5 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1.2px solid black;
+            border-top: none;
+            margin-bottom: 20px;
+        }
+        .row5-item {
+            width: 50%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+        .table {
+            font-size: 12px;
+        }
+        .logo {
+            width: 150px;
+            height: 100px;
+        }
+        .contact-info {
+            width: 50%;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .contact-info-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid black;
+        }
+
+        .header-table{
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .subtotal {
+            display: flex;
+            justify-content: space-between;
+            border: 1px solid black;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .subtotal div{
+            padding: 4px;
+            width: 50%;
+        }
+        .subtotal div:nth-child(1){
+            border-right: 1.2px solid black;
+        }
+        .subtotal div:nth-child(2){
+            text-align: right;
+        }
+        .total-amount{
+            display: flex;
+            justify-content: space-between;
+            border: 1.2px solid black;
+            margin-top: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            width: 70%;
+            margin-left: auto;
+        }
+        .total-amount div{
+            padding: 4px;
+        }
+        .total-amount div:nth-child(1){
+            border-right: 1.2px solid black;
+        }
+
+        .bank-details{
+           margin-top: 40px;
+           font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="contact-info-container">
+            <img src='http://localhost:5000/uploads/logo/Logo.png' alt="logo" class="logo">
+            <div class="contact-info">
+                <strong>All Service Marine D.O.O.</strong><br>
+                OIB: 84034357097<br>
+            Mob.: +385 91 535-59-60<br>
+            Phone: +385 91 613-89-41<br>
+                E-mail: info@a-s-m.yachts
+            </div>
+            
+        </div>
+        <div class="header row-title">
+            <div class="header-row">
+                <div class="header-item header-title">OFFER / PONUDA</div>
+                <div class="header-list">
+                    <div class="header-item">Number/Broj: 351</div>
+                    <div class="header-item">Date/Datum: {{createdAt}}</div> 
+                </div>
+            </div>
+            <div class="row">
+                <div class="header-row row2">
+                    <div class="header-item item">Customer/Kupac: {{customerFullName}}</div>
+                    <div class="header-item item">Address/Adresa:</div> 
+                </div>
+            </div>  
+            <div class="header-row row-3">
+                <div class="header-item right">Description/Opis:</div>
+                <div class="header-item full">Non Schedule Service / Usluga izvan rasporeda</div>
+            </div>
+            <div class="row5">
+                <div class="header-row row-4">
+                    <div class="header-row row2">
+                        <div class="header-item">Yacht Name/Ime jahte: {{yachtName}}</div>
+                    </div>
+                    <div class="header-row row2">
+                        <div class="header-item">Yacht Model / Model jahte/ SN/SB: {{yachtModel}}</div>
+                    </div>
+                    <div class="header-row row2">
+                        <div class="header-item">Reg. Number/Reg. Broj: {{countryCode}}</div>
+                    </div>
+                </div>
+                <div class="header-row row5-item">
+                    <div class="header-item">Location/Mjesto:</div>
+                    <div class="header-item">MARINA POLESANA</div>
+                </div>
+            </div>
+
+            <span class="header-table">
+                Products / Proizvodi
+            </span>
+            <table class="table">
+                <tr>
+                    <th>No.</th>
+                    <th>Products / Proizvodi</th>
+                    <th>Quantity / Količina</th>
+                    <th>Price in EURO per pcs/ Cijena u Eurima ed/kom</th>
+                    <th>Price in EURO/ Cijena u Eurima</th>
+                </tr>
+                {{partsTableRows}}
+            </table>
+            <div class="subtotal" style="margin-bottom: 20px;">
+                <div>SUBTOTAL / UKUPNO:</div>
+                <div>EUR {{totalPrice}}</div>
+            </div>
+
+
+            <span class="header-table">
+                Provided Services / Pružene usluge: 
+            </span>
+
+            <table class="table table-2">
+                <tr>
+                    <th>No.</th>
+                    <th>Service / Servis</th>
+                    <th>Quantity / Količina</th>
+                    <th>Price in EURO per pcs/ Cijena u Eurima ed/kom</th>
+                    <th>Price in EURO/ Cijena u Eurima</th>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>{{seriveName}}</td>
+                    <td>{{serviceQuantity}}</td>
+                    <td>{{servicePrice}}</td>
+                    <td>{{totalPriceServices}}</td>
+                </tr>
+            </table>
+
+            <div class="subtotal">
+                <div>SUBTOTAL / UKUPNO:</div>
+                <div>EUR {{totalPriceAllServices}}</div>
+            </div>
+
+
+            <div class="total-amount">
+                <div>TOTAL AMOUNT / SVEUKUPNI IZNOS:</div>
+                <div>EUR {{totalPriceAll}}</div>
+            </div>
+        </div>
+        <div class="bank-details">
+            <strong>BANK DETAILS / BANKOVNI DETALJI:</strong><br>
+            Beneficiary / Korisnik: All Services MARINE d.o.o.<br>
+            Beneficiary Bank / Banka primatelj: ERSTE&STEIERMARKISCHE BANK d.d.<br>
+            IBAN: HR5124020061101131858<br>
+            Bank address / Adresa banke: JADRANSKA TRG 3a, 51000 RIJEKA, REPUBLIKA HRVATSKA<br>
+            SWIFT / BRZ: ESBCHR22<br>
+            <div style="text-align: center; margin-top: 20px;">V.Cherednichenko</div>
+        </div>
+    </div>
+</body>
+</html>

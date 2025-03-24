@@ -1,33 +1,38 @@
 import * as nodemailer from 'nodemailer';
+import { createPdfBuffer } from './createPdf';
 
-export async function sendEmail(to: string, subject: string, text: string, html?: string, pdfFilePath?: string) {
+export async function sendEmail(to: string, data: any) {
 
+  const pdfBuffer = await createPdfBuffer(data);
+  
   const transporter = nodemailer.createTransport({
-    host: 'smtp-mail.outlook.com', 
-    port: 587, 
-    secure: false,
+    host: "smtp.zoho.eu", 
+    port: 465, 
+    secure: true,
     auth: {
-      user: 'outlook_91A721DC25DF8FF7@outlook.com',
-      pass: 'your-email-password',
+      user: process.env.ZOHO_EMAIL,
+      pass: process.env.ZOHO_APP_PASSWORD,
     },
-    tls: {
-      ciphers: 'SSLv3'
-    }
   });
 
   const mailOptions: nodemailer.SendMailOptions = {
-    from: '"Your Name" <outlook_91A721DC25DF8FF7@outlook.com>',
+    from: `"${process.env.ZOHO_EMAIL}"`,
     to,
-    subject,
-    text,
-    html,
-    attachments: pdfFilePath ? [
+    subject: 'Offer created',
+    text: 'Offer created',
+    html: `
+      <p>Offer created. Please find the attached PDF.</p>
+      <p>You can confirm your offer by clicking the following link:</p>
+      <a href="${process.env.SERVER_URL}/offer/confirm/${data.id}">Confirm Offer</a>
+      <p>You can cancel your offer by clicking the following link:</p>
+      <a href="${process.env.SERVER_URL}/offer/cancel/${data.id}">Cancel Offer</a>
+    `,
+    attachments: [
       {
-        filename: 'attachment.pdf',
-        path: pdfFilePath,
-        contentType: 'application/pdf'
+        filename: 'offer.pdf',
+        content: pdfBuffer
       }
-    ] : []
+    ]
   };
 
   try {

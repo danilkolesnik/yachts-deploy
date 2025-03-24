@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { warehouse } from './entities/warehouse.entity';
 import { WarehouseHistory } from './entities/warehouseHistory.entity';
 import { CreateWareHourehDto } from './dto/create-wareHoure.dto';
@@ -16,7 +16,7 @@ export class WarehouseService {
     ){}
 
     async create(data: CreateWareHourehDto) {
-        if (!data.name || !data.quantity || !data.inventory || !data.comment || !data.countryCode || !data.serviceCategory) {
+        if (!data.name || !data.quantity || !data.serviceCategory) {
           return {
             code: 400,
             message: 'Not all arguments',
@@ -24,6 +24,15 @@ export class WarehouseService {
         }
     
         try {
+
+          const checkPart = await this.warehouseModule.findOne({ where: { name: data.name } });
+
+          if (checkPart) {
+            return {
+              code: 400,
+              message: 'Part already exists',
+            };
+          }
           const generateId = generateRandomId();
     
           const result = await this.warehouseModule.save(
@@ -35,6 +44,7 @@ export class WarehouseService {
               comment: data.comment,
               countryCode: data.countryCode,
               serviceCategory: data.serviceCategory,
+              pricePerUnit: data.pricePerUnit,
             })
           );
     
@@ -154,6 +164,14 @@ export class WarehouseService {
                 message: err instanceof Error ? err.message : 'Internal server error',
             };
         }
+    }
+
+    async getInStock() {
+        const warehouses = await this.warehouseModule.find({ where: { quantity: Not('0') } });
+        return {
+            code: 200,
+            data: warehouses,
+        };
     }
 
     async getHistory(warehouseId: string) {

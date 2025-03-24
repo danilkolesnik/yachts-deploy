@@ -35,4 +35,18 @@ export class OfferController {
   async getAllOffers(@Req() request: Request) {
     return this.offerService.findAll(request);
   }
+
+  @Get('confirm/:id')
+  async confirmOffer(@Param('id') id: string) {
+    return this.offerService.confirmOffer(id).then((res) => {
+      return res.message;
+    });
+  }
+
+  @Get('cancel/:id')
+  async cancelOffer(@Param('id') id: string) {
+    return this.offerService.cancelOffer(id).then((res) => {
+      return res.message;
+    });
+  }
 }

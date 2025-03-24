@@ -12,11 +12,15 @@ import {
   DocumentTextIcon,
   UserIcon
 } from "@heroicons/react/24/solid";
+import { useAppDispatch } from '@/lib/hooks';
+import { setId } from '@/lib/features/todos/usersDataSlice';
+
 import Link from 'next/link'
 import Loader from '@/ui/loader';
 
 function NavList() {
   const [role, setRole] = useState(null);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     const storedRole = localStorage.getItem('role');
@@ -25,6 +29,7 @@ function NavList() {
 
   const clearLocalStorage = () => {
     localStorage.clear();
+    dispatch(setId(''));
   };
 
   if (role === null) {

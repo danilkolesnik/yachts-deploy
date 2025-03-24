@@ -41,6 +41,46 @@ export class OrderController {
     return this.orderService.deleteOrder(orderId);
   }
 
+  @Post(':orderId/timer/start')
+  async startTimer(@Param('orderId') orderId: string, @Req() request: Request) {
+    return this.orderService.startTimer(orderId, request);
+  }
+ 
+  @Post(':orderId/timer/pause')
+  async pauseTimer(@Param('orderId') orderId: string) {
+    return this.orderService.pauseTimer(orderId);
+  }
+
+  @Post(':orderId/timer/resume') 
+  async resumeTimer(@Param('orderId') orderId: string) {
+    return this.orderService.resumeTimer(orderId);
+  }
+
+  @Post(':orderId/timer/stop')
+  async stopTimer(@Param('orderId') orderId: string) {
+    return this.orderService.stopTimer(orderId);
+  }
+
+  @Get(':orderId/timer')
+  async getTimerStatus(@Param('orderId') orderId: string) {
+    return this.orderService.getTimerStatus(orderId);
+  }
+
+  @Get(':orderId/timer/history')
+  async getTimerHistory(@Param('orderId') orderId: string) {
+    return this.orderService.getTimerHistory(orderId);
+  }
+
+  @Get('timers/active')
+  async getActiveTimers() {
+    return this.orderService.getActiveTimers();
+  }
+
+  @Get('timers/all')
+  async getAllTimers() {
+    return this.orderService.getAllTimers();
+  }
+
   @Post(':orderId/upload/:tab')
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({

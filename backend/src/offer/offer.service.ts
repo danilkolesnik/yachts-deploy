@@ -5,6 +5,7 @@ import { offer } from './entities/offer.entity';
 import { CreateOfferhDto } from './dto/create-offer.dto';
 import { Request } from 'express';
 import generateRandomId from 'src/methods/generateRandomId';
+import { sendEmail } from 'src/utils/sendEmail';
 import { users } from 'src/auth/entities/users.entity';
 import { warehouse } from 'src/warehouse/entities/warehouse.entity';
 import { OfferHistory } from './entities/offer-history.entity';
@@ -60,6 +61,7 @@ export class OfferService {
           await this.warehouseRepository.save(part);
         }
       }
+
   
       const result = await this.offerRepository.save(
         this.offerRepository.create({
@@ -78,6 +80,8 @@ export class OfferService {
         })
       );
 
+      await sendEmail(customer.email, result);
+     
       return {
         code: 201,
         data: result,
@@ -154,6 +158,7 @@ export class OfferService {
       const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
 
       let offers;
+      
       if (login.role === 'user') {
         offers = await this.offerRepository.find({
           where: { customerId: login.id },
@@ -237,6 +242,55 @@ export class OfferService {
       return {
         code: 200,
         data: offer,  
+      };
+    } catch (err) {
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
+  async confirmOffer(id: string) {
+    try {
+      const offer = await this.offerRepository.findOne({ where: { id } });
+      if (!offer) {
+        return {
+          code: 404,
+          message: 'Offer not found',
+        };
+      }
+
+      await this.offerRepository.update(id, { status: 'confirmed' });
+
+      return {
+        code: 200,
+        message: 'Offer confirmed successfully',
+      };
+      
+    } catch (err) {
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
+  async cancelOffer(id: string) {
+    try {
+      const offer = await this.offerRepository.findOne({ where: { id } });
+      if (!offer) {
+        return {
+          code: 404,
+          message: 'Offer not found',
+        };
+      } 
+
+      await this.offerRepository.update(id, { status: 'canceled' });
+
+      return {
+        code: 200,
+        message: 'Offer cancelled successfully',
       };
     } catch (err) {
       return {

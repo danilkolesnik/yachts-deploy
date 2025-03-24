@@ -12,6 +12,9 @@ export class warehouse {
   quantity: string;
 
   @Column({ default: '' })
+  pricePerUnit: string;
+  
+  @Column({ default: '' })
   inventory: string;
 
   @Column({ default: '' })

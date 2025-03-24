@@ -1,20 +1,22 @@
 "use client"
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { statusStyles } from '@/utils/statusStyles';
+import { Button, Select, Option } from "@material-tailwind/react";
+import { URL } from '@/utils/constants';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { useAppSelector } from '@/lib/hooks';
 import axios from 'axios';
 import DataTable from 'react-data-table-component';
 import Loader from '@/ui/loader';
 import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
-import { Button, Select, Option } from "@material-tailwind/react";
-import { URL } from '@/utils/constants';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
-import { useAppSelector } from '@/lib/hooks';
 import Header from '@/component/header';
-import { useRouter } from 'next/navigation';
 import ReactSelect from 'react-select';
 import Link from 'next/link';
 import CreateOfferModal from '@/component/modal/CreateOfferModal';
 import EditOfferModal from '@/component/modal/EditOfferModal';
+
 
 const OfferPage = () => {
     const router = useRouter();
@@ -29,6 +31,9 @@ const OfferPage = () => {
     const [createServiceModalIsOpen, setCreateServiceModalIsOpen] = useState(false);
     const [createPartModalIsOpen, setCreatePartModalIsOpen] = useState(false);
     const [role, setRole] = useState(null);
+
+    const [loadingCreateOffer, setLoadingCreateOffer] = useState(false);
+
     const [formData, setFormData] = useState({
         customerFullName: '',
         yachtName: '',
@@ -52,6 +57,7 @@ const OfferPage = () => {
         inventory: '',
         comment: '',
         countryCode: '',
+        pricePerUnit: '',
         serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' }
     });
 
@@ -112,11 +118,15 @@ const OfferPage = () => {
             selector: row => row.countryCode,
             sortable: true,
         },
-        {
-            name: 'Status',
-            selector: row => row.status,
-            sortable: true,
-        },
+        { name: 'Status', selector: row => row.status, sortable: true, cell: row => (
+            <span style={{
+                ...statusStyles[row.status],
+                padding: '5px 10px',
+                borderRadius: '5px'
+            }}>
+                {row.status}
+            </span>
+        ) },
         {
             name: 'Service Category',
             selector: row => `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€`,
@@ -190,8 +200,8 @@ const OfferPage = () => {
 
     const getWareHouse = async () => {
         try {
-            const res = await axios.get('/api/warehouse');
-            return res.data;
+            const res = await axios.get(`${URL}/warehouse/in-stock`);
+            return res.data.data;
         } catch (error) {
             console.error(error);
         }
@@ -232,11 +242,22 @@ const OfferPage = () => {
         e.preventDefault();
         try {
             await axios.post(`${URL}/warehouse/create`, createPartFormData);
+
             getWareHouse()
-                .then((res) => {
-                    setParts(res);
-                });
+                .then((res) => setParts(res));
+
+            setCreatePartFormData({
+                name: '',
+                quantity: '',
+                inventory: '',
+                comment: '',
+                countryCode: '',
+                serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
+                pricePerUnit: ''
+            });
             
+            setCreatePartModalIsOpen(false); 
+
         } catch (error) {
             console.error(error);
         }
@@ -245,6 +266,7 @@ const OfferPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoadingCreateOffer(true);
         try {
             const offerData = { ...formData, userId: id };
             if (editMode) {
@@ -270,8 +292,11 @@ const OfferPage = () => {
             setModalIsOpen(false);
             setEditMode(false);
             setEditId(null);
+            setLoadingCreateOffer(false);
         } catch (error) {
             console.error(error);
+        } finally {
+            setLoadingCreateOffer(false);
         }
     };
 
@@ -347,22 +372,34 @@ const OfferPage = () => {
 
     const closeCreatePartModal = () => {
         setCreatePartModalIsOpen(false);
+        setCreatePartFormData({
+            name: '',
+            quantity: '',
+            inventory: '',
+            comment: '',
+            countryCode: '',
+            serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' }
+        });
     };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        if (name in formData) {
-            setFormData({ ...formData, [name]: value });
-        } else if (name in createServiceFormData) {
-            setCreateServiceFormData({ ...createServiceFormData, [name]: value });
-        } else if (name in createPartFormData) {
-            setCreatePartFormData({ ...createPartFormData, [name]: value });
-        }
+        setFormData({ ...formData, [name]: value });
     };
 
     const handleSelectChange = (value, name) => {
         setFormData({ ...formData, [name]: value });
     };
+
+    const handlePartChange = (e) => {
+        const { name, value } = e.target; 
+        setCreatePartFormData({ ...createPartFormData, [name]: value });
+    };
+
+    const handleSelectChangePart = (value, name) => {
+        setCreatePartFormData({ ...createPartFormData, [name]: value });
+    };
+
 
     const createOrder = async () => {
         if (!selectedRow) {
@@ -399,6 +436,46 @@ const OfferPage = () => {
 
     const handleHistoryClick = () => {
         router.push('/offersHistory');
+    };
+
+    const partOptions = parts.map((part) => ({
+        value: part.id,
+        label: part.name,
+        quantity: part.quantity,
+        pricePerUnit: part.pricePerUnit,
+    }));
+
+    const closeEditModal = () => {
+        setEditModalIsOpen(false);
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const offerData = { ...editFormData, userId: id };
+            await axios.put(`${URL}/offer/update/${editId}`, offerData);
+            getData()
+                .then((res) => {
+                    setData(res);
+                });
+
+            setEditModalIsOpen(false);
+            setEditMode(false);
+            setEditId(null);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleEditChange = (e) => {
+        const { name, value } = e.target;
+        if (name in editFormData) {
+            setEditFormData({ ...editFormData, [name]: value });
+        }
+    };
+
+    const handleEditSelectChange = (value, name) => {
+        setEditFormData({ ...editFormData, [name]: value });
     };
 
     useEffect(() => {
@@ -440,48 +517,6 @@ const OfferPage = () => {
         }
     }, []);
 
-    const handlePartsChange = (selectedOptions) => {
-        setFormData({ ...formData, parts: selectedOptions });
-    };
-
-    const partOptions = parts.map((part) => ({
-        value: part.id,
-        label: part.name
-    }));
-
-    const closeEditModal = () => {
-        setEditModalIsOpen(false);
-    };
-
-    const handleEditSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const offerData = { ...editFormData, userId: id };
-            await axios.put(`${URL}/offer/update/${editId}`, offerData);
-            getData()
-                .then((res) => {
-                    setData(res);
-                });
-
-            setEditModalIsOpen(false);
-            setEditMode(false);
-            setEditId(null);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const handleEditChange = (e) => {
-        const { name, value } = e.target;
-        if (name in editFormData) {
-            setEditFormData({ ...editFormData, [name]: value });
-        }
-    };
-
-    const handleEditSelectChange = (value, name) => {
-        setEditFormData({ ...editFormData, [name]: value });
-    };
-
     return (
         <>
             <Header />
@@ -518,12 +553,13 @@ const OfferPage = () => {
                     onSubmit={handleSubmit}
                     formData={formData}
                     handleChange={handleChange}
-                    handleSelectChange={handleSelectChange}
+                    handleSelectChange={handleSelectChange }
                     userOptions={userOptions}
                     catagoryData={catagoryData}
                     partOptions={partOptions}
                     openCreateServiceModal={openCreateServiceModal}
                     openCreatePartModal={openCreatePartModal}
+                    loading={loadingCreateOffer}
                 />
                 <EditOfferModal
                     isOpen={editModalIsOpen}
@@ -575,14 +611,14 @@ const OfferPage = () => {
                             label="Service Name"
                             name="serviceName"
                             value={createServiceFormData.serviceName}
-                            onChange={handleChange}
+                            onChange={handleSelectChange}
                             required
                         />
                         <Input
                             label="Price in Euro Without VAT"
                             name="priceInEuroWithoutVAT"
                             value={createServiceFormData.priceInEuroWithoutVAT}
-                            onChange={handleChange}
+                            onChange={handleSelectChange}
                             required
                         />
                         <div className="flex justify-end">
@@ -596,39 +632,46 @@ const OfferPage = () => {
                     </form>
                 </Modal>
                 <Modal isOpen={createPartModalIsOpen} onClose={closeCreatePartModal} title="Create Part">  
-                    <form onSubmit={createPart} className="space-y-4">
+                    <form onSubmit={createPart} className="space-y-4 overflow-y-auto h-full" style={{ height: '400px', overflowY: 'auto' }}>
                         <Input
                             label="Name"
                             name="name"
                             value={createPartFormData.name}
-                            onChange={handleChange}
+                            onChange={handlePartChange}
                             required
                         />
                         <Input
                             label="Quantity"
                             name="quantity"
                             value={createPartFormData.quantity}
-                            onChange={handleChange}
+                            onChange={handlePartChange}
                             required
                         />  
                         <Input
-                            label="Inventory"
-                            name="inventory"
-                            value={createPartFormData.inventory}
-                            onChange={handleChange}
+                            label="Price Per Unit"
+                            name="pricePerUnit"
+                            value={createPartFormData.pricePerUnit}
+                            onChange={handlePartChange}
                             required
-                        />
+                        /> 
+                        <Input
+                            label="Comment"
+                            name="comment"
+                            value={createPartFormData.comment}
+                            onChange={handlePartChange}
+                            required
+                        /> 
                         <Input
                             label="Boat Registration"
                             name="countryCode"
                             value={createPartFormData.countryCode}
-                            onChange={handleChange}
+                            onChange={handlePartChange}
                             required
                         />
                         <Select
                             label="Service Category"
                             value={createPartFormData.serviceCategory}
-                            onChange={(value) => handleSelectChange(value, 'serviceCategory')}
+                            onChange={(value) => handleSelectChangePart(value, 'serviceCategory')}
                             required
                             className="text-black" 
                             labelProps={{ className: "text-black" }}
