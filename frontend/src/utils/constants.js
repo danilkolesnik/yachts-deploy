@@ -1,1 +1,1 @@
-export const URL = process.env.NEXT_PUBLIC_SERVER_URL;
+export const URL = 'http://116.203.198.150:5000';
