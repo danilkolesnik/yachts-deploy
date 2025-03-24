@@ -10,7 +10,7 @@ const nextConfig = {
         ];
       },
       images: {
-        domains: ['localhost'],
+        domains: ['localhost', '116.203.198.150'],
       },
 };
 

@@ -26,7 +26,7 @@ services:
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=12345678
       - DATABASE_NAME=yachts
-      - SERVER_URL=http://localhost:5000
+      - SERVER_URL=http://116.203.198.150:5000
       - ZOHO_APP_PASSWORD=fV3U2ZA#u4:6$Gg
       - ZOHO_EMAIL=kiril.kuznetsov@gmail.com
     depends_on:
