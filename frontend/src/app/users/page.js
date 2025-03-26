@@ -208,7 +208,7 @@ const UsersPage = () => {
                     </div>
                 )}
                 <Modal isOpen={editRoleModalIsOpen} onClose={closeEditRoleModal} title="Edit User Role">
-                    <div className="space-y-4">
+                    <div className="space-y-4 h-full justify-between w-full" style={{ height: '200px' }}>
                         <Select
                             label="Role"
                             value={newRole}
@@ -221,7 +221,7 @@ const UsersPage = () => {
                                 <Option key={role.value} value={role.value} className="text-black">{role.label}</Option>
                             ))}
                         </Select>
-                        <div className="flex justify-end">
+                        <div className="absolute bottom-4 right-4">
                             <Button variant="text" color="red" onClick={closeEditRoleModal} className="mr-1">
                                 <span>Cancel</span>
                             </Button>
