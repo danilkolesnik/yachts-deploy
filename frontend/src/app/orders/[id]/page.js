@@ -10,6 +10,8 @@ import Loader from '@/ui/loader';
 import Image from 'next/image';
 import ReactPlayer from 'react-player';
 import axios from 'axios';
+import ImageGallery from 'react-image-gallery';
+import "react-image-gallery/styles/css/image-gallery.css";
 
 const OrderDetail = ({ params }) => {
     const { id } = use(params);
@@ -18,6 +20,8 @@ const OrderDetail = ({ params }) => {
     const [uploading, setUploading] = useState(false);
     const [role, setRole] = useState(null);
     const [selectedTab, setSelectedTab] = useState('Before');
+    const [showGallery, setShowGallery] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const router = useRouter();
 
     useEffect(() => {
@@ -94,6 +98,26 @@ const OrderDetail = ({ params }) => {
         }
     };
 
+    const handleImageClick = (index) => {
+        setSelectedImageIndex(index);
+        setShowGallery(true);
+    };
+
+    const getCurrentImages = () => {
+        const tabMapping = {
+            'Before': 'processImageUrls',
+            'In Progress': 'resultImageUrls',
+            'Result': 'tabImageUrls'
+        };
+        const imageKey = tabMapping[selectedTab];
+        return order?.[imageKey]?.map(url => ({
+            original: url,
+            thumbnail: url,
+            originalAlt: 'Order Image',
+            thumbnailAlt: 'Order Image Thumbnail'
+        })) || [];
+    };
+
     const renderTabContent = () => {
         const tabMapping = {
             'Before': { imageKey: 'processImageUrls', videoKey: 'processVideoUrls' },
@@ -108,7 +132,7 @@ const OrderDetail = ({ params }) => {
                     <div className="mt-10">
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                             {order[imageKey].map((url, index) => (
-                                <div key={index} className="relative group">
+                                <div key={index} className="relative group cursor-pointer" onClick={() => handleImageClick(index)}>
                                     <Image
                                         src={url}
                                         alt={`Order Image ${index + 1}`}
@@ -118,7 +142,10 @@ const OrderDetail = ({ params }) => {
                                     />
                                     {role !== 'user' && (
                                         <button
-                                            onClick={() => handleDelete(url)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(url);
+                                            }}
                                             className="absolute top-1 right-1 text-black rounded-full p-2 transition-colors"
                                         >
                                             <XMarkIcon className="w-6 h-6 bg-white rounded-full p-1" />
@@ -218,6 +245,35 @@ const OrderDetail = ({ params }) => {
                     </div>
                 )}
             </div>
+
+            {showGallery && (
+                <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+                    <div className="w-full h-full p-4">
+                        <div className="relative w-full h-full">
+                            <ImageGallery
+                                items={getCurrentImages()}
+                                startIndex={selectedImageIndex}
+                                showFullscreenButton={true}
+                                showPlayButton={false}
+                                showThumbnails={true}
+                                showNav={true}
+                                showBullets={true}
+                                infinite={true}
+                                slideInterval={3000}
+                                slideOnThumbnailOver={true}
+                                thumbnailPosition="bottom"
+                                onClick={() => setShowGallery(false)}
+                            />
+                            <button
+                                onClick={() => setShowGallery(false)}
+                                className="absolute top-4 right-4 text-white z-50 bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75"
+                            >
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

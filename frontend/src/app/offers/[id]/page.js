@@ -9,6 +9,8 @@ import Header from '@/component/header';
 import Loader from '@/ui/loader';
 import Image from 'next/image';
 import ReactPlayer from 'react-player';
+import ImageGallery from 'react-image-gallery';
+import "react-image-gallery/styles/css/image-gallery.css";
 
 const OfferDetail = ({ params }) => {
     const { id } = use(params);
@@ -16,6 +18,8 @@ const OfferDetail = ({ params }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [role, setRole] = useState(localStorage.getItem('role'));
+    const [showGallery, setShowGallery] = useState(false);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const router = useRouter();
 
     useEffect(() => {
@@ -75,6 +79,18 @@ const OfferDetail = ({ params }) => {
         }
     };
 
+    const handleImageClick = (index) => {
+        setSelectedImageIndex(index);
+        setShowGallery(true);
+    };
+
+    const images = offer?.imageUrls?.map(url => ({
+        original: url,
+        thumbnail: url,
+        originalAlt: 'Offer Image',
+        thumbnailAlt: 'Offer Image Thumbnail'
+    })) || [];
+
     if (!offer) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -108,7 +124,7 @@ const OfferDetail = ({ params }) => {
                         <h2 className="text-3xl font-bold mb-6 text-black">Images</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                             {offer.imageUrls.map((url, index) => (
-                                <div key={index} className="relative group">
+                                <div key={index} className="relative group cursor-pointer" onClick={() => handleImageClick(index)}>
                                     <Image
                                         src={url}
                                         alt={`Offer Image ${index + 1}`}
@@ -118,7 +134,10 @@ const OfferDetail = ({ params }) => {
                                     />
                                     {role != 'user' && (
                                         <button
-                                            onClick={() => handleDelete(url)}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(url);
+                                            }}
                                             className="absolute top-1 right-1 text-black rounded-full p-2 transition-colors"
                                         >
                                             <XMarkIcon className="w-6 h-6 bg-white rounded-full p-1" />
@@ -178,6 +197,35 @@ const OfferDetail = ({ params }) => {
                     </div>
                 )}
             </div>
+
+            {showGallery && (
+                <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+                    <div className="w-full h-full p-4">
+                        <div className="relative w-full h-full">
+                            <ImageGallery
+                                items={images}
+                                startIndex={selectedImageIndex}
+                                showFullscreenButton={true}
+                                showPlayButton={false}
+                                showThumbnails={true}
+                                showNav={true}
+                                showBullets={true}
+                                infinite={true}
+                                slideInterval={3000}
+                                slideOnThumbnailOver={true}
+                                thumbnailPosition="bottom"
+                                onClick={() => setShowGallery(false)}
+                            />
+                            <button
+                                onClick={() => setShowGallery(false)}
+                                className="absolute top-4 right-4 text-white z-50 bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75"
+                            >
+                                <XMarkIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
