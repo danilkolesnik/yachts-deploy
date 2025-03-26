@@ -37,7 +37,7 @@ import * as crypto from 'crypto';
         username:process.env.DATABASE_USER,
         password:process.env.DATABASE_PASSWORD,
         database:process.env.DATABASE_NAME,
-        synchronize:true,
+        synchronize: false,
         entities: [__dirname + '/**/*.entity{.js, .ts}'],
         ssl: {
           rejectUnauthorized: false,

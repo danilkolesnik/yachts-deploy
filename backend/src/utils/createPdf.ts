@@ -3,6 +3,7 @@ import * as path from 'path';
 import puppeteer from 'puppeteer';
 
 export async function createPdfBuffer(data: any, type: string): Promise<Buffer> {
+  console.log(data);
   const templatePath = path.join(process.cwd(), 'documents', `${type}.html`);
   let templateString = fs.readFileSync(templatePath, 'utf8');
 
@@ -29,6 +30,8 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
     .replace('{{customerFullName}}', String(data.customerFullName))
     .replace('{{yachtName}}', String(data.yachtName))
     .replace('{{yachtModel}}', String(data.yachtModel))
+    .replace('{{yachtModelOffer}}', String(data.offer?.yachtModel))
+    .replace('{{yachtNameOffer}}', String(data.offer?.yachtName))
     .replace('{{countryCode}}', String(data.countryCode))
     .replace('{{serviceName}}', String(data.services?.serviceName))
     .replace('{{serviceDescription}}', String(data.services?.description))
@@ -41,7 +44,8 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
     .replace('{{serviceQuantity}}', String(data.services?.unitsOfMeasurement))
     .replace('{{totalPriceServices}}', String(totalPriceServices))
     .replace('{{totalPriceAll}}', String(totalPriceAll))
-    .replace('{{totalPriceAllServices}}', String(totalPriceAllServices));
+    .replace('{{totalPriceAllServices}}', String(totalPriceAllServices))
+    .replace('{{orderId}}', String(data.order?.id));
 
 
   const browser = await puppeteer.launch();

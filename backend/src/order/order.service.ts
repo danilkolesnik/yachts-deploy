@@ -220,7 +220,7 @@ export class OrderService {
 
       const orderData = {
         ...order,
-        offer
+        offer: {...offer}
       };
 
       if(newStatus === 'completed'){
