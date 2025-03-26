@@ -22,10 +22,11 @@ services:
     environment:
       - SECRET_KEY=gfgd@43435sdfggpp[[gdsf
       - NODE_ENV=production
-      - DATABASE_HOST=localhost
-      - DATABASE_USER=postgres
-      - DATABASE_PASSWORD=12345678
-      - DATABASE_NAME=yachts
+      - DATABASE_HOST=ep-twilight-sun-a2y5dnis.eu-central-1.pg.koyeb.app
+      - DATABASE_USER=koyeb-adm
+      - DATABASE_PASSWORD=npg_HN76ryMJUTiK
+      - DATABASE_NAME=koyebdb
+      - DATABASE_PORT=5432
       - SERVER_URL=http://116.203.198.150:5000
       - ZOHO_APP_PASSWORD=fV3U2ZA#u4:6$Gg
       - ZOHO_EMAIL=kiril.kuznetsov@gmail.com

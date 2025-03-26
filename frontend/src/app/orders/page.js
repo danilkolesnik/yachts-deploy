@@ -6,6 +6,7 @@ import { Select, Option,Button } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import { useAppSelector } from '@/lib/hooks';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { ClipLoader } from 'react-spinners';
 import Header from '@/component/header';
 import Loader from '@/ui/loader';
 import Modal from '@/ui/Modal';
@@ -28,6 +29,7 @@ const OrderPage = () => {
     const [sortField, setSortField] = useState('urgencyLevel');
     const [sortOrder, setSortOrder] = useState('desc');
     const [loading, setLoading] = useState(true);
+    const [loadingUpdate, setLoadingUpdate] = useState(false);
     const id = useAppSelector(state => state.userData?.id);
     const [editStatusModalIsOpen, setEditStatusModalIsOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -111,11 +113,14 @@ const OrderPage = () => {
     const updateOrderStatus = async () => {
         if (!selectedOrder) return;
         try {
+            setLoadingUpdate(true);
             await axios.post(`${URL}/orders/${selectedOrder.id}/status`, { status: selectedOrder.status });
             fetchOrders();
             closeEditStatusModal(); 
         } catch (error) {
             console.error('Error updating order status:', error);
+        }finally {
+            setLoadingUpdate(false);
         }
     };
 
@@ -287,8 +292,8 @@ const OrderPage = () => {
                             <Button variant="text" color="red" onClick={closeEditStatusModal} className="mr-1">
                                 <span>Cancel</span>
                             </Button>
-                            <Button color="green" onClick={() => updateOrderStatus(selectedOrder.id)}>
-                                <span>Update</span>
+                            <Button color="green" onClick={() => updateOrderStatus(selectedOrder.id)} disabled={loadingUpdate}>
+                                {loadingUpdate ? <ClipLoader size={13} color={"#123abc"} /> : <span>Update</span>}
                             </Button>
                     </div>
                 </div>

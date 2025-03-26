@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        * {
+            font-family: 'Roboto', sans-serif;
+        }
+        .container {
+            width: 750px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid black;
+            padding-bottom: 10px;
+        }
+        .invoice-title {
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+        }
+        .info-block {
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .bold {
+            font-weight: bold;
+        }
+        /* table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        } */
+        .logo {
+            width: 150px;
+            height: 100px;
+        }
+        .contact-info-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid black;
+            padding-bottom: 10px;
+        }
+        .contact-info {
+            font-size: 12px;
+            width: 50%;
+        }
+        .bank-details {
+            margin-top: 40px;
+            font-size: 12px;
+        }
+
+
+        .table div {
+            display: flex;
+            justify-content: space-between;
+        }
+        .table div span {
+            width: 20%;
+            font-size: 12px;
+            text-align: center;
+            font-weight: 700;
+            padding-bottom: 5px;
+            padding-top: 5px;
+            border-bottom: 2px solid black;
+        }
+        .table div span:nth-child(2) {
+            width: 50%;
+        }
+
+        h2{
+            font-size: 14px;
+            padding: 0px;
+            border-bottom: 2px solid black;
+            margin: 0px;
+            margin-bottom: 2px;
+        }
+        .work-title{
+            margin-top: 5px;
+            padding-bottom: 5px;
+        }
+
+        .details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+        }
+        .details-item{
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            width: 50%;
+        }
+        .total-amount{
+            width: 50%;
+
+        }
+        .total-amount div:nth-child(4){
+            border-top: 1.2px solid black;
+            border-bottom: 1.2px solid black;
+            padding: 3px 0px;
+        }
+        .details-item span{
+           font-size: 12px;
+           text-align: center;
+        }
+        .total-amount div{
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 0px;
+        }
+        .payment{
+            padding-top: 20px;
+        }
+        .payment h1{
+            font-size: 14px;
+            font-weight: 400;
+        }
+        .payment-item{
+            display: flex;
+            justify-content: space-between;
+            width: 300px;
+            padding: 4px 0px;
+        }
+        .payment-item span:nth-child(1){
+            font-weight: 700;
+        }
+        .bank{
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
+        }
+        .bank span{
+            font-size: 14px;
+            padding: 5px 0px;
+        }
+        .footer{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+            text-align: center;
+            margin-top: 100px;
+            border-top: 2px solid black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="contact-info-container">
+            <img src='http://localhost:5000/uploads/logo/Logo.png' alt="logo" class="logo">
+            <div class="contact-info">
+                <strong>All Service Marine D.O.O.</strong><br>
+                OIB: 84034357097<br>
+                Mob.: +385 91 535-59-60<br>
+                Phone: +385 91 613-89-41<br>
+                E-mail: info@a-s-m.yachts
+            </div>
+            <div class="contact-info">
+                <strong>Beneficiary Bank: ERSTE&STEIERMARKISCHE BANK d.d.</strong><br>
+                IBAN: HR5124020061101131858<br>
+                Bank address: JADRANSKA TRG 3a, 51000 RIJEKA,<br>
+                REPUBLIKA HRVATSKA<br>
+                SWIFT / BRZ: ESBCHR22
+            </div>
+        </div>
+        
+        <div class="header">
+            <div>
+                <p>Place and date of issue: Pula, 24/01/2025</p>
+                <p class="invoice-title">INVOICE : 4/0001/214</p>
+                <p>GLAVNO SKLADIŠTE</p>
+                <p>Remark: OFFER 411</p>
+                <p>Method of payment: VIRMANOM U ROKU 5 DANA</p>
+                <p>Order: RN 0000294</p>
+            </div>
+            <div>
+                <p class="bold">Gerhard Müller</p>
+                <p>Address:</p>
+                <p>OIB:</p>
+                <p>Name: {{yachtName}}</p>
+                <p>Model: {{yachtModel}}</p>
+                <p>Country: {{countryCode}}</p>
+                <p>Location: MARINA POLESANA</p>
+            </div>
+        </div>
+
+
+        <h2>Products</h2>
+        <div class="table">
+            <div>
+                <span>ID</span>
+                <span>Products</span>
+                <span>UOM</span>
+                <span>Quantity</span>
+                <span>Price per unit EUR</span>
+                <span>Price EUR</span>
+            </div>
+            <div>
+                <span>001118</span>
+                <span>REMENICA</span>
+                <span>PCS</span>
+                <span>1,000</span>
+                <span>402,00</span>
+                <span>402,00</span>
+            </div>
+        </div>
+
+        <h2 class="work-title">Work</h2>
+        <div class="table">
+            <div>
+                <span>ID</span>
+                <span>Service</span>
+                <span>UOM</span>
+                <span>Quantity</span>
+                <span>Price per unit EUR</span>
+                <span>Price EUR</span>
+            </div>
+            <div>
+                <span>001118</span>
+                <span>REMENICA</span>
+                <span>PCS</span>
+                <span>1,000</span>
+                <span>402,00</span>
+                <span>402,00</span>
+            </div>
+        </div>
+       
+
+        <div class="details">
+            <div class="details-item">
+                <span>
+                    Osnovica 25 %
+                </span>
+                <span>
+                    Osnovica PDV
+                    542,00
+                </span>
+                <span>
+                    PDV 135,50
+                </span>
+            </div>
+            <div class="total-amount">
+                <div>
+                    <div>Inventory costs</div>
+                    <div>0,00 EUR</div>
+                </div>
+                <div>
+                    <div>Without tax</div>
+                    <div>542,00 EUR</div>
+                </div>
+                <div>
+                    <div>VAT</div>
+                    <div>135,50 EUR</div>
+                </div>
+                <div>
+                    <div>Total amount</div>
+                    <div>677,50 EUR</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="payment">
+            <h1>SLOVIMA:(ŠESTOSEDAMDESETSEDAM EURA I PEDESET CENTI)</h1>
+            <div class="payment-item">
+                <span>DVO:</span>
+                <span>24/01/2025</span>
+            </div>
+            <div class="payment-item">
+                <span>Payment due:</span>
+                <span>29/01/2025</span>
+            </div>
+            <div class="payment-item">
+                <span>Reference number:</span>
+                <span>000933 - 000004</span>
+            </div>
+        </div>
+
+        <div class="bank">
+            <span>Payment must be made to a bank account</span>
+            <span>Oznaka plaćanja: Transakcijski račun</span>
+            <span>Datum i vrijeme izdavanja: 24.01.2025 14:58:31</span>
+            <span>Dokument Izdao: SILVIJA MIRKOVIC</span>
+        </div>
+
+        <div class="footer">
+            <span>Društvo je upisano kod Trgovačkog suda u Pazinu MBS 130134955</span>
+            <span>Temeljni kapital iznosi 2.654,46 EUR i uplaćen je u cijelosti.</span>
+            <span>Članovi uprave: Viktor Cherednichenko</span>
+        </div>
+        
+    </div>
+</body>
+</html>

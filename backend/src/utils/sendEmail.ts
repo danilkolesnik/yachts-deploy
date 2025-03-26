@@ -1,9 +1,9 @@
 import * as nodemailer from 'nodemailer';
 import { createPdfBuffer } from './createPdf';
 
-export async function sendEmail(to: string, data: any) {
+export async function sendEmail(to: string, data: any, type: string, subject: string, message:string) {
 
-  const pdfBuffer = await createPdfBuffer(data);
+  const pdfBuffer = await createPdfBuffer(data,type);
   
   const transporter = nodemailer.createTransport({
     host: "smtp.zoho.eu", 
@@ -18,18 +18,12 @@ export async function sendEmail(to: string, data: any) {
   const mailOptions: nodemailer.SendMailOptions = {
     from: `"${process.env.ZOHO_EMAIL}"`,
     to,
-    subject: 'Offer created',
+    subject,
     text: 'Offer created',
-    html: `
-      <p>Offer created. Please find the attached PDF.</p>
-      <p>You can confirm your offer by clicking the following link:</p>
-      <a href="${process.env.SERVER_URL}/offer/confirm/${data.id}">Confirm Offer</a>
-      <p>You can cancel your offer by clicking the following link:</p>
-      <a href="${process.env.SERVER_URL}/offer/cancel/${data.id}">Cancel Offer</a>
-    `,
+    html: message,
     attachments: [
       {
-        filename: 'offer.pdf',
+        filename: `${type}.pdf`,
         content: pdfBuffer
       }
     ]

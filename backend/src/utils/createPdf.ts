@@ -2,11 +2,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import puppeteer from 'puppeteer';
 
-export async function createPdfBuffer(data: any): Promise<Buffer> {
-  const templatePath = path.join(process.cwd(), 'documents', 'offer.html');
+export async function createPdfBuffer(data: any, type: string): Promise<Buffer> {
+  const templatePath = path.join(process.cwd(), 'documents', `${type}.html`);
   let templateString = fs.readFileSync(templatePath, 'utf8');
 
-  const partsTableRows = data.parts.map((part: any, index: number) => `
+  const partsTableRows = data.parts?.map((part: any, index: number) => `
     <tr>
       <td>${index + 1}</td>
       <td>${part.label}</td>
@@ -16,9 +16,9 @@ export async function createPdfBuffer(data: any): Promise<Buffer> {
     </tr>
   `).join('');
 
-  const totalPrice = data.parts.reduce((acc: number, part: any) => acc + part.quantity * part.pricePerUnit, 0);
-  const totalPriceServices = Number(data.services.priceInEuroWithoutVAT) * Number(data.services.unitsOfMeasurement);
-  const totalPriceAllServices = Number(data.services.priceInEuroWithoutVAT) * Number(data.services.unitsOfMeasurement);
+  const totalPrice = data.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0);
+  const totalPriceServices = Number(data.services?.priceInEuroWithoutVAT) * Number(data.services?.unitsOfMeasurement);
+  const totalPriceAllServices = Number(data.services?.priceInEuroWithoutVAT) * Number(data.services?.unitsOfMeasurement);
 
   const createdAt = new Date();
   const createdAtString = isNaN(createdAt.getTime()) ? 'Invalid Date' : createdAt.toLocaleString();
@@ -30,15 +30,15 @@ export async function createPdfBuffer(data: any): Promise<Buffer> {
     .replace('{{yachtName}}', String(data.yachtName))
     .replace('{{yachtModel}}', String(data.yachtModel))
     .replace('{{countryCode}}', String(data.countryCode))
-    .replace('{{serviceName}}', String(data.services.serviceName))
-    .replace('{{serviceDescription}}', String(data.services.description))
+    .replace('{{serviceName}}', String(data.services?.serviceName))
+    .replace('{{serviceDescription}}', String(data.services?.description))
     .replace('{{status}}', String(data.status))
     .replace('{{createdAt}}', createdAtString)
     .replace('{{partsTableRows}}', String(partsTableRows))
     .replace('{{totalPrice}}', String(totalPrice))
-    .replace('{{seriveName}}', String(data.services.serviceName))
-    .replace('{{servicePrice}}', String(data.services.priceInEuroWithoutVAT))
-    .replace('{{serviceQuantity}}', String(data.services.unitsOfMeasurement))
+    .replace('{{seriveName}}', String(data.services?.serviceName))
+    .replace('{{servicePrice}}', String(data.services?.priceInEuroWithoutVAT))
+    .replace('{{serviceQuantity}}', String(data.services?.unitsOfMeasurement))
     .replace('{{totalPriceServices}}', String(totalPriceServices))
     .replace('{{totalPriceAll}}', String(totalPriceAll))
     .replace('{{totalPriceAllServices}}', String(totalPriceAllServices));

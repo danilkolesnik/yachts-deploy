@@ -8,6 +8,7 @@ import { users } from 'src/auth/entities/users.entity';
 import { order } from './entities/order.entity';
 import { File } from 'src/upload/entities/file.entity';
 import { OrderTimer } from './entities/order-timer.entity';
+import { sendEmail } from 'src/utils/sendEmail';
 import getBearerToken from 'src/methods/getBearerToken';
 
 import { JwtPayload } from 'jsonwebtoken';
@@ -192,8 +193,42 @@ export class OrderService {
         };
       }
 
+      const offer = await this.offerRepository.findOne({
+        where: { id: order.offerId },
+      });
+
+      if(!offer){
+        return {
+          code: 404,
+          message: 'Offer not found',
+        };
+      }
+
       order.status = newStatus;
       await this.orderRepository.save(order);
+
+      const customer = await this.usersRepository.findOne({
+        where: { id: order.customerId },
+      });
+
+      if (!customer) {
+        return {
+          code: 404,
+          message: 'Customer not found',
+        };
+      }
+
+      const orderData = {
+        ...order,
+        offer
+      };
+
+      if(newStatus === 'completed'){
+        const subject = 'Invoice created';
+        const message = '<p>Invoice created. Please find the attached PDF.</p>';
+        
+        await sendEmail(customer.email, orderData, 'Invoice', subject,message);
+      }
 
       return {
         code: 200,
@@ -201,6 +236,7 @@ export class OrderService {
         data: order,
       };
     } catch (err) {
+      console.log(err);
       return {
         code: 500,
         message: err instanceof Error ? err.message : 'Internal server error',

@@ -30,30 +30,17 @@ import { join } from 'path';
       ],
       useFactory:() =>({
         type:"postgres",
-        host:"ep-twilight-sun-a2y5dnis.eu-central-1.pg.koyeb.app",
-        port:5432,
-        username:"koyeb-adm",
-        password:"npg_HN76ryMJUTiK",
-        database:"koyebdb",
+        host:process.env.DATABASE_HOST,
+        port: parseInt(process.env.DATABASE_PORT ?? '5432'),
+        username:process.env.DATABASE_USER,
+        password:process.env.DATABASE_PASSWORD,
+        database:process.env.DATABASE_NAME,
         synchronize:true,
         entities: [__dirname + '/**/*.entity{.js, .ts}'],
         ssl: {
           rejectUnauthorized: false,
         },
       })
-      // useFactory:() =>({
-      //   type:"postgres",
-      //   host:process.env.DATABASE_HOST,
-      //   port:5432,
-      //   username:process.env.DATABASE_USER,
-      //   password:process.env.DATABASE_PASSWORD,
-      //   database:process.env.DATABASE_NAME,
-      //   synchronize:true,
-      //   entities: [__dirname + '/**/*.entity{.js, .ts}'],
-      //   // ssl: {
-      //   //   rejectUnauthorized: true,
-      //   // },
-      // })
     }),
     AuthModule, 
     WarehouseModule, 
