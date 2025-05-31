@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import DataTable from 'react-data-table-component';
 import Loader from '@/ui/loader';
@@ -11,6 +11,7 @@ import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import Header from '@/component/header';
 import SearchInput from '@/component/search';
 import { useRouter } from 'next/navigation';
+import { DownloadTableExcel } from 'react-export-table-to-excel-xlsx';
 
 const WarehousePage = () => {
     const [data, setData] = useState([]);
@@ -31,6 +32,7 @@ const WarehousePage = () => {
     const [editMode, setEditMode] = useState(false);
     const [editId, setEditId] = useState(null);
     const router = useRouter();
+    const tableRef = useRef(null);
 
     const columns = [
         {
@@ -153,7 +155,6 @@ const WarehousePage = () => {
             console.log(error);
         }
     };
-;
 
     const openModal = () => {
         setFormData({
@@ -215,32 +216,70 @@ const WarehousePage = () => {
     return (
         <>
         <Header />
-        <div className="min-h-screen bg-gray-100 p-8 font-sans">
+        <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
             {loading ? (
                 <div className="flex justify-center items-center min-h-screen">
                     <Loader loading={loading} />
                 </div>
             ) : (
                 <div className="w-full space-y-6 bg-white rounded shadow-md">
-                    <div className="relative flex justify-between mb-4 p-4">
-                        <SearchInput search={search} setSearch={setSearch} filteredData={filteredData} onSearchSelect={handleSearchSelect} />
-                        <div className="flex space-x-4">
-                            <Button onClick={openModal} color="blue">
+                    <div className="relative flex flex-col md:flex-row justify-between gap-4 mb-4 p-4">
+                        <div className="w-full md:w-auto">
+                            <SearchInput search={search} setSearch={setSearch} filteredData={filteredData} onSearchSelect={handleSearchSelect} />
+                        </div>
+                        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                            <Button onClick={openModal} color="blue" className="w-full md:w-auto">
                                 Create
                             </Button>
-                            <Button onClick={handleHistoryClick} color="green">
+                            <DownloadTableExcel
+                                filename="warehouse_export"
+                                sheet="Warehouse"
+                                currentTableRef={tableRef.current}
+                            >
+                                <Button color="purple" className="w-full md:w-auto">
+                                    Export to Excel
+                                </Button>
+                            </DownloadTableExcel>
+                            <Button onClick={handleHistoryClick} color="green" className="w-full md:w-auto">
                                 View History
                             </Button>
                         </div>
                     </div>
-                    <DataTable
-                        columns={columns}
-                        data={filteredData}
-                        pagination
-                        highlightOnHover
-                        pointerOnHover
-                        className="min-w-full border-collapse"
-                    />
+                    <div className="overflow-x-auto">
+                        <table ref={tableRef} style={{ display: 'none' }}>
+                            <thead>
+                                <tr>
+                                    <th>Boat Registration</th>
+                                    <th>Name</th>
+                                    <th>Quantity</th>
+                                    <th>Comment</th>
+                                    <th>Price</th>
+                                    <th>Service Category</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredData.map((row) => (
+                                    <tr key={row.id}>
+                                        <td>{row.countryCode}</td>
+                                        <td>{row.name}</td>
+                                        <td>{row.quantity}</td>
+                                        <td>{row.comment}</td>
+                                        <td>{row.pricePerUnit}</td>
+                                        <td>{row.serviceCategory.serviceName}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <DataTable
+                            columns={columns}
+                            data={filteredData}
+                            pagination
+                            highlightOnHover
+                            pointerOnHover
+                            className="min-w-full border-collapse"
+                            responsive
+                        />
+                    </div>
                 </div>
             )}
             <Modal isOpen={modalIsOpen} onClose={closeModal} title={editMode ? "Edit" : "Create"}>
@@ -259,13 +298,6 @@ const WarehousePage = () => {
                         onChange={handleChange}
                         required
                     />
-                    {/* <Input
-                        label="Inventory"
-                        name="inventory"
-                        value={formData.inventory}
-                        onChange={handleChange}
-                        required
-                    /> */}
                     <Input
                         label="Comment"
                         name="comment"
@@ -301,11 +333,11 @@ const WarehousePage = () => {
                             </Option>
                         ))}
                     </Select>
-                    <div className="flex justify-end">
-                        <Button variant="text" color="red" onClick={closeModal} className="mr-1">
+                    <div className="flex justify-end gap-2">
+                        <Button variant="text" color="red" onClick={closeModal} className="w-full md:w-auto">
                             <span>Cancel</span>
                         </Button>
-                        <Button color="green" type="submit">
+                        <Button color="green" type="submit" className="w-full md:w-auto">
                             <span>{editMode ? 'Update' : 'Add'}</span>
                         </Button>
                     </div>

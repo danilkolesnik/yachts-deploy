@@ -36,6 +36,8 @@ export class OfferService {
       };
     }
 
+    console.log(data);
+
     try {
       const customer = await this.usersRepository.findOne({ where: { fullName: data.customerFullName } });
       if (!customer) {
@@ -96,6 +98,7 @@ export class OfferService {
         data: result,
       };
     } catch (err) {
+      console.log(err);
       return {
         code: 500,
         message: err,

@@ -184,7 +184,7 @@
                 <p>Place and date of issue: Pula, {{createdAt}}</p>
                 <p class="invoice-title">INVOICE : 4/0001/214</p>
                 <p>GLAVNO SKLADIŠTE</p>
-                <p>Remark: OFFER {{offerId}}</p>
+                <p>Remark: OFFER {{offerIdInvoice}}</p>
                 <p>Method of payment: VIRMANOM U ROKU 5 DANA</p>
                 <p>Order: RN {{orderId}}</p>
             </div>
@@ -205,19 +205,11 @@
             <div>
                 <span>ID</span>
                 <span>Products</span>
-                <span>UOM</span>
                 <span>Quantity</span>
                 <span>Price per unit EUR</span>
                 <span>Price EUR</span>
             </div>
-            <div>
-                <span>001118</span>
-                <span>REMENICA</span>
-                <span>PCS</span>
-                <span>1,000</span>
-                <span>402,00</span>
-                <span>402,00</span>
-            </div>
+            {{invoiceTableRows}}
         </div>
 
         <h2 class="work-title">Work</h2>
@@ -225,18 +217,16 @@
             <div>
                 <span>ID</span>
                 <span>Service</span>
-                <span>UOM</span>
                 <span>Quantity</span>
                 <span>Price per unit EUR</span>
                 <span>Price EUR</span>
             </div>
             <div>
-                <span>001118</span>
-                <span>REMENICA</span>
-                <span>PCS</span>
-                <span>1,000</span>
-                <span>402,00</span>
-                <span>402,00</span>
+                <span>{{idService}}</span>
+                <span>{{seriveNameInvoice}}</span>
+                <span>1</span>
+                <span>{{servicePriceInvoice}}</span>
+                <span>{{totalPriceInvoiceServices}}</span>
             </div>
         </div>
        
@@ -248,10 +238,10 @@
                 </span>
                 <span>
                     Osnovica PDV
-                    542,00
+                    {{totalPriceInvoice}}
                 </span>
                 <span>
-                    PDV 135,50
+                    PDV {{totalPriceTax}}
                 </span>
             </div>
             <div class="total-amount">
@@ -261,15 +251,15 @@
                 </div>
                 <div>
                     <div>Without tax</div>
-                    <div>542,00 EUR</div>
+                    <div>{{totalPriceInvoiceServicesTwo}} EUR</div>
                 </div>
                 <div>
                     <div>VAT</div>
-                    <div>135,50 EUR</div>
+                    <div>{{totalPriceTaxTwo}} EUR</div>
                 </div>
                 <div>
                     <div>Total amount</div>
-                    <div>677,50 EUR</div>
+                    <div>{{totalPriceInvoiceTwo}} EUR</div>
                 </div>
             </div>
         </div>

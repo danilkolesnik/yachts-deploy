@@ -94,21 +94,29 @@ const OffersHistoryPage = () => {
     return (
         <>
           <Header />
-            <div className="min-h-screen bg-gray-100 p-8 font-sans">
+            <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
             {loading ? (
                 <div className="flex justify-center items-center min-h-screen">
                     <Loader loading={loading} />
                 </div>
             ) : (
             <div className="w-full space-y-6 bg-white rounded shadow-md p-4">
-                <Button color="blue" onClick={() => router.push('/offers')}>Back</Button>
-                <DataTable
-                    columns={columns}
-                    data={flattenedData}
-                    pagination
-                    highlightOnHover
-                    striped
-                />
+                <div className="flex justify-start mb-4">
+                    <Button color="blue" onClick={() => router.push('/offers')} className="w-full md:w-auto">
+                        Back
+                    </Button>
+                </div>
+                <div className="overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={flattenedData}
+                        pagination
+                        highlightOnHover
+                        striped
+                        responsive
+                        className="min-w-full border-collapse"
+                    />
+                </div>
             </div>
             )}
         </div>

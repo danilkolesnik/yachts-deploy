@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import DataTable from 'react-data-table-component';
 import Loader from '@/ui/loader';
@@ -10,8 +10,10 @@ import { URL } from '@/utils/constants';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import Header from '@/component/header';
 import ReactSelect from 'react-select';
+import { DownloadTableExcel } from 'react-export-table-to-excel-xlsx';
 
 const PriceListPage = () => {
+    const tableRef = useRef(null);
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalIsOpen, setModalIsOpen] = useState(false);
@@ -169,53 +171,89 @@ const PriceListPage = () => {
     return (
         <>
             <Header />
-            <div className="min-h-screen bg-gray-100 p-8 font-sans">
+            <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
                 {loading ? (
                     <div className="flex justify-center items-center min-h-screen">
                         <Loader loading={loading} />
                     </div>
                 ) : (
                     <div className="w-full space-y-6 bg-white rounded shadow-md">
-                        <div className="relative flex justify-between mb-4 p-4">
-                            <ReactSelect
-                                options={serviceOptions}
-                                value={selectedService}
-                                onChange={handleServiceChange}
-                                onInputChange={handleInputChange}
-                                inputValue={inputValue}
-                                placeholder="Search for a description..."
-                                isClearable
-                                isSearchable
-                                menuIsOpen={inputValue.length > 0}
-                                className=" w-80"
-                                styles={{
-                                    control: (provided) => ({
-                                        ...provided,
-                                        color: 'black',
-                                    }),
-                                    singleValue: (provided) => ({
-                                        ...provided,
-                                        color: 'black',
-                                    }),
-                                    option: (provided, state) => ({
-                                        ...provided,
-                                        color: 'black',
-                                        backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
-                                    }),
-                                }}
-                            />
-                            <Button onClick={openModal} color="blue">
-                                Create
-                            </Button>     
+                        <div className="relative flex flex-col md:flex-row justify-between gap-4 mb-4 p-4">
+                            <div className="w-full md:w-auto">
+                                <ReactSelect
+                                    options={serviceOptions}
+                                    value={selectedService}
+                                    onChange={handleServiceChange}
+                                    onInputChange={handleInputChange}
+                                    inputValue={inputValue}
+                                    placeholder="Search for a description..."
+                                    isClearable
+                                    isSearchable
+                                    menuIsOpen={inputValue.length > 0}
+                                    className="w-full md:w-80"
+                                    styles={{
+                                        control: (provided) => ({
+                                            ...provided,
+                                            color: 'black',
+                                        }),
+                                        singleValue: (provided) => ({
+                                            ...provided,
+                                            color: 'black',
+                                        }),
+                                        option: (provided, state) => ({
+                                            ...provided,
+                                            color: 'black',
+                                            backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
+                                        }),
+                                    }}
+                                />
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                                <DownloadTableExcel
+                                    filename="price_list_export"
+                                    sheet="Price List"
+                                    currentTableRef={tableRef.current}
+                                >
+                                    <Button color="purple" className="w-full sm:w-auto">
+                                        Export to Excel
+                                    </Button>
+                                </DownloadTableExcel>
+                                <Button onClick={openModal} color="blue" className="w-full sm:w-auto">
+                                    Create
+                                </Button>     
+                            </div>
                         </div>
-                        <DataTable
-                            columns={columns}
-                            data={filteredData}
-                            pagination
-                            highlightOnHover
-                            pointerOnHover
-                            className="min-w-full border-collapse"
-                        />
+                        <div className="overflow-x-auto">
+                            <table ref={tableRef} style={{ display: 'none' }}>
+                                <thead>
+                                    <tr>
+                                        <th>Service Name</th>
+                                        <th>Description</th>
+                                        <th>Price in EURO without VAT</th>
+                                        <th>Units of Measurement</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredData.map((row) => (
+                                        <tr key={row.id}>
+                                            <td>{row.serviceName}</td>
+                                            <td>{row.description}</td>
+                                            <td>{row.priceInEuroWithoutVAT}</td>
+                                            <td>{row.unitsOfMeasurement}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <DataTable
+                                columns={columns}
+                                data={filteredData}
+                                pagination
+                                highlightOnHover
+                                pointerOnHover
+                                className="min-w-full border-collapse"
+                                responsive
+                            />
+                        </div>
                     </div>
                 )}
                 <Modal isOpen={modalIsOpen} onClose={closeModal} title={editMode ? "Edit" : "Create"}>
@@ -247,11 +285,11 @@ const PriceListPage = () => {
                             value={formData.description}
                             onChange={handleChange}
                         />
-                        <div className="flex justify-end">
-                            <Button variant="text" color="red" onClick={closeModal} className="mr-1">
+                        <div className="flex justify-end gap-2">
+                            <Button variant="text" color="red" onClick={closeModal} className="w-full md:w-auto">
                                 <span>Cancel</span>
                             </Button>
-                            <Button color="green" type="submit">
+                            <Button color="green" type="submit" className="w-full md:w-auto">
                                 <span>{editMode ? 'Update' : 'Add'}</span>
                             </Button>
                         </div>

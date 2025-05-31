@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { statusStyles } from '@/utils/statusStyles';
 import { Button, Select, Option } from "@material-tailwind/react";
@@ -16,6 +16,7 @@ import ReactSelect from 'react-select';
 import Link from 'next/link';
 import CreateOfferModal from '@/component/modal/CreateOfferModal';
 import EditOfferModal from '@/component/modal/EditOfferModal';
+import { DownloadTableExcel } from 'react-export-table-to-excel-xlsx';
 
 
 const OfferPage = () => {
@@ -82,6 +83,14 @@ const OfferPage = () => {
         parts: [],
         status: 'created'
     });
+
+    const [filters, setFilters] = useState({
+        searchCriteria: 'id',
+        searchValue: '',
+        date: ''
+    });
+
+    const tableRef = useRef(null);
 
     const columns = [
         {
@@ -397,9 +406,12 @@ const OfferPage = () => {
     };
 
     const handleSelectChangePart = (value, name) => {
-        setCreatePartFormData({ ...createPartFormData, [name]: value });
+        if(name === 'unitsOfMeasurement' && !value){
+            setCreatePartFormData({ ...createPartFormData, [name]: '1' });
+        } else {
+            setCreatePartFormData({ ...createPartFormData, [name]: value });
+        }
     };
-
 
     const createOrder = async () => {
         if (!selectedRow) {
@@ -441,7 +453,7 @@ const OfferPage = () => {
     const partOptions = parts.map((part) => ({
         value: part.id,
         label: part.name,
-        quantity: part.quantity,
+        quantity: '1',
         pricePerUnit: part.pricePerUnit,
     }));
 
@@ -477,6 +489,29 @@ const OfferPage = () => {
     const handleEditSelectChange = (value, name) => {
         setEditFormData({ ...editFormData, [name]: value });
     };
+
+    const filteredData = (data || []).filter(offer => {
+        const searchValue = filters.searchValue.toLowerCase();
+        const offerDate = new Date(offer.createdAt);
+        const filterDate = filters.date ? new Date(filters.date) : null;
+
+        const matchesSearch = () => {
+            switch(filters.searchCriteria) {
+                case 'id':
+                    return offer.id.toString().includes(searchValue);
+                case 'customer':
+                    return offer.customerFullName?.toLowerCase().includes(searchValue);
+                default:
+                    return true;
+            }
+        };
+
+        return (
+            (filters.searchValue ? matchesSearch() : true) &&
+            (filterDate ? offerDate.toDateString() === filterDate.toDateString() : true)
+        );
+    });
+
 
     useEffect(() => {
         setLoading(true);
@@ -520,31 +555,102 @@ const OfferPage = () => {
     return (
         <>
             <Header />
-            <div className="min-h-screen bg-gray-100 p-8 font-sans">
+            <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
                 {loading ? (
                     <div className="flex justify-center items-center min-h-screen">
                         <Loader loading={loading} />
                     </div>
                 ) : (
                     <div className="w-full space-y-6 bg-white rounded shadow-md">
-                        <div className="relative flex justify-between mb-4 p-4">
-                            <div className="flex space-x-4">
-                                <Button onClick={openCreateModal} color="blue">
+                        <div className="relative flex flex-col md:flex-row justify-between gap-4 mb-4 p-4">
+                            <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-8">
+                                <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-0 w-full md:w-auto">
+                                    <Select
+                                        label="Search by"
+                                        value={filters.searchCriteria}
+                                        onChange={(value) => setFilters({ ...filters, searchCriteria: value })}
+                                        className="text-black border-gray-300 rounded-xs w-full md:w-36"
+                                        labelProps={{ className: 'text-black' }}
+                                        containerProps={{ className: 'min-w-[120px] w-full md:w-auto' }}
+                                    >
+                                        <Option className="text-black" value="id">ID</Option>
+                                        <Option className="text-black" value="customer">Customer</Option>
+                                    </Select>
+                                    <input
+                                        type="text"
+                                        placeholder="Search..."
+                                        value={filters.searchValue}
+                                        onChange={(e) => setFilters({ ...filters, searchValue: e.target.value })}
+                                        className="border p-2 text-black rounded w-full md:w-48 h-10"
+                                    />
+                                </div>
+                                <input
+                                    type="date"
+                                    value={filters.date}
+                                    onChange={(e) => setFilters({ ...filters, date: e.target.value })}
+                                    className="border p-2 text-black rounded h-10 w-full md:w-auto"
+                                    lang="en"
+                                />
+                            </div>
+                            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto justify-end">
+                                <Button onClick={openCreateModal} color="blue" className="w-full sm:w-auto">
                                     Create
                                 </Button>
-                                <Button onClick={handleHistoryClick} color="green">
+                                <Button onClick={handleHistoryClick} color="green" className="w-full sm:w-auto">
                                     History
                                 </Button>
+                                <DownloadTableExcel
+                                    filename="offers_export"
+                                    sheet="Offers"
+                                    currentTableRef={tableRef.current}
+                                >
+                                    <Button color="purple" className="w-full sm:w-auto">
+                                        Export to Excel
+                                    </Button>
+                                </DownloadTableExcel>
                             </div>
                         </div>
-                        <DataTable
-                            columns={columns}
-                            data={data}
-                            pagination
-                            highlightOnHover
-                            pointerOnHover
-                            className="min-w-full border-collapse"
-                        />
+                        <div className="overflow-x-auto">
+                            <table ref={tableRef} style={{ display: 'none' }}>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Date</th>
+                                        <th>Customer</th>
+                                        <th>Yacht Name</th>
+                                        <th>Yacht Model</th>
+                                        <th>Boat Registration</th>
+                                        <th>Status</th>
+                                        <th>Service Category</th>
+                                        <th>Parts</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredData.map((row) => (
+                                        <tr key={row.id}>
+                                            <td>{row.id}</td>
+                                            <td>{new Date(row.createdAt).toLocaleString()}</td>
+                                            <td>{row.customerFullName || ''}</td>
+                                            <td>{row.yachtName}</td>
+                                            <td>{row.yachtModel}</td>
+                                            <td>{row.countryCode}</td>
+                                            <td>{row.status}</td>
+                                            <td>{`${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€`}</td>
+                                            <td>{Array.isArray(row.parts) ? row.parts.map(part => part.label).join(', ') : 'N/A'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <DataTable
+                                columns={columns}
+                                data={filteredData}
+                                pagination
+                                highlightOnHover
+                                pointerOnHover
+                                className="min-w-full border-collapse"
+                                responsive
+                            />
+                        </div>
                     </div>
                 )}
                 <CreateOfferModal

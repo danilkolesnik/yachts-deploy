@@ -20,6 +20,7 @@
     "react-countdown": "^2.3.6",
     "react-data-table-component": "^7.6.2",
     "react-dom": "^19.0.0",
+    "react-export-table-to-excel-xlsx": "^1.0.1",
     "react-grid-gallery": "^1.0.1",
     "react-image-gallery": "^1.4.0",
     "react-player": "^2.16.0",

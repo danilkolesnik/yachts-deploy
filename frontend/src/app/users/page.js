@@ -161,50 +161,53 @@ const UsersPage = () => {
     return (
         <>
             <Header />
-            <div className="min-h-screen bg-gray-100 p-8 font-sans">
+            <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
                 {loading ? (
                     <div className="flex justify-center items-center min-h-screen">
                         <Loader loading={loading} />
                     </div>
                 ) : (
                     <div className="w-full space-y-6 bg-white rounded shadow-md">
-                         <ReactSelect
-                            options={userOptions}
-                            value={selectedUser}
-                            onChange={handleUserChange}
-                            onInputChange={handleInputChange}
-                            inputValue={inputValue}
-                            placeholder="Search..."
-                            isClearable
-                            isSearchable
-                            menuIsOpen={inputValue.length > 0}
-                            className="mb-4 p-[16px] w-80"
-                            styles={{
-                                control: (provided) => ({
-                                    ...provided,
-                                    color: 'black',
-                            
-                                }),
-                                singleValue: (provided) => ({
-                                    ...provided,
-                                    color: 'black',
-                                }),
-                                option: (provided, state) => ({
-                                    ...provided,
-                                    color: 'black',
-                                    backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
-                                   
-                                }),
-                            }}
-                        />
-                        <DataTable
-                            columns={columns}
-                            data={users}
-                            pagination
-                            highlightOnHover
-                            pointerOnHover
-                            className="min-w-full border-collapse"
-                        />
+                        <div className="p-4">
+                            <ReactSelect
+                                options={userOptions}
+                                value={selectedUser}
+                                onChange={handleUserChange}
+                                onInputChange={handleInputChange}
+                                inputValue={inputValue}
+                                placeholder="Search..."
+                                isClearable
+                                isSearchable
+                                menuIsOpen={inputValue.length > 0}
+                                className="w-full md:w-80"
+                                styles={{
+                                    control: (provided) => ({
+                                        ...provided,
+                                        color: 'black',
+                                    }),
+                                    singleValue: (provided) => ({
+                                        ...provided,
+                                        color: 'black',
+                                    }),
+                                    option: (provided, state) => ({
+                                        ...provided,
+                                        color: 'black',
+                                        backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
+                                    }),
+                                }}
+                            />
+                        </div>
+                        <div className="overflow-x-auto">
+                            <DataTable
+                                columns={columns}
+                                data={users}
+                                pagination
+                                highlightOnHover
+                                pointerOnHover
+                                className="min-w-full border-collapse"
+                                responsive
+                            />
+                        </div>
                     </div>
                 )}
                 <Modal isOpen={editRoleModalIsOpen} onClose={closeEditRoleModal} title="Edit User Role">
@@ -221,11 +224,11 @@ const UsersPage = () => {
                                 <Option key={role.value} value={role.value} className="text-black">{role.label}</Option>
                             ))}
                         </Select>
-                        <div className="absolute bottom-4 right-4">
-                            <Button variant="text" color="red" onClick={closeEditRoleModal} className="mr-1">
+                        <div className="flex justify-end gap-2">
+                            <Button variant="text" color="red" onClick={closeEditRoleModal} className="w-full md:w-auto">
                                 <span>Cancel</span>
                             </Button>
-                            <Button color="green" onClick={updateRole}>
+                            <Button color="green" onClick={updateRole} className="w-full md:w-auto">
                                 <span>Update</span>
                             </Button>
                         </div>
