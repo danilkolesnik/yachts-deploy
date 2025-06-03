@@ -15,7 +15,7 @@ import { UploadModule } from './upload/upload.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import * as crypto from 'crypto';
-// (global as any).crypto = crypto;
+(global as any).crypto = crypto;
 
 @Module({
   imports: [
