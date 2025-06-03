@@ -15,7 +15,7 @@ import { UploadModule } from './upload/upload.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import * as crypto from 'crypto';
-// (global as any).crypto = crypto;
+(global as any).crypto = crypto;
 
 @Module({
   imports: [
@@ -39,9 +39,6 @@ import * as crypto from 'crypto';
         database:process.env.DATABASE_NAME,
         synchronize: false,
         entities: [__dirname + '/**/*.entity{.js, .ts}'],
-        ssl: {
-          rejectUnauthorized: false,
-        },
         // type:"postgres",
         // host:"localhost",
         // port:5432,
