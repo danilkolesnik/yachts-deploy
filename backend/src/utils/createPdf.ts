@@ -79,7 +79,9 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
     .replace('{{totalPriceTaxTwo}}', String(totalPriceTaxTwo));
 
 
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
   const page = await browser.newPage();
   await page.setContent(templateString, { waitUntil: 'networkidle0' });
   const pdfBuffer = await page.pdf({ format: 'A4' });
