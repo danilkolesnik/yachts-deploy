@@ -284,7 +284,9 @@ const OrderPage = () => {
                                 />
                             </div>
                             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto justify-end">
-                                <DownloadTableExcel
+                                {role !== 'user' && (
+                                    <>
+                                    <DownloadTableExcel
                                     filename="orders_export"
                                     sheet="Orders"
                                     currentTableRef={tableRef.current}
@@ -296,6 +298,8 @@ const OrderPage = () => {
                                 <Button color="green" onClick={() => router.push('/orders/history')} className="w-full sm:w-auto">
                                     <span>History</span>
                                 </Button>
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="overflow-x-auto">

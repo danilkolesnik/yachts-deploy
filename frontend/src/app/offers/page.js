@@ -593,21 +593,26 @@ const OfferPage = () => {
                                 />
                             </div>
                             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto justify-end">
+                                {role !== 'user' && (
+                                <>
                                 <Button onClick={openCreateModal} color="blue" className="w-full sm:w-auto">
                                     Create
                                 </Button>
                                 <Button onClick={handleHistoryClick} color="green" className="w-full sm:w-auto">
-                                    History
+                                History
+                            </Button>
+                            <DownloadTableExcel
+                                filename="offers_export"
+                                sheet="Offers"
+                                currentTableRef={tableRef.current}
+                            >
+                                <Button color="purple" className="w-full sm:w-auto">
+                                    Export to Excel
                                 </Button>
-                                <DownloadTableExcel
-                                    filename="offers_export"
-                                    sheet="Offers"
-                                    currentTableRef={tableRef.current}
-                                >
-                                    <Button color="purple" className="w-full sm:w-auto">
-                                        Export to Excel
-                                    </Button>
-                                </DownloadTableExcel>
+                            </DownloadTableExcel>
+                                </>
+                                )}
+                                
                             </div>
                         </div>
                         <div className="overflow-x-auto">
