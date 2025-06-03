@@ -15,6 +15,15 @@ import { UploadModule } from './upload/upload.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import * as crypto from 'crypto';
+import { users } from './auth/entities/users.entity';
+import { File } from './upload/entities/file.entity';
+import { offer } from './offer/entities/offer.entity';
+import { order } from './order/entities/order.entity';
+import { Pricelist } from './price-list/entities/pricelist.entity';
+import { warehouse } from './warehouse/entities/warehouse.entity';
+import { WarehouseHistory } from './warehouse/entities/warehouseHistory.entity';
+import { OfferHistory } from './offer/entities/offer-history.entity';
+import { OrderTimer } from './order/entities/order-timer.entity';
 (global as any).crypto = crypto;
 
 @Module({
@@ -38,7 +47,17 @@ import * as crypto from 'crypto';
         password:process.env.DATABASE_PASSWORD,
         database:process.env.DATABASE_NAME,
         synchronize: true,
-        entities: [__dirname + '/**/*.entity{.js, .ts}'],
+        entities: [
+          users,
+          File,
+          offer,
+          order,
+          Pricelist,
+          warehouse,
+          WarehouseHistory,
+          OfferHistory,
+          OrderTimer
+        ],
         // type:"postgres",
         // host:"localhost",
         // port:5432,

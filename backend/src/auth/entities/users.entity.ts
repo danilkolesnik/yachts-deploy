@@ -1,7 +1,7 @@
 import { Role } from 'src/constants/roles';
 import { Entity, Column, PrimaryColumn } from 'typeorm';
 
-@Entity()
+@Entity('users')
 export class users {
   @PrimaryColumn()
   id: string;
