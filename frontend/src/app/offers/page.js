@@ -16,7 +16,7 @@ import ReactSelect from 'react-select';
 import Link from 'next/link';
 import CreateOfferModal from '@/component/modal/CreateOfferModal';
 import EditOfferModal from '@/component/modal/EditOfferModal';
-import { DownloadTableExcel } from 'react-export-table-to-excel-xlsx';
+import * as XLSX from 'xlsx';
 
 
 const OfferPage = () => {
@@ -512,6 +512,24 @@ const OfferPage = () => {
         );
     });
 
+    // --- SheetJS Export Function ---
+    const exportToExcel = () => {
+        const exportData = filteredData.map(row => ({
+            ID: row.id,
+            Date: new Date(row.createdAt).toLocaleString(),
+            Customer: row.customerFullName || '',
+            'Yacht Name': row.yachtName,
+            'Yacht Model': row.yachtModel,
+            'Boat Registration': row.countryCode,
+            Status: row.status,
+            'Service Category': `${row.services?.serviceName || ''}, ${row.services?.priceInEuroWithoutVAT || ''}€`,
+            Parts: Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : 'N/A'
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Offers');
+        XLSX.writeFile(workbook, 'offers_export.xlsx');
+    };
 
     useEffect(() => {
         setLoading(true);
@@ -601,17 +619,9 @@ const OfferPage = () => {
                                 <Button onClick={handleHistoryClick} color="green" className="w-full sm:w-auto">
                                 History
                             </Button>
-                            <DownloadTableExcel
-                                filename="offers_export"
-                                sheet="Offers"
-                                currentTableRef={tableRef.current}
-                                type="xlsx"
-                                mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            >
-                                <Button color="purple" className="w-full sm:w-auto">
-                                    Export to Excel
-                                </Button>
-                            </DownloadTableExcel>
+                            <Button color="purple" className="w-full sm:w-auto" onClick={exportToExcel}>
+                                Export to Excel
+                            </Button>
                                 </>
                                 )}
                                 
