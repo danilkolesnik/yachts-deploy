@@ -24,7 +24,7 @@ import { warehouse } from './warehouse/entities/warehouse.entity';
 import { WarehouseHistory } from './warehouse/entities/warehouseHistory.entity';
 import { OfferHistory } from './offer/entities/offer-history.entity';
 import { OrderTimer } from './order/entities/order-timer.entity';
-(global as any).crypto = crypto;
+// (global as any).crypto = crypto;
 
 @Module({
   imports: [
