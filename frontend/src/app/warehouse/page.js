@@ -11,7 +11,7 @@ import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import Header from '@/component/header';
 import SearchInput from '@/component/search';
 import { useRouter } from 'next/navigation';
-import { DownloadTableExcel } from 'react-export-table-to-excel-xlsx';
+import * as XLSX from 'xlsx';
 
 const WarehousePage = () => {
     const [data, setData] = useState([]);
@@ -195,6 +195,22 @@ const WarehousePage = () => {
         router.push('/warehouseHistory');
     };
 
+    // --- SheetJS Export Function ---
+    const exportToExcel = () => {
+        const exportData = filteredData.map(row => ({
+            'Boat Registration': row.countryCode || '',
+            Name: row.name || '',
+            Quantity: row.quantity || '',
+            Comment: row.comment || '',
+            Price: `${row.pricePerUnit || ''}€`,
+            'Service Category': row.serviceCategory?.serviceName || ''
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Warehouse');
+        XLSX.writeFile(workbook, 'warehouse_export.xlsx');
+    };
+
     useEffect(() => {
         Promise.all([getData(), getDataCatagory()])
             .then(([res1, res2]) => {
@@ -231,17 +247,9 @@ const WarehousePage = () => {
                             <Button onClick={openModal} color="blue" className="w-full md:w-auto">
                                 Create
                             </Button>
-                            <DownloadTableExcel
-                                filename="warehouse_export"
-                                sheet="Warehouse"
-                                currentTableRef={tableRef.current}
-                                type="xlsx"
-                                mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            >
-                                <Button color="purple" className="w-full md:w-auto">
-                                    Export to Excel
-                                </Button>
-                            </DownloadTableExcel>
+                            <Button color="purple" className="w-full md:w-auto" onClick={exportToExcel}>
+                                Export to Excel
+                            </Button>
                             <Button onClick={handleHistoryClick} color="green" className="w-full md:w-auto">
                                 View History
                             </Button>

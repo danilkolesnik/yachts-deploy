@@ -10,7 +10,7 @@ import { URL } from '@/utils/constants';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import Header from '@/component/header';
 import ReactSelect from 'react-select';
-import { DownloadTableExcel } from 'react-export-table-to-excel-xlsx';
+import * as XLSX from 'xlsx';
 
 const PriceListPage = () => {
     const tableRef = useRef(null);
@@ -168,6 +168,20 @@ const PriceListPage = () => {
         setFormData({ ...formData, [name]: value });
     };
 
+    // --- SheetJS Export Function ---
+    const exportToExcel = () => {
+        const exportData = filteredData.map(row => ({
+            'Service Name': row.serviceName || '',
+            Description: row.description || '',
+            'Price in EURO without VAT': `${row.priceInEuroWithoutVAT || ''}€`,
+            'Units of Measurement': row.unitsOfMeasurement || ''
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Price List');
+        XLSX.writeFile(workbook, 'price_list_export.xlsx');
+    };
+
     return (
         <>
             <Header />
@@ -209,17 +223,9 @@ const PriceListPage = () => {
                                 />
                             </div>
                             <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                                <DownloadTableExcel
-                                    filename="price_list_export"
-                                    sheet="Price List"
-                                    currentTableRef={tableRef.current}
-                                    type="xlsx"
-                                    mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                                >
-                                    <Button color="purple" className="w-full sm:w-auto">
-                                        Export to Excel
-                                    </Button>
-                                </DownloadTableExcel>
+                                <Button color="purple" className="w-full sm:w-auto" onClick={exportToExcel}>
+                                    Export to Excel
+                                </Button>
                                 <Button onClick={openModal} color="blue" className="w-full sm:w-auto">
                                     Create
                                 </Button>     
