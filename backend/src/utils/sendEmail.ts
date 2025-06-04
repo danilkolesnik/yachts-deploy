@@ -2,8 +2,6 @@ import * as nodemailer from 'nodemailer';
 import { createPdfBuffer } from './createPdf';
 
 export async function sendEmail(to: string, data: any, type: string, subject: string, message:string) {
-  console.log(to, data, type, subject, message);
-
   const pdfBuffer = await createPdfBuffer(data,type);
   
   const transporter = nodemailer.createTransport({
