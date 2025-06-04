@@ -29,7 +29,7 @@ export async function sendEmail(to: string, data: any, type: string, subject: st
     console.log('SMTP connection verified successfully');
 
     const mailOptions: nodemailer.SendMailOptions = {
-      from: `"${process.env.ZOHO_EMAIL}"`,
+      from: `"kirill.hetman@zohomail.eu"`,
       to,
       subject,
       text: 'Offer created',
