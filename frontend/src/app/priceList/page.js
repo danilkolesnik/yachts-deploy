@@ -213,6 +213,8 @@ const PriceListPage = () => {
                                     filename="price_list_export"
                                     sheet="Price List"
                                     currentTableRef={tableRef.current}
+                                    type="xlsx"
+                                    mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                                 >
                                     <Button color="purple" className="w-full sm:w-auto">
                                         Export to Excel
@@ -236,10 +238,10 @@ const PriceListPage = () => {
                                 <tbody>
                                     {filteredData.map((row) => (
                                         <tr key={row.id}>
-                                            <td>{row.serviceName}</td>
-                                            <td>{row.description}</td>
-                                            <td>{row.priceInEuroWithoutVAT}</td>
-                                            <td>{row.unitsOfMeasurement}</td>
+                                            <td>{row.serviceName || ''}</td>
+                                            <td>{row.description || ''}</td>
+                                            <td>{`${row.priceInEuroWithoutVAT || ''}€`}</td>
+                                            <td>{row.unitsOfMeasurement || ''}</td>
                                         </tr>
                                     ))}
                                 </tbody>

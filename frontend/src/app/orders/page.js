@@ -290,6 +290,8 @@ const OrderPage = () => {
                                     filename="orders_export"
                                     sheet="Orders"
                                     currentTableRef={tableRef.current}
+                                    type="xlsx"
+                                    mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                                 >
                                     <Button color="purple" className="w-full sm:w-auto">
                                         Export to Excel
@@ -318,9 +320,15 @@ const OrderPage = () => {
                                     {sortedOrders.map((row) => (
                                         <tr key={row.id}>
                                             <td>{row.id}</td>
-                                            <td>{new Date(row.createdAt).toLocaleString()}</td>
-                                            <td>{row.offer && row.offer.customerFullName ? row.offer.customerFullName : 'N/A'}</td>
-                                            <td>{row.offer && row.offer.yachtName ? row.offer.yachtName : ''}</td>
+                                            <td>{new Date(row.createdAt).toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}</td>
+                                            <td>{row.offer?.customerFullName || 'N/A'}</td>
+                                            <td>{row.offer?.yachtName || ''}</td>
                                             <td>{Array.isArray(row.assignedWorkers) 
                                                 ? row.assignedWorkers.map(worker => worker.fullName).join(', ') 
                                                 : 'N/A'}</td>

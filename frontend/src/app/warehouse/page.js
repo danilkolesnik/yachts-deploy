@@ -235,6 +235,8 @@ const WarehousePage = () => {
                                 filename="warehouse_export"
                                 sheet="Warehouse"
                                 currentTableRef={tableRef.current}
+                                type="xlsx"
+                                mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                             >
                                 <Button color="purple" className="w-full md:w-auto">
                                     Export to Excel
@@ -260,12 +262,12 @@ const WarehousePage = () => {
                             <tbody>
                                 {filteredData.map((row) => (
                                     <tr key={row.id}>
-                                        <td>{row.countryCode}</td>
-                                        <td>{row.name}</td>
-                                        <td>{row.quantity}</td>
-                                        <td>{row.comment}</td>
-                                        <td>{row.pricePerUnit}</td>
-                                        <td>{row.serviceCategory.serviceName}</td>
+                                        <td>{row.countryCode || ''}</td>
+                                        <td>{row.name || ''}</td>
+                                        <td>{row.quantity || ''}</td>
+                                        <td>{row.comment || ''}</td>
+                                        <td>{`${row.pricePerUnit || ''}€`}</td>
+                                        <td>{row.serviceCategory?.serviceName || ''}</td>
                                     </tr>
                                 ))}
                             </tbody>

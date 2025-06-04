@@ -605,6 +605,8 @@ const OfferPage = () => {
                                 filename="offers_export"
                                 sheet="Offers"
                                 currentTableRef={tableRef.current}
+                                type="xlsx"
+                                mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                             >
                                 <Button color="purple" className="w-full sm:w-auto">
                                     Export to Excel
@@ -634,14 +636,20 @@ const OfferPage = () => {
                                     {filteredData.map((row) => (
                                         <tr key={row.id}>
                                             <td>{row.id}</td>
-                                            <td>{new Date(row.createdAt).toLocaleString()}</td>
+                                            <td>{new Date(row.createdAt).toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: '2-digit',
+                                                day: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            })}</td>
                                             <td>{row.customerFullName || ''}</td>
                                             <td>{row.yachtName}</td>
                                             <td>{row.yachtModel}</td>
                                             <td>{row.countryCode}</td>
                                             <td>{row.status}</td>
-                                            <td>{`${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€`}</td>
-                                            <td>{Array.isArray(row.parts) ? row.parts.map(part => part.label).join(', ') : 'N/A'}</td>
+                                            <td>{`${row.services?.serviceName || ''}, ${row.services?.priceInEuroWithoutVAT || ''}€`}</td>
+                                            <td>{Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : 'N/A'}</td>
                                         </tr>
                                     ))}
                                 </tbody>
