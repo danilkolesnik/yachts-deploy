@@ -497,8 +497,8 @@ const OfferPage = () => {
 
         const matchesSearch = () => {
             switch(filters.searchCriteria) {
-                case 'id':
-                    return offer.id.toString().includes(searchValue);
+                case 'yachtName':
+                    return offer.yachtName?.toLowerCase().includes(searchValue);
                 case 'customer':
                     return offer.customerFullName?.toLowerCase().includes(searchValue);
                 default:
@@ -573,7 +573,7 @@ const OfferPage = () => {
                                         labelProps={{ className: 'text-black' }}
                                         containerProps={{ className: 'min-w-[120px] w-full md:w-auto' }}
                                     >
-                                        <Option className="text-black" value="id">ID</Option>
+                                        <Option className="text-black" value="id">Yacht Name</Option>
                                         <Option className="text-black" value="customer">Customer</Option>
                                     </Select>
                                     <input

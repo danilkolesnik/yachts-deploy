@@ -243,7 +243,7 @@ const OrderPage = () => {
                                         labelProps={{ className: 'text-black' }}
                                         containerProps={{ className: 'min-w-[120px] w-full md:w-auto' }}
                                     >
-                                        <Option className="text-black" value="id">ID</Option>
+                                        <Option className="text-black" value="yachtName">Yacht Name</Option>
                                         <Option className="text-black" value="customer">Customer</Option>
                                         <Option className="text-black" value="worker">Worker</Option>
                                     </Select>
