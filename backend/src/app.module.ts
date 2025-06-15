@@ -24,7 +24,23 @@ import { warehouse } from './warehouse/entities/warehouse.entity';
 import { WarehouseHistory } from './warehouse/entities/warehouseHistory.entity';
 import { OfferHistory } from './offer/entities/offer-history.entity';
 import { OrderTimer } from './order/entities/order-timer.entity';
+import * as fs from 'fs';
+import * as path from 'path';
+
 (global as any).crypto = crypto;
+
+// Создаем необходимые директории при старте приложения
+const createUploadDirectories = () => {
+  const uploadDirs = ['uploads', 'uploads/video', 'uploads/image', 'uploads/logo'];
+  uploadDirs.forEach(dir => {
+    const dirPath = path.join(__dirname, '..', dir);
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+  });
+};
+
+createUploadDirectories();
 
 @Module({
   imports: [
@@ -37,7 +53,6 @@ import { OrderTimer } from './order/entities/order-timer.entity';
           rootPath: join(__dirname, '..', 'uploads'),
           serveRoot: '/uploads', 
         }),
-
       ],
       useFactory:() =>({
         type:"postgres",
@@ -58,14 +73,6 @@ import { OrderTimer } from './order/entities/order-timer.entity';
           OfferHistory,
           OrderTimer
         ],
-        // type:"postgres",
-        // host:"localhost",
-        // port:5432,
-        // username:"postgres",
-        // password:"12345678",
-        // database:"yachts",
-        // synchronize:true,
-        // entities: [__dirname + '/**/*.entity{.js, .ts}']
       })
     }),
     AuthModule, 
