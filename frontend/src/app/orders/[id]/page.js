@@ -89,25 +89,19 @@ const OrderDetail = ({ params }) => {
             };
             const tabName = tabMapping[selectedTab];
             
-            // Оптимистичное обновление UI
-            const isVideo = url.endsWith('.mp4') || url.endsWith('.avi');
-            const key = isVideo ? `${tabName}VideoUrls` : `${tabName}ImageUrls`;
-            setOrder((prevOrder) => ({
-                ...prevOrder,
-                [key]: prevOrder[key]?.filter((fileUrl) => fileUrl !== url) || [],
-            }));
-
-            await axios.post(`${URL}/orders/${id}/delete/${tabName}`, { fileUrl: url });
+            const response = await axios.post(`${URL}/orders/${id}/delete/${tabName}`, { fileUrl: url });
             
-            // Обновляем данные с сервера после удаления
-            const response = await axios.get(`${URL}/orders/${id}`);
-            setOrder(response.data.data);
+            if (response.data.code === 200) {
+                // Обновляем данные с сервера
+                const orderResponse = await axios.get(`${URL}/orders/${id}`);
+                setOrder(orderResponse.data.data);
+            }
         } catch (error) {
             console.error('Error deleting file:', error);
             // В случае ошибки обновляем данные с сервера
             try {
-                const response = await axios.get(`${URL}/orders/${id}`);
-                setOrder(response.data.data);
+                const orderResponse = await axios.get(`${URL}/orders/${id}`);
+                setOrder(orderResponse.data.data);
             } catch (refreshError) {
                 console.error('Error refreshing data:', refreshError);
             }
@@ -115,6 +109,26 @@ const OrderDetail = ({ params }) => {
             setDeleting(false);
         }
     };
+
+    // Добавляем функцию для обновления данных
+    const refreshOrderData = async () => {
+        try {
+            const response = await axios.get(`${URL}/orders/${id}`);
+            setOrder(response.data.data);
+        } catch (error) {
+            console.error('Error refreshing order data:', error);
+        }
+    };
+
+    // Добавляем useEffect для периодического обновления данных
+    useEffect(() => {
+        if (id) {
+            refreshOrderData();
+            // Обновляем данные каждые 5 секунд
+            const interval = setInterval(refreshOrderData, 5000);
+            return () => clearInterval(interval);
+        }
+    }, [id]);
 
     const handleImageClick = (index) => {
         setSelectedImageIndex(index);
