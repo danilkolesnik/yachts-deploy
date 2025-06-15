@@ -1,14 +1,69 @@
 "use client"
 import React, { useState, useEffect } from 'react';
-import { Button } from "@material-tailwind/react";
+import { Button, Select, Option } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import Header from '@/component/header';
 import axios from 'axios';
+import DataTable from 'react-data-table-component';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import Modal from '@/ui/Modal';
+import Input from '@/ui/Input';
+import Loader from '@/ui/loader';
 
 const YachtsPage = () => {
     const [yachts, setYachts] = useState([]);
-    const [newYacht, setNewYacht] = useState({ name: '', model: '' });
+    const [loading, setLoading] = useState(true);
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+    const [editModalIsOpen, setEditModalIsOpen] = useState(false);
     const [editingYacht, setEditingYacht] = useState(null);
+    const [filters, setFilters] = useState({
+        searchCriteria: 'name',
+        searchValue: '',
+    });
+
+    const [formData, setFormData] = useState({
+        name: '',
+        model: ''
+    });
+
+    const columns = [
+        {
+            name: 'ID',
+            selector: row => row.id,
+            sortable: true,
+        },
+        {
+            name: 'Name',
+            selector: row => row.name,
+            sortable: true,
+        },
+        {
+            name: 'Model',
+            selector: row => row.model,
+            sortable: true,
+        },
+        {
+            name: 'Actions',
+            cell: row => (
+                <div className="flex space-x-2">
+                    <button
+                        onClick={() => handleEdit(row)}
+                        className="text-blue-500 hover:text-blue-700"
+                    >
+                        <PencilIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                        onClick={() => handleDelete(row.id)}
+                        className="text-red-500 hover:text-red-700"
+                    >
+                        <TrashIcon className="w-5 h-5" />
+                    </button>
+                </div>
+            ),
+            ignoreRowClick: true,
+            button: true,
+        },
+    ];
 
     useEffect(() => {
         fetchYachts();
@@ -22,15 +77,18 @@ const YachtsPage = () => {
             }
         } catch (error) {
             console.error('Error fetching yachts:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleCreate = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post(`${URL}/yachts`, newYacht);
+            const response = await axios.post(`${URL}/yachts`, formData);
             if (response.data.code === 201) {
-                setNewYacht({ name: '', model: '' });
+                setFormData({ name: '', model: '' });
+                setModalIsOpen(false);
                 fetchYachts();
             }
         } catch (error) {
@@ -38,12 +96,18 @@ const YachtsPage = () => {
         }
     };
 
-    const handleUpdate = async (e) => {
+    const handleEdit = (yacht) => {
+        setEditingYacht(yacht);
+        setEditModalIsOpen(true);
+    };
+
+    const handleEditSubmit = async (e) => {
         e.preventDefault();
         try {
             const response = await axios.put(`${URL}/yachts/${editingYacht.id}`, editingYacht);
             if (response.data.code === 200) {
                 setEditingYacht(null);
+                setEditModalIsOpen(false);
                 fetchYachts();
             }
         } catch (error) {
@@ -62,91 +126,138 @@ const YachtsPage = () => {
         }
     };
 
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+    };
+
+    const handleEditChange = (e) => {
+        const { name, value } = e.target;
+        setEditingYacht({ ...editingYacht, [name]: value });
+    };
+
+    const filteredData = yachts.filter(yacht => {
+        const searchValue = filters.searchValue.toLowerCase();
+        switch(filters.searchCriteria) {
+            case 'name':
+                return yacht.name?.toLowerCase().includes(searchValue);
+            case 'model':
+                return yacht.model?.toLowerCase().includes(searchValue);
+            default:
+                return true;
+        }
+    });
+
     return (
-        <div className="min-h-screen bg-gray-100">
+        <>
             <Header />
-            <div className="max-w-4xl mx-auto p-8">
-                <h1 className="text-4xl font-bold mb-8">Yachts Management</h1>
-
-                {/* Create Form */}
-                <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                    <h2 className="text-2xl font-semibold mb-4">Add New Yacht</h2>
-                    <form onSubmit={handleCreate} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Name</label>
-                            <input
-                                type="text"
-                                value={newYacht.name}
-                                onChange={(e) => setNewYacht({ ...newYacht, name: e.target.value })}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Model</label>
-                            <input
-                                type="text"
-                                value={newYacht.model}
-                                onChange={(e) => setNewYacht({ ...newYacht, model: e.target.value })}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                required
-                            />
-                        </div>
-                        <Button type="submit" color="blue">Add Yacht</Button>
-                    </form>
-                </div>
-
-                {/* Yachts List */}
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h2 className="text-2xl font-semibold mb-4">Yachts List</h2>
-                    <div className="space-y-4">
-                        {yachts.map((yacht) => (
-                            <div key={yacht.id} className="border p-4 rounded-lg">
-                                {editingYacht?.id === yacht.id ? (
-                                    <form onSubmit={handleUpdate} className="space-y-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">Name</label>
-                                            <input
-                                                type="text"
-                                                value={editingYacht.name}
-                                                onChange={(e) => setEditingYacht({ ...editingYacht, name: e.target.value })}
-                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">Model</label>
-                                            <input
-                                                type="text"
-                                                value={editingYacht.model}
-                                                onChange={(e) => setEditingYacht({ ...editingYacht, model: e.target.value })}
-                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                                required
-                                            />
-                                        </div>
-                                        <div className="flex space-x-2">
-                                            <Button type="submit" color="green">Save</Button>
-                                            <Button onClick={() => setEditingYacht(null)} color="red">Cancel</Button>
-                                        </div>
-                                    </form>
-                                ) : (
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <h3 className="text-lg font-medium">{yacht.name}</h3>
-                                            <p className="text-gray-600">{yacht.model}</p>
-                                        </div>
-                                        <div className="flex space-x-2">
-                                            <Button onClick={() => setEditingYacht(yacht)} color="blue">Edit</Button>
-                                            <Button onClick={() => handleDelete(yacht.id)} color="red">Delete</Button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+            <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
+                {loading ? (
+                    <div className="flex justify-center items-center min-h-screen">
+                        <Loader loading={loading} />
                     </div>
-                </div>
+                ) : (
+                    <div className="w-full space-y-6 bg-white rounded shadow-md">
+                        <div className="relative flex flex-col md:flex-row justify-between gap-4 mb-4 p-4">
+                            <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-8">
+                                <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-0 w-full md:w-auto">
+                                    <Select
+                                        label="Search by"
+                                        value={filters.searchCriteria}
+                                        onChange={(value) => setFilters({ ...filters, searchCriteria: value })}
+                                        className="text-black border-gray-300 rounded-xs w-full md:w-36"
+                                        labelProps={{ className: 'text-black' }}
+                                        containerProps={{ className: 'min-w-[120px] w-full md:w-auto' }}
+                                    >
+                                        <Option className="text-black" value="name">Name</Option>
+                                        <Option className="text-black" value="model">Model</Option>
+                                    </Select>
+                                    <input
+                                        type="text"
+                                        placeholder="Search..."
+                                        value={filters.searchValue}
+                                        onChange={(e) => setFilters({ ...filters, searchValue: e.target.value })}
+                                        className="border p-2 text-black rounded w-full md:w-48 h-10"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto justify-end">
+                                <Button onClick={() => setModalIsOpen(true)} color="blue" className="w-full sm:w-auto">
+                                    Create
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <DataTable
+                                columns={columns}
+                                data={filteredData}
+                                pagination
+                                highlightOnHover
+                                pointerOnHover
+                                className="min-w-full border-collapse"
+                                responsive
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* Create Modal */}
+                <Modal isOpen={modalIsOpen} onClose={() => setModalIsOpen(false)} title="Add New Yacht">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <Input
+                            label="Name"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            required
+                        />
+                        <Input
+                            label="Model"
+                            name="model"
+                            value={formData.model}
+                            onChange={handleChange}
+                            required
+                        />
+                        <div className="flex justify-end space-x-2">
+                            <Button variant="text" color="red" onClick={() => setModalIsOpen(false)} className="mr-1">
+                                <span>Cancel</span>
+                            </Button>
+                            <Button color="green" type="submit">
+                                <span>Create</span>
+                            </Button>
+                        </div>
+                    </form>
+                </Modal>
+
+                {/* Edit Modal */}
+                <Modal isOpen={editModalIsOpen} onClose={() => setEditModalIsOpen(false)} title="Edit Yacht">
+                    <form onSubmit={handleEditSubmit} className="space-y-4">
+                        <Input
+                            label="Name"
+                            name="name"
+                            value={editingYacht?.name || ''}
+                            onChange={handleEditChange}
+                            required
+                        />
+                        <Input
+                            label="Model"
+                            name="model"
+                            value={editingYacht?.model || ''}
+                            onChange={handleEditChange}
+                            required
+                        />
+                        <div className="flex justify-end space-x-2">
+                            <Button variant="text" color="red" onClick={() => setEditModalIsOpen(false)} className="mr-1">
+                                <span>Cancel</span>
+                            </Button>
+                            <Button color="green" type="submit">
+                                <span>Save</span>
+                            </Button>
+                        </div>
+                    </form>
+                </Modal>
             </div>
-        </div>
+        </>
     );
 };
 
