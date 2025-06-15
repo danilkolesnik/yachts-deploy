@@ -27,6 +27,7 @@ import { OrderTimer } from './order/entities/order-timer.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { YachtModule } from './yacht/yacht.module';
+import { Yacht } from './yacht/entities/yacht.entity';
 
 (global as any).crypto = crypto;
 
@@ -75,7 +76,8 @@ createUploadDirectories();
           warehouse,
           WarehouseHistory,
           OfferHistory,
-          OrderTimer
+          OrderTimer,
+          Yacht
         ],
       })
     }),
