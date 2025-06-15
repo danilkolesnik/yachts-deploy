@@ -10,7 +10,6 @@ export class CreateOfferDto {
     parts: { partName: string; quantity: number }[];
     status: string;
     yachtId: string;
-    title: string;
     description: string;
     price: number;
     imageUrls?: string[];

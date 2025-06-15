@@ -6,9 +6,6 @@ export class offer {
   id: string;
 
   @Column()
-  title: string;
-
-  @Column()
   description: string;
 
   @Column()
