@@ -1,4 +1,4 @@
-export class CreateOfferhDto {
+export class CreateOfferDto {
     userId: string;
     customerFullName: string;
     customerId: string;
@@ -9,4 +9,10 @@ export class CreateOfferhDto {
     services: { serviceName: string; priceInEuroWithoutVAT: number }[];
     parts: { partName: string; quantity: number }[];
     status: string;
-  }
+    yachtId: string;
+    title: string;
+    description: string;
+    price: number;
+    imageUrls?: string[];
+    videoUrls?: string[];
+}

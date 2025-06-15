@@ -26,6 +26,7 @@ import { OfferHistory } from './offer/entities/offer-history.entity';
 import { OrderTimer } from './order/entities/order-timer.entity';
 import * as fs from 'fs';
 import * as path from 'path';
+import { YachtModule } from './yacht/yacht.module';
 
 (global as any).crypto = crypto;
 
@@ -85,7 +86,8 @@ createUploadDirectories();
     PriceListModule, 
     UsersModule, 
     OrderModule, 
-    UploadModule
+    UploadModule,
+    YachtModule
   ],
   controllers: [AppController],
   providers: [AppService,],

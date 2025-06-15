@@ -1,46 +1,43 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class offer {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({default: ''})
+  @Column()
+  title: string;
+
+  @Column()
+  description: string;
+
+  @Column()
+  price: number;
+
+  @Column()
   customerId: string;
 
-  @Column({default: ''})
+  @Column()
   customerFullName: string;
 
-  @Column({default: ''})
+  @Column()
   yachtName: string;
 
-  @Column({default: ''})
+  @Column()
   yachtModel: string;
 
-  @Column({ default: '' })
-  comment: string;
-
-  @Column({default: ''})
-  countryCode: string;
-
-  @Column('json', { default: [] })
-  services: { serviceName: string; priceInEuroWithoutVAT: number }[];
-
-  @Column('json', { default: [] })
-  parts: { partName: string; quantity: number }[];
-
-  @Column({ default: 'created' })
-  status: string;
-
-  @Column('json', { default: [] })
-  versions: any[];
-
-  @Column('json', { nullable: true, default: [] })
+  @Column('simple-array', { nullable: true })
   imageUrls: string[];
 
-  @Column('json', { nullable: true, default: [] })
+  @Column('simple-array', { nullable: true })
   videoUrls: string[];
 
-  @CreateDateColumn()
+  @Column({ default: 'pending' })
+  status: string;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
 }
