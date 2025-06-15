@@ -7,6 +7,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_SERVER_URL=http://116.203.198.150:5000
@@ -20,6 +23,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     environment:
       - SECRET_KEY=gfgd@43435sdfggpp[[gdsf
       - NODE_ENV=production
@@ -32,12 +38,12 @@ services:
       - ZOHO_APP_PASSWORD=fV3U2ZA#u4:6$Gg
       - ZOHO_EMAIL=kirill.hetman@zohomail.eu
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: always
 
   db:
     image: postgres:15
-    restart: always
     ports:
       - "5432:5432"
     environment:
@@ -46,7 +52,13 @@ services:
       POSTGRES_DB: yachts
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backend/src/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
 
 volumes:
   postgres_data:
