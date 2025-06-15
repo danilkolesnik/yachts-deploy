@@ -15,7 +15,7 @@ import {
   UserIcon,
   Bars3Icon,
   XMarkIcon,
-  AnchorIcon,
+  ShipIcon,
 } from "@heroicons/react/24/solid";
 import { useAppDispatch } from '@/lib/hooks';
 import { setId } from '@/lib/features/todos/usersDataSlice';
@@ -81,7 +81,7 @@ function NavList({ isOpen, setIsOpen }) {
         <>
           <Link href="/yachts" onClick={handleClick} className=" font-bold">
             <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
-              <AnchorIcon className="h-5 w-5 mr-2" />
+              <ShipIcon className="h-5 w-5 mr-2" />
               <span>Yachts</span>
             </ListItem>
           </Link>
