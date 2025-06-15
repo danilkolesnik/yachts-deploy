@@ -1,52 +1,34 @@
-import { Controller, Post, Put, Body, Param,Get, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
 import { OfferService } from './offer.service';
-import { CreateOfferhDto } from './dto/create-offer.dto';
+import { CreateOfferDto } from './dto/create-offer.dto';
 import { Request } from 'express';
+
 @Controller('offer')
 export class OfferController {
   constructor(private readonly offerService: OfferService) {}
 
-  @Post('create')
-  async createOffer(@Body() data: CreateOfferhDto) {
-    return this.offerService.create(data);
-  }
-
-  @Put('update/:id')
-  async updateOffer(@Param('id') id: string, @Body() data: Partial<CreateOfferhDto>) {
-    return this.offerService.update(id, data);
-  }
-
-  @Post('delete/:id')
-  async deleteOffer(@Param('id') id: string) {
-    return this.offerService.delete(id);
-  }
-
-  @Get('history')
-  async getOfferHistory() {
-    return this.offerService.getOfferHistory();
-  }
-
-  @Get(':id')
-  async getOfferById(@Param('id') id: string) {
-    return this.offerService.getOfferById(id);
+  @Post()
+  create(@Body() createOfferDto: CreateOfferDto) {
+    return this.offerService.create(createOfferDto);
   }
 
   @Get()
-  async getAllOffers(@Req() request: Request) {
-    return this.offerService.findAll(request);
+  findAll(@Req() req: Request) {
+    return this.offerService.findAll(req);
   }
 
-  @Get('confirm/:id')
-  async confirmOffer(@Param('id') id: string) {
-    return this.offerService.confirmOffer(id).then((res) => {
-      return res.message;
-    });
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.offerService.findOne(id);
   }
 
-  @Get('cancel/:id')
-  async cancelOffer(@Param('id') id: string) {
-    return this.offerService.cancelOffer(id).then((res) => {
-      return res.message;
-    });
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateOfferDto: CreateOfferDto) {
+    return this.offerService.update(id, updateOfferDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.offerService.remove(id);
   }
 }
