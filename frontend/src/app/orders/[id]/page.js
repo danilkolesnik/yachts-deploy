@@ -87,12 +87,10 @@ const OrderDetail = ({ params }) => {
             };
             const tabName = tabMapping[selectedTab];
             await axios.post(`${URL}/orders/${id}/delete/${tabName}`, { fileUrl: url });
-            const isVideo = url.endsWith('.mp4') || url.endsWith('.avi');
-            const key = isVideo ? `${tabName}VideoUrls` : `${tabName}ImageUrls`;
-            setOrder((prevOrder) => ({
-                ...prevOrder,
-                [key]: prevOrder[key]?.filter((fileUrl) => fileUrl !== url) || [],
-            }));
+            
+            // Обновляем данные с сервера после удаления
+            const response = await axios.get(`${URL}/orders/${id}`);
+            setOrder(response.data.data);
         } catch (error) {
             console.error('Error deleting file:', error);
         }
