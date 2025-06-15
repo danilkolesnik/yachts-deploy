@@ -338,31 +338,7 @@ export class OrderService {
         return { message: 'Некорректный URL.', code: 400 };
       }
 
-      const file = await this.fileRepository.findOne({ where: { filename, offerId: order.offerId } });
-      if (!file) {
-        return { message: 'Файл не найден в базе данных.', code: 404 };
-      }
-
-      // Проверяем существование файла
-      try {
-        await fs.promises.access(file.path);
-      } catch (error) {
-        console.error('Файл не найден на диске:', error);
-        // Продолжаем удаление записи из БД даже если файл не найден
-      }
-
-      // Пытаемся удалить файл, если он существует
-      try {
-        await unlink(file.path);
-      } catch (error) {
-        console.error('Ошибка при удалении файла:', error);
-        // Продолжаем удаление записи из БД даже если файл не удален
-      }
-
-      // Удаляем запись из базы данных
-      await this.fileRepository.delete(file.id);
-
-      // Обновляем URL в заказе
+      // Сначала обновляем URL в заказе
       if (tab === 'process') {
         order.processImageUrls = order.processImageUrls ? order.processImageUrls.filter(url => url !== fileUrl) : [];
         order.processVideoUrls = order.processVideoUrls ? order.processVideoUrls.filter(url => url !== fileUrl) : [];
@@ -374,7 +350,27 @@ export class OrderService {
         order.tabVideoUrls = order.tabVideoUrls ? order.tabVideoUrls.filter(url => url !== fileUrl) : [];
       }
 
+      // Сохраняем изменения в заказе
       await this.orderRepository.save(order);
+
+      // Ищем файл в базе данных
+      const file = await this.fileRepository.findOne({ where: { filename, offerId: order.offerId } });
+      if (!file) {
+        return { message: 'Файл не найден в базе данных.', code: 404 };
+      }
+
+      // Проверяем существование файла
+      try {
+        await fs.promises.access(file.path);
+        // Пытаемся удалить файл
+        await unlink(file.path);
+      } catch (error) {
+        console.error('Ошибка при удалении файла:', error);
+        // Продолжаем удаление записи из БД даже если файл не найден или не удален
+      }
+
+      // Удаляем запись из базы данных
+      await this.fileRepository.delete(file.id);
 
       return { message: 'Файл успешно удалён.', code: 200 };
     } catch (error) {

@@ -18,6 +18,7 @@ const OrderDetail = ({ params }) => {
     const [order, setOrder] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [role, setRole] = useState(null);
     const [selectedTab, setSelectedTab] = useState('Before');
     const [showGallery, setShowGallery] = useState(false);
@@ -80,12 +81,22 @@ const OrderDetail = ({ params }) => {
 
     const handleDelete = async (url) => {
         try {
+            setDeleting(true);
             const tabMapping = {
                 'Before': 'process',
                 'In Progress': 'result',
                 'Result': 'tab'
             };
             const tabName = tabMapping[selectedTab];
+            
+            // Оптимистичное обновление UI
+            const isVideo = url.endsWith('.mp4') || url.endsWith('.avi');
+            const key = isVideo ? `${tabName}VideoUrls` : `${tabName}ImageUrls`;
+            setOrder((prevOrder) => ({
+                ...prevOrder,
+                [key]: prevOrder[key]?.filter((fileUrl) => fileUrl !== url) || [],
+            }));
+
             await axios.post(`${URL}/orders/${id}/delete/${tabName}`, { fileUrl: url });
             
             // Обновляем данные с сервера после удаления
@@ -93,6 +104,15 @@ const OrderDetail = ({ params }) => {
             setOrder(response.data.data);
         } catch (error) {
             console.error('Error deleting file:', error);
+            // В случае ошибки обновляем данные с сервера
+            try {
+                const response = await axios.get(`${URL}/orders/${id}`);
+                setOrder(response.data.data);
+            } catch (refreshError) {
+                console.error('Error refreshing data:', refreshError);
+            }
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -144,7 +164,8 @@ const OrderDetail = ({ params }) => {
                                                 e.stopPropagation();
                                                 handleDelete(url);
                                             }}
-                                            className="absolute top-1 right-1 text-black rounded-full p-2 transition-colors"
+                                            disabled={deleting}
+                                            className="absolute top-1 right-1 text-black rounded-full p-2 transition-colors disabled:opacity-50"
                                         >
                                             <XMarkIcon className="w-6 h-6 bg-white rounded-full p-1" />
                                         </button>
@@ -170,7 +191,8 @@ const OrderDetail = ({ params }) => {
                                     {role !== 'user' && (
                                         <button
                                             onClick={() => handleDelete(url)}
-                                            className="absolute top-1 right-1 text-black rounded-full p-2 transition-colors"
+                                            disabled={deleting}
+                                            className="absolute top-1 right-1 text-black rounded-full p-2 transition-colors disabled:opacity-50"
                                         >
                                             <XMarkIcon className="w-6 h-6 bg-white rounded-full p-1" />
                                         </button>
