@@ -59,6 +59,10 @@ function NavList({ isOpen, setIsOpen }) {
     }
   };
 
+  if (!role) {
+    return null;
+  }
+
   return (
     <List className={`flex items-center ${isMobile ? 'flex-col' : 'flex-row'} w-full p-0`}>
       <Link href="/orders" onClick={handleClick} className=" font-bold">
