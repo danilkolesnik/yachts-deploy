@@ -1,5 +1,5 @@
 # Используем официальный образ Node.js
-FROM node:18
+FROM node:20-alpine
 
 # Устанавливаем необходимые зависимости для Puppeteer
 RUN apt-get update && apt-get install -y \
@@ -44,8 +44,10 @@ RUN npm install
 COPY . .
 RUN npm run build
 
+COPY src/database/init.sql /docker-entrypoint-initdb.d/
+
 # Открываем порт
-EXPOSE 5000
+EXPOSE 3000
 
 # Запускаем сервер
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "start:prod"]
