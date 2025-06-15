@@ -30,6 +30,10 @@ RUN apt-get update && apt-get install -y \
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
+# Создаем директории для загрузки файлов
+RUN mkdir -p /app/uploads/video /app/uploads/image /app/uploads/logo && \
+    chmod -R 777 /app/uploads
+
 # Копируем package.json и package-lock.json
 COPY package*.json ./
 

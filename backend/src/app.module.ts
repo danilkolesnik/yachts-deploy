@@ -51,7 +51,10 @@ createUploadDirectories();
         ConfigModule,
         ServeStaticModule.forRoot({
           rootPath: join(__dirname, '..', 'uploads'),
-          serveRoot: '/uploads', 
+          serveRoot: '/uploads',
+          serveStaticOptions: {
+            fallthrough: true
+          }
         }),
       ],
       useFactory:() =>({

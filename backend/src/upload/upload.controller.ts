@@ -73,7 +73,7 @@ export class UploadController {
       destination: (req, file, callback) => {
         const uploadDirs = ['uploads', 'uploads/video', 'uploads/image', 'uploads/logo'];
         uploadDirs.forEach(dir => {
-          const dirPath = path.join(process.cwd(), dir);
+          const dirPath = path.join(__dirname, '..', '..', dir);
           if (!fs.existsSync(dirPath)) {
             fs.mkdirSync(dirPath, { recursive: true });
           }
@@ -81,12 +81,12 @@ export class UploadController {
 
         const isImage = file.mimetype.startsWith('image/');
         const isVideo = file.mimetype.startsWith('video/');
-        let folder = './uploads'; 
+        let folder = path.join(__dirname, '..', '..', 'uploads'); 
 
         if (isImage) {
-          folder = './uploads/image';
+          folder = path.join(__dirname, '..', '..', 'uploads', 'image');
         } else if (isVideo) {
-          folder = './uploads/video';
+          folder = path.join(__dirname, '..', '..', 'uploads', 'video');
         }
 
         callback(null, folder);
@@ -111,12 +111,12 @@ export class UploadController {
 
       const isImage = file.mimetype.startsWith('image/');
       const isVideo = file.mimetype.startsWith('video/');
-      let folder = 'uploads'; 
+      let folder = path.join(__dirname, '..', '..', 'uploads'); 
 
       if (isImage) {
-        folder = 'uploads/image';
+        folder = path.join(__dirname, '..', '..', 'uploads', 'image');
       } else if (isVideo) {
-        folder = 'uploads/video';
+        folder = path.join(__dirname, '..', '..', 'uploads', 'video');
       }
 
       const fileUrl = `${process.env.SERVER_URL}/${folder}/${file.filename}`;
