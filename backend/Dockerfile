@@ -20,6 +20,9 @@ WORKDIR /app
 RUN mkdir -p /app/uploads/video /app/uploads/image /app/uploads/logo && \
     chmod -R 777 /app/uploads
 
+# Устанавливаем глобальные зависимости
+RUN npm install -g @nestjs/cli
+
 # Копируем package.json и package-lock.json
 COPY package*.json ./
 
@@ -28,7 +31,9 @@ RUN npm install
 
 # Копируем весь проект
 COPY . .
-RUN npm run build
+
+# Собираем приложение
+RUN nest build
 
 COPY src/database/init.sql /docker-entrypoint-initdb.d/
 
