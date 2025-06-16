@@ -292,7 +292,10 @@ const OfferPage = () => {
                 ...formData, 
                 userId: id,
                 customerId: id,
-                services: formData.services ? [formData.services] : [],
+                services: formData.services ? {
+                    serviceName: formData.services.serviceName,
+                    priceInEuroWithoutVAT: formData.services.priceInEuroWithoutVAT
+                } : null,
                 parts: formData.parts || [],
                 price: 0,
                 description: formData.comment || ''

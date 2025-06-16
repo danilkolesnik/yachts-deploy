@@ -71,14 +71,20 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
             />
             <Select
                 label="Services"
-                value={formData.services}
+                value={formData.services ? {
+                    serviceName: formData.services.serviceName,
+                    priceInEuroWithoutVAT: formData.services.priceInEuroWithoutVAT
+                } : null}
                 onChange={(value) => handleSelectChange(value, 'services')}
                 required
                 className="text-black"
                 labelProps={{ className: "text-black" }}
             >
                 {catagoryData.map((category) => (
-                    <Option key={category.id} value={category} className="text-black">
+                    <Option key={category.id} value={{
+                        serviceName: category.serviceName,
+                        priceInEuroWithoutVAT: category.priceInEuroWithoutVAT
+                    }} className="text-black">
                         {`${category.serviceName} - ${category.priceInEuroWithoutVAT}€`}
                     </Option>
                 ))}
