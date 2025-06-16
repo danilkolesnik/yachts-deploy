@@ -292,10 +292,7 @@ const OfferPage = () => {
                 ...formData, 
                 userId: id,
                 customerId: id,
-                services: formData.services ? {
-                    serviceName: formData.services.serviceName,
-                    priceInEuroWithoutVAT: formData.services.priceInEuroWithoutVAT
-                } : null,
+                services: formData.services ? [formData.services] : [],
                 parts: formData.parts || [],
                 price: 0,
                 description: formData.comment || ''
@@ -326,7 +323,7 @@ const OfferPage = () => {
                     yachtModel: '',
                     comment: '',
                     countryCode: '',
-                    services: null,
+                    services: [],
                     parts: [],
                     status: 'created'
                 });

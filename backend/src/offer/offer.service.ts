@@ -17,10 +17,9 @@ export class OfferService {
 
   async create(createOfferDto: CreateOfferDto) {
     try {
+      console.log(createOfferDto);
       const newOffer = this.offerRepository.create(createOfferDto);
       const savedOffer = await this.offerRepository.save(newOffer);
-
-      console.log(savedOffer);
       return {
         code: 201,
         data: savedOffer,
