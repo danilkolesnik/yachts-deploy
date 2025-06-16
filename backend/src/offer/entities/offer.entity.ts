@@ -1,36 +1,27 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, CreateDateColumn } from 'typeorm';
 
 @Entity()
 export class offer {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn()
   id: string;
 
-  @Column()
-  description: string;
-
-  @Column()
-  price: number;
-
-  @Column()
+  @Column({default: ''})
   customerId: string;
 
-  @Column()
+  @Column({default: ''})
   customerFullName: string;
 
-  @Column()
+  @Column({default: ''})
   yachtName: string;
 
-  @Column()
+  @Column({default: ''})
   yachtModel: string;
 
-  @Column('simple-array', { nullable: true })
-  imageUrls: string[];
+  @Column({ default: '' })
+  comment: string;
 
-  @Column('simple-array', { nullable: true })
-  videoUrls: string[];
-
-  @Column({ default: 'pending' })
-  status: string;
+  @Column({default: ''})
+  countryCode: string;
 
   @Column('json', { default: [] })
   services: { serviceName: string; priceInEuroWithoutVAT: number }[];
@@ -38,9 +29,18 @@ export class offer {
   @Column('json', { default: [] })
   parts: { partName: string; quantity: number }[];
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  @Column({ default: 'created' })
+  status: string;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  updatedAt: Date;
+  @Column('json', { default: [] })
+  versions: any[];
+
+  @Column('json', { nullable: true, default: [] })
+  imageUrls: string[];
+
+  @Column('json', { nullable: true, default: [] })
+  videoUrls: string[];
+
+  @CreateDateColumn()
+  createdAt: Date;
 }
