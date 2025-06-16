@@ -16,5 +16,8 @@ COPY . .
 # Собираем проект Next.js
 RUN npm run build
 
+# Открываем порт
+EXPOSE 3000
+
 # Запускаем Next.js в продакшн-режиме
-CMD ["npm", "start"]
+CMD ["npm", "run", "start"]
