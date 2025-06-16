@@ -1,4 +1,22 @@
-# Используем официальный образ Node.js
+# Build stage
+FROM node:20-alpine AS builder
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Копируем package.json и package-lock.json
+COPY package*.json ./
+
+# Устанавливаем зависимости
+RUN npm install
+
+# Копируем весь проект
+COPY . .
+
+# Собираем приложение
+RUN npm run build
+
+# Production stage
 FROM node:20-alpine
 
 # Устанавливаем необходимые зависимости для Puppeteer
@@ -20,21 +38,15 @@ WORKDIR /app
 RUN mkdir -p /app/uploads/video /app/uploads/image /app/uploads/logo && \
     chmod -R 777 /app/uploads
 
-# Устанавливаем глобальные зависимости
-RUN npm install -g @nestjs/cli
-
 # Копируем package.json и package-lock.json
 COPY package*.json ./
 
-# Устанавливаем зависимости
-RUN npm install
+# Устанавливаем только production зависимости
+RUN npm install --only=production
 
-# Копируем весь проект
-COPY . .
-
-# Собираем приложение и проверяем результат
-RUN npm run build && \
-    ls -la dist/ || echo "Build failed - dist directory not created"
+# Копируем собранное приложение из builder stage
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
 
 COPY src/database/init.sql /docker-entrypoint-initdb.d/
 
