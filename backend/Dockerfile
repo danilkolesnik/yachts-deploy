@@ -38,8 +38,6 @@ RUN npm install
 
 # Копируем весь проект
 COPY . .
-
-# Собираем приложение
 RUN npm run build
 
 # Открываем порт
