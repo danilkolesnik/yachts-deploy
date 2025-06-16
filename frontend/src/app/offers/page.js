@@ -305,15 +305,19 @@ const OfferPage = () => {
             console.log('Offer Data being sent:', offerData);
 
             if (editMode) {
+                console.log('Sending PUT request with data:', JSON.stringify(offerData));
                 await axios.put(`${URL}/offer/update/${editId}`, offerData, {
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     }
                 });
             } else {
+                console.log('Sending POST request with data:', JSON.stringify(offerData));
                 await axios.post(`${URL}/offer`, offerData, {
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     }
                 });
                 setFormData({
@@ -322,7 +326,7 @@ const OfferPage = () => {
                     yachtModel: '',
                     comment: '',
                     countryCode: '',
-                    services: [],
+                    services: null,
                     parts: [],
                     status: 'created'
                 });
