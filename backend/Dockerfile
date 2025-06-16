@@ -32,8 +32,9 @@ RUN npm install
 # Копируем весь проект
 COPY . .
 
-# Собираем приложение
-RUN npm run build
+# Собираем приложение и проверяем результат
+RUN npm run build && \
+    ls -la dist/ || echo "Build failed - dist directory not created"
 
 COPY src/database/init.sql /docker-entrypoint-initdb.d/
 

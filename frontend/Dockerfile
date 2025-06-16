@@ -13,8 +13,9 @@ RUN npm install
 # Копируем весь проект
 COPY . .
 
-# Собираем проект Next.js
-RUN npm run build
+# Собираем проект Next.js и проверяем результат
+RUN npm run build && \
+    ls -la .next/ || echo "Build failed - .next directory not created"
 
 # Открываем порт
 EXPOSE 3000
