@@ -17,6 +17,7 @@ export class OfferService {
 
   async create(createOfferDto: CreateOfferDto) {
     try {
+      console.log(createOfferDto);
       const newOffer = this.offerRepository.create(createOfferDto);
       const savedOffer = await this.offerRepository.save(newOffer);
 
@@ -25,6 +26,7 @@ export class OfferService {
         data: savedOffer,
       };
     } catch (error) {
+      console.log(error);
       return {
         code: 500,
         message: error.message,
