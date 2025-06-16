@@ -1,5 +1,31 @@
-# Build stage
-FROM node:20-alpine AS builder
+# Используем официальный образ Node.js
+FROM node:18
+
+# Устанавливаем необходимые зависимости для Puppeteer
+RUN apt-get update && apt-get install -y \
+    apparmor \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libnspr4 \
+    libnss3 \
+    libxss1 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxshmfence1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Устанавливаем рабочую директорию
 WORKDIR /app
@@ -16,42 +42,8 @@ COPY . .
 # Собираем приложение
 RUN npm run build
 
-# Production stage
-FROM node:20-alpine
-
-# Устанавливаем необходимые зависимости для Puppeteer
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    nodejs \
-    yarn
-
-# Устанавливаем рабочую директорию
-WORKDIR /app
-
-# Создаем директории для загрузки файлов
-RUN mkdir -p /app/uploads/video /app/uploads/image /app/uploads/logo && \
-    chmod -R 777 /app/uploads
-
-# Копируем package.json и package-lock.json
-COPY package*.json ./
-
-# Устанавливаем только production зависимости
-RUN npm install --only=production
-
-# Копируем собранное приложение из builder stage
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-
-COPY src/database/init.sql /docker-entrypoint-initdb.d/
-
 # Открываем порт
-EXPOSE 3000
+EXPOSE 5000
 
 # Запускаем сервер
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "run", "start"]
