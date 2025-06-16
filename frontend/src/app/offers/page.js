@@ -26,6 +26,7 @@ const OfferPage = () => {
     const [parts, setParts] = useState([]);
     const [users, setUsers] = useState([]);
     const [workers, setWorkers] = useState([]);
+    const [yachts, setYachts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [createOrderModalIsOpen, setCreateOrderModalIsOpen] = useState(false);
@@ -228,6 +229,15 @@ const OfferPage = () => {
     const getWorkers = async () => {
         try {
             const res = await axios.get(`${URL}/users/role/worker`);
+            return res.data.data;
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const getYachts = async () => {
+        try {
+            const res = await axios.get(`${URL}/yachts`);
             return res.data.data;
         } catch (error) {
             console.error(error);
@@ -531,15 +541,36 @@ const OfferPage = () => {
         XLSX.writeFile(workbook, 'offers_export.xlsx');
     };
 
+    const handleYachtSelect = (selectedYacht) => {
+        if (selectedYacht) {
+            setFormData({
+                ...formData,
+                yachtName: selectedYacht.name,
+                yachtModel: selectedYacht.model,
+                countryCode: selectedYacht.countryCode || '',
+                yachtId: selectedYacht.id
+            });
+        } else {
+            setFormData({
+                ...formData,
+                yachtName: '',
+                yachtModel: '',
+                countryCode: '',
+                yachtId: ''
+            });
+        }
+    };
+
     useEffect(() => {
         setLoading(true);
-        Promise.all([getData(), getDataCatagory(), getWareHouse(), getUsers(), getWorkers()])
-            .then(([res1, res2, res3, res4, res5]) => {
+        Promise.all([getData(), getDataCatagory(), getWareHouse(), getUsers(), getWorkers(), getYachts()])
+            .then(([res1, res2, res3, res4, res5, res6]) => {
                 setData(res1 || []);
                 setCatagoryData(res2 || []);
                 setParts(res3 || []);
                 setUsers(res4 || []);
                 setWorkers(res5 || []);
+                setYachts(res6 || []);
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
@@ -682,13 +713,15 @@ const OfferPage = () => {
                     onSubmit={handleSubmit}
                     formData={formData}
                     handleChange={handleChange}
-                    handleSelectChange={handleSelectChange }
+                    handleSelectChange={handleSelectChange}
                     userOptions={userOptions}
                     catagoryData={catagoryData}
                     partOptions={partOptions}
                     openCreateServiceModal={openCreateServiceModal}
                     openCreatePartModal={openCreatePartModal}
                     loading={loadingCreateOffer}
+                    yachts={yachts}
+                    handleYachtSelect={handleYachtSelect}
                 />
                 <EditOfferModal
                     isOpen={editModalIsOpen}

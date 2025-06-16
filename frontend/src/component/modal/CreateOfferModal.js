@@ -5,7 +5,12 @@ import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import ReactSelect from 'react-select';
 
-const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal, loading }) => {
+const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal, loading, yachts, handleYachtSelect }) => {
+    const yachtOptions = yachts.map(yacht => ({
+        value: yacht,
+        label: `${yacht.name} - ${yacht.model}`
+    }));
+
     return(
         <Modal isOpen={isOpen} onClose={onClose} title="Create Offer">
         <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto h-full" style={{ height: '400px', overflowY: 'auto' }}>
@@ -32,20 +37,31 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
                     }),
                 }}
             />
-            <Input
-                label="Yacht Name"
-                name="yachtName"
-                value={formData.yachtName}
-                onChange={handleChange}
-                required
-            />
-            <Input
-                label="Yacht Model"
-                name="yachtModel"
-                value={formData.yachtModel}
-                onChange={handleChange}
-                required
-            />
+            <div className="mb-4">
+                <label htmlFor="yacht-select" className="block text-sm font-medium text-gray-700">
+                    Select Yacht
+                </label>
+                <ReactSelect
+                    id="yacht-select"
+                    options={yachtOptions}
+                    value={yachtOptions.find(option => option.value.name === formData.yachtName && option.value.model === formData.yachtModel) || null}
+                    onChange={selectedOption => handleYachtSelect(selectedOption?.value)}
+                    placeholder="Select a yacht..."
+                    isClearable
+                    isSearchable
+                    className="mt-1"
+                    styles={{
+                        control: (provided) => ({
+                            ...provided,
+                        }),
+                        option: (provided, state) => ({
+                            ...provided,
+                            color: 'black',
+                            backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                    }}
+                />
+            </div>
             <Input
                 label="Boat Registration"
                 name="countryCode"
