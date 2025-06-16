@@ -78,10 +78,7 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
                 labelProps={{ className: "text-black" }}
             >
                 {catagoryData.map((category) => (
-                    <Option key={category.id} value={{
-                        serviceName: category.serviceName,
-                        priceInEuroWithoutVAT: category.priceInEuroWithoutVAT
-                    }} className="text-black">
+                    <Option key={category.id} value={category} className="text-black">
                         {`${category.serviceName} - ${category.priceInEuroWithoutVAT}€`}
                     </Option>
                 ))}
