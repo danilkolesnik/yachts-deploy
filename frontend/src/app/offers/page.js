@@ -301,6 +301,9 @@ const OfferPage = () => {
                 description: formData.comment || ''
             };
 
+            console.log('Form Data:', formData);
+            console.log('Offer Data being sent:', offerData);
+
             if (editMode) {
                 await axios.put(`${URL}/offer/update/${editId}`, offerData, {
                     headers: {
@@ -427,6 +430,7 @@ const OfferPage = () => {
     };
 
     const handleSelectChange = (value, name) => {
+        console.log('Select Change:', { name, value });
         setFormData({ ...formData, [name]: value });
     };
 

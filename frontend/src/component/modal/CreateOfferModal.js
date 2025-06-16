@@ -75,7 +75,10 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
                     serviceName: formData.services.serviceName,
                     priceInEuroWithoutVAT: formData.services.priceInEuroWithoutVAT
                 } : null}
-                onChange={(value) => handleSelectChange(value, 'services')}
+                onChange={(value) => {
+                    console.log('Services Select onChange:', value);
+                    handleSelectChange(value, 'services');
+                }}
                 required
                 className="text-black"
                 labelProps={{ className: "text-black" }}
