@@ -32,6 +32,12 @@ export class offer {
   @Column({ default: 'pending' })
   status: string;
 
+  @Column('json', { default: [] })
+  services: { serviceName: string; priceInEuroWithoutVAT: number }[];
+
+  @Column('json', { default: [] })
+  parts: { partName: string; quantity: number }[];
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
