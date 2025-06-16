@@ -27,7 +27,7 @@ export class OfferController {
     return this.offerService.update(id, updateOfferDto);
   }
 
-  @Delete(':id')
+  @Post('delete/:id')
   remove(@Param('id') id: string) {
     return this.offerService.remove(id);
   }
