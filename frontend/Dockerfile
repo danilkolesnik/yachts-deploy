@@ -1,5 +1,5 @@
 # Используем официальный образ Node.js
-FROM node:18
+FROM node:20-alpine
 
 # Устанавливаем рабочую директорию
 WORKDIR /app
@@ -15,6 +15,9 @@ COPY . .
 
 # Собираем проект Next.js
 RUN npm run build
+
+# Открываем порт
+EXPOSE 3000
 
 # Запускаем Next.js в продакшн-режиме
 CMD ["npm", "start"]
