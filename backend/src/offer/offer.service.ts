@@ -17,10 +17,10 @@ export class OfferService {
 
   async create(createOfferDto: CreateOfferDto) {
     try {
-      console.log(createOfferDto);
       const newOffer = this.offerRepository.create(createOfferDto);
       const savedOffer = await this.offerRepository.save(newOffer);
 
+      console.log(savedOffer);
       return {
         code: 201,
         data: savedOffer,
@@ -109,7 +109,7 @@ export class OfferService {
         code: 200,
         data: updatedOffer,
       };
-    } catch (error) {
+    } catch (error) {   
       return {
         code: 500,
         message: error.message,
