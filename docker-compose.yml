@@ -51,15 +51,17 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345678
       POSTGRES_DB: yachts
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d yachts"]
+      interval: 10s
       timeout: 5s
-      retries: 5
-    user: "999:999"
+      retries: 10
+      start_period: 30s
+    command: postgres -c 'max_connections=1000'
 
 volumes:
   postgres_data:
