@@ -287,11 +287,29 @@ const OfferPage = () => {
         e.preventDefault();
         setLoadingCreateOffer(true);
         try {
-            const offerData = { ...formData, userId: id };
+            const token = localStorage.getItem('token');
+            const offerData = { 
+                ...formData, 
+                userId: id,
+                customerId: id,
+                services: formData.services ? [formData.services] : [],
+                parts: formData.parts || [],
+                price: 0,
+                description: formData.comment || ''
+            };
+
             if (editMode) {
-                await axios.put(`${URL}/offer/update/${editId}`, offerData);
+                await axios.put(`${URL}/offer/update/${editId}`, offerData, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
             } else {
-                await axios.post(`${URL}/offer/create`, offerData);
+                await axios.post(`${URL}/offer/create`, offerData, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
                 setFormData({
                     customerFullName: '',
                     yachtName: '',
@@ -313,8 +331,7 @@ const OfferPage = () => {
             setEditId(null);
             setLoadingCreateOffer(false);
         } catch (error) {
-            console.error(error);
-        } finally {
+            console.error('Error creating offer:', error);
             setLoadingCreateOffer(false);
         }
     };
