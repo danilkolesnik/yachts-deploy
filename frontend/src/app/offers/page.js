@@ -305,7 +305,7 @@ const OfferPage = () => {
                     }
                 });
             } else {
-                await axios.post(`${URL}/offer/create`, offerData, {
+                await axios.post(`${URL}/offer`, offerData, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
