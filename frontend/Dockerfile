@@ -20,4 +20,4 @@ RUN npm run build
 EXPOSE 3000
 
 # Запускаем Next.js в продакшн-режиме
-CMD ["npm", "start"]
+CMD ["npm", "run", "start"]

@@ -33,7 +33,7 @@ RUN npm install
 COPY . .
 
 # Собираем приложение
-RUN nest build
+RUN npm run build
 
 COPY src/database/init.sql /docker-entrypoint-initdb.d/
 
