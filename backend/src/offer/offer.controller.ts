@@ -19,7 +19,7 @@ export class OfferController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.offerService.findOne(id);
+    return this.offerService.getOfferById(id);
   }
 
   @Patch(':id')
@@ -29,6 +29,6 @@ export class OfferController {
 
   @Post('delete/:id')
   remove(@Param('id') id: string) {
-    return this.offerService.remove(id);
+    return this.offerService.delete(id);
   }
 }
