@@ -248,7 +248,8 @@ export class OrderService {
             warehouseId: String(part.value),
             action: 'write-off',
             data: {
-              name: part.partName,
+              //@ts-expect-error: label property exists in runtime data
+              name: part.label,
               quantity: part.quantity,
             },
           });
