@@ -27,10 +27,15 @@ const WarehouseHistoryPage = () => {
             sortable: true,
         },
         {
-            name: 'Country Code',
-            selector: row => row.data.countryCode,
+            name: 'Quantity',
+            selector: row => row.data.quantity,
             sortable: true,
         },
+        {
+            name: 'Price per unit',
+            selector: row => row.data.pricePerUnit,
+            sortable: true,
+        }
     ];
 
     const getData = async () => {

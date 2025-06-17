@@ -251,6 +251,8 @@ export class OrderService {
               //@ts-expect-error: label property exists in runtime data
               name: part.label,
               quantity: part.quantity,
+              //@ts-expect-error: pricePerUnit property exists in runtime data
+              pricePerUnit: part.pricePerUnit,
             },
           });
           await this.warehouseHistoryRepository.save(warehouseHistory);
