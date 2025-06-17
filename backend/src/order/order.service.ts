@@ -242,7 +242,7 @@ export class OrderService {
         for (const part of parts) {
           const warehouseHistory = this.warehouseHistoryRepository.create({
             warehouseId: part.id,
-            action: 'update',
+            action: 'write-off',
             data: part,
           });
           await this.warehouseHistoryRepository.save(warehouseHistory);

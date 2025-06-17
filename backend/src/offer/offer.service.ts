@@ -209,7 +209,7 @@ export class OfferService {
     try {
       const offers = await this.offerRepository.find({ 
         where: { 
-            status: In(['canceled', 'created'])
+            status: In(['canceled', 'confirmed'])
         },
         order: { createdAt: 'DESC' },
       });
