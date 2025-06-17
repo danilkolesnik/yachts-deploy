@@ -500,7 +500,7 @@ const OfferPage = () => {
         e.preventDefault();
         try {
             const offerData = { ...editFormData, userId: id };
-            await axios.put(`${URL}/offer/update/${editId}`, offerData);
+            await axios.put(`${URL}/offer/${editId}`, offerData);
             getData()
                 .then((res) => {
                     setData(res);
