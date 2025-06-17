@@ -229,6 +229,8 @@ export class OrderService {
         const subject = 'Invoice created';
         const message = '<p>Invoice created. Please find the attached PDF.</p>';
 
+        offer.status = 'confirmed';
+        await this.offerRepository.save(offer);
        
         const partIds = offer.parts.map(part => part.partName);
 
