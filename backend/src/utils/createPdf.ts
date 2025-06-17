@@ -30,15 +30,15 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
 
 
     const totalPrice = data.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0);
-    const totalPriceServices = Number(data.services?.[0]?.priceInEuroWithoutVAT);
-    const totalPriceAllServices = Number(data.services?.[0]?.priceInEuroWithoutVAT);
+    const totalPriceServices = Number(data.services?.priceInEuroWithoutVAT);
+    const totalPriceAllServices = Number(data.services?.priceInEuroWithoutVAT);
 
     const createdAt = new Date();
     const createdAtString = isNaN(createdAt.getTime()) ? 'Invalid Date' : createdAt.toLocaleString();
 
     const totalPriceAll = totalPrice + totalPriceServices;
-    const totalPriceInvoiceServices = Number(data.offer?.services?.[0]?.priceInEuroWithoutVAT) + Number(data.offer?.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0));
-    const totalPriceInvoiceServicesTwo = Number(data.offer?.services?.[0]?.priceInEuroWithoutVAT) + Number(data.offer?.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0));
+    const totalPriceInvoiceServices = Number(data.offer?.services?.priceInEuroWithoutVAT) + Number(data.offer?.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0));
+    const totalPriceInvoiceServicesTwo = Number(data.offer?.services?.priceInEuroWithoutVAT) + Number(data.offer?.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0));
     const idService = Math.floor(Math.random() * 1000000);
 
     const totalPriceTax = totalPriceInvoiceServices * 0.25;
@@ -53,24 +53,24 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       .replace('{{yachtModelOffer}}', String(data.offer?.yachtModel))
       .replace('{{yachtNameOffer}}', String(data.offer?.yachtName))
       .replace('{{countryCode}}', String(data.countryCode))
-      .replace('{{serviceName}}', String(data.services?.[0]?.serviceName))
-      .replace('{{serviceDescription}}', String(data.services?.[0]?.description))
+      .replace('{{serviceName}}', String(data.services?.serviceName))
+      .replace('{{serviceDescription}}', String(data.services?.description))
       .replace('{{status}}', String(data.status))
       .replace('{{createdAt}}', createdAtString)
       .replace('{{partsTableRows}}', String(partsTableRows))
       .replace('{{invoiceTableRows}}', String(invoiceTableRows))
       .replace('{{totalPrice}}', String(totalPrice))
-      .replace('{{seriveName}}', String(data.services?.[0]?.serviceName))
-      .replace('{{servicePrice}}', String(data.services?.[0]?.priceInEuroWithoutVAT))
+      .replace('{{seriveName}}', String(data.services?.serviceName))
+      .replace('{{servicePrice}}', String(data.services?.priceInEuroWithoutVAT))
       .replace('{{serviceQuantity}}', String(1))
       .replace('{{totalPriceServices}}', String(totalPriceServices))
       .replace('{{totalPriceAll}}', String(totalPriceAll))
       .replace('{{totalPriceAllServices}}', String(totalPriceAllServices))
       .replace('{{orderId}}', String(data.id))
       .replace('{{offerIdInvoice}}', String(data.offer?.id))
-      .replace('{{seriveNameInvoice}}', String(data.offer?.services?.[0]?.serviceName))
-      .replace('{{servicePriceInvoice}}', String(data.offer?.services?.[0]?.priceInEuroWithoutVAT))
-      .replace('{{totalPriceInvoiceServices}}', String(data.offer?.services?.[0]?.priceInEuroWithoutVAT))
+      .replace('{{seriveNameInvoice}}', String(data.offer?.services?.serviceName))
+      .replace('{{servicePriceInvoice}}', String(data.offer?.services?.priceInEuroWithoutVAT))
+      .replace('{{totalPriceInvoiceServices}}', String(data.offer?.services?.priceInEuroWithoutVAT))
       .replace('{{serviceQuantityInvoice}}', String(1))
       .replace('{{idService}}', String(idService))
       .replace('{{totalPriceInvoice}}', String(totalPriceInvoiceServices))
