@@ -140,8 +140,8 @@ const OfferPage = () => {
         {
             name: 'Service Category',
             selector: row => {
-                console.log(row.services);
-                row.services ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A'
+                console.log('Row services:', row.services);
+                return row.services ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A';
             },
             sortable: true,
         },
