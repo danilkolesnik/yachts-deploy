@@ -36,6 +36,10 @@ services:
     restart: always
     volumes:
       - uploads_data:/app/uploads
+    command: >
+      sh -c "mkdir -p /app/uploads/image /app/uploads/video /app/uploads/logo &&
+             chmod -R 777 /app/uploads &&
+             npm run start"
 
   db:
     image: postgres:15
