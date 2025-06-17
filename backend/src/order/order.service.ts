@@ -275,6 +275,11 @@ export class OrderService {
     return url.replace(/([^:]\/)\/+/g, "$1");
   }
 
+  private getPublicUrl(filename: string, isImage: boolean): string {
+    const folder = isImage ? 'image' : 'video';
+    return this.normalizeUrl(`${process.env.SERVER_URL}/uploads/${folder}/${filename}`);
+  }
+
   async uploadFileToOrder(orderId: string, file: Express.Multer.File, tab: string): Promise<any> {
     if (!file) {
       return { message: 'Файл не загружен.' };
@@ -295,7 +300,8 @@ export class OrderService {
       folder = '/app/uploads/video';
     }
 
-    const fileUrl = this.normalizeUrl(`${process.env.SERVER_URL}/uploads/${isImage ? 'image' : 'video'}/${file.filename}`);
+    // Используем новый метод для получения публичного URL
+    const fileUrl = this.getPublicUrl(file.filename, isImage);
     
     if (tab === 'process') {
       if (isImage) {
@@ -333,7 +339,7 @@ export class OrderService {
       code: 200, 
       file: {
         ...newFile,
-        url: fileUrl // Добавляем URL в ответ
+        url: fileUrl
       }
     };
   }

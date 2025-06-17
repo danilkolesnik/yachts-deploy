@@ -22,6 +22,11 @@ export class UploadController {
     return url.replace(/([^:]\/)\/+/g, "$1");
   }
 
+  private getPublicUrl(filename: string, isImage: boolean): string {
+    const folder = isImage ? 'image' : 'video';
+    return this.normalizeUrl(`${process.env.SERVER_URL}/uploads/${folder}/${filename}`);
+  }
+
 @Post('delete')
 async deleteFile(@Body() body: { url: string; offerId: string }) {
   const { url, offerId } = body;
@@ -95,16 +100,9 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
 
     const isImage = file.mimetype.startsWith('image/');
     const isVideo = file.mimetype.startsWith('video/');
-    let folder = 'image'; 
 
-    if (isImage) {
-      folder = 'image';
-    } else if (isVideo) {
-      folder = 'video';
-    }
-
-    // Construct URL using the serveRoot path and normalize it
-    const fileUrl = this.normalizeUrl(`${process.env.SERVER_URL}/uploads/${folder}/${file.filename}`);
+    // Используем новый метод для получения публичного URL
+    const fileUrl = this.getPublicUrl(file.filename, isImage);
 
     if (isImage) {
       offer.imageUrls = offer.imageUrls ? [...offer.imageUrls, fileUrl] : [fileUrl];
@@ -128,7 +126,7 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
       code: 200, 
       file: {
         ...newFile,
-        url: fileUrl // Добавляем URL в ответ
+        url: fileUrl
       }
     };
   }
@@ -140,7 +138,8 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
       return { message: 'Файл не найден.' };
     }
 
-    const fileUrl = this.normalizeUrl(`${process.env.SERVER_URL}/uploads/${file.filename}`);
+    const isImage = file.mimetype.startsWith('image/');
+    const fileUrl = this.getPublicUrl(file.filename, isImage);
 
     return {
       id: file.id,
