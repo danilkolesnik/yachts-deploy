@@ -134,7 +134,7 @@ const OfferPage = () => {
                 padding: '5px 10px',
                 borderRadius: '5px'
             }}>
-                {row.status}
+                {row.status} 
             </span>
         ) },
         {
@@ -271,7 +271,7 @@ const OfferPage = () => {
                 inventory: '',
                 comment: '',
                 countryCode: '',
-                serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
+                serviceCategory: [{ serviceName: '', priceInEuroWithoutVAT: '' }],
                 pricePerUnit: ''
             });
             
@@ -421,7 +421,7 @@ const OfferPage = () => {
             inventory: '',
             comment: '',
             countryCode: '',
-            serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' }
+            serviceCategory: [{ serviceName: '', priceInEuroWithoutVAT: '' }]
         });
     };
 
