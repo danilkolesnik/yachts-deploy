@@ -8,6 +8,7 @@ import { users } from 'src/auth/entities/users.entity';
 import { order } from './entities/order.entity';
 import { File } from 'src/upload/entities/file.entity';
 import { OrderTimer } from './entities/order-timer.entity';
+import { warehouse } from 'src/warehouse/entities/warehouse.entity';
 import { sendEmail } from 'src/utils/sendEmail';
 import getBearerToken from 'src/methods/getBearerToken';
 
@@ -25,6 +26,8 @@ export class OrderService {
     private readonly usersRepository: Repository<users>,
     @InjectRepository(order)
     private readonly orderRepository: Repository<order>,
+    @InjectRepository(warehouse)
+    private readonly warehouseRepository: Repository<warehouse>,
     @InjectRepository(File)
     private readonly fileRepository: Repository<File>,
     @InjectRepository(OrderTimer)
@@ -225,7 +228,22 @@ export class OrderService {
       if(newStatus === 'completed'){
         const subject = 'Invoice created';
         const message = '<p>Invoice created. Please find the attached PDF.</p>';
-        
+
+       
+        const partIds = offer.parts.map(part => part.partName);
+
+        const parts = await this.warehouseRepository.find({ where: { id: In(partIds) } });
+
+        for (const part of parts) {
+        //@ts-expect-error: value property exists in runtime data
+        const partData = offer.parts.find(p => p.value === part.id);
+        if (part && partData) {
+         //@ts-expect-error: Assuming 'quantity' exists on 'part' for mapping IDs
+          part.quantity = (parseInt(part.quantity, 10) || 0) - 1; 
+          await this.warehouseRepository.save(part);
+          }
+        }
+
         await sendEmail(customer.email, orderData, 'Invoice', subject,message);
       }
 

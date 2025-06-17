@@ -49,20 +49,20 @@ export class OfferService {
 
       const generateId = generateRandomId();
 
-      //@ts-expect-error: value property exists in runtime data
-      const partIds = data.parts.map(part => part.value);
+      // //@ts-expect-error: value property exists in runtime data
+      // const partIds = data.parts.map(part => part.value);
 
-      const parts = await this.warehouseRepository.find({ where: { id: In(partIds as string[]) } });
+      // const parts = await this.warehouseRepository.find({ where: { id: In(partIds as string[]) } });
 
-      for (const part of parts) {
-        //@ts-expect-error: value property exists in runtime data
-        const partData = data.parts.find(p => p.value === part.id);
-        if (part && partData) {
-         //@ts-expect-error: Assuming 'quantity' exists on 'part' for mapping IDs
-          part.quantity = (parseInt(part.quantity, 10) || 0) - 1; 
-          await this.warehouseRepository.save(part);
-        }
-      }
+      // for (const part of parts) {
+      //   //@ts-expect-error: value property exists in runtime data
+      //   const partData = data.parts.find(p => p.value === part.id);
+      //   if (part && partData) {
+      //    //@ts-expect-error: Assuming 'quantity' exists on 'part' for mapping IDs
+      //     part.quantity = (parseInt(part.quantity, 10) || 0) - 1; 
+      //     await this.warehouseRepository.save(part);
+      //   }
+      // }
 
   
       const result = await this.offerRepository.save(

@@ -7,10 +7,11 @@ import { users } from 'src/auth/entities/users.entity';
 import { order } from './entities/order.entity';
 import { File } from 'src/upload/entities/file.entity';
 import { OrderTimer } from './entities/order-timer.entity';
+import { warehouse } from 'src/warehouse/entities/warehouse.entity';
 
 @Module({
   imports:[
-    TypeOrmModule.forFeature([offer,users,order,File,OrderTimer]),
+    TypeOrmModule.forFeature([offer,users,order,File,OrderTimer,warehouse]),
   ],
   controllers: [OrderController],
   providers: [OrderService]
