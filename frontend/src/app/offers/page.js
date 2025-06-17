@@ -303,7 +303,7 @@ const OfferPage = () => {
 
             if (editMode) {
                 console.log('Sending PUT request with data:', JSON.stringify(offerData));
-                await axios.put(`${URL}/offer/update/${editId}`, offerData, {
+                await axios.put(`${URL}/offer/${editId}`, offerData, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
