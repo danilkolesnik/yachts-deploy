@@ -18,8 +18,8 @@ export class OfferController {
   }
 
   @Get('canceled')
-  getCanceledOffers(@Req() req: Request) {
-    return this.offerService.getCanceledOffers(req);
+  getCanceledOffers() {
+    return this.offerService.getCanceledOffers();
   }
 
   @Get(':id')

@@ -205,13 +205,10 @@ export class OfferService {
     }
   }
 
-  async getCanceledOffers(req: Request) {
+  async getCanceledOffers() {
     try {
-      const token = getBearerToken(req);
-      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
       const offers = await this.offerRepository.find({ 
         where: { 
-          customerId: login.id, 
           status: 'canceled'
         },
         order: { createdAt: 'DESC' },
