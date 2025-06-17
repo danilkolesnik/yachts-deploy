@@ -17,6 +17,11 @@ export class OfferController {
     return this.offerService.findAll(req);
   }
 
+  @Get('canceled')
+  getCanceledOffers(@Req() req: Request) {
+    return this.offerService.getCanceledOffers(req);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.offerService.getOfferById(id);

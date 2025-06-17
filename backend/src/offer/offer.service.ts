@@ -173,12 +173,22 @@ export class OfferService {
       
       if (login.role === 'user') {
         offers = await this.offerRepository.find({
-          where: { customerId: login.id },
-          order: { createdAt: 'DESC' },
+          where: { 
+            customerId: login.id,
+            status: 'created'
+          },
+          order: { 
+            createdAt: 'DESC'
+          },
         });
       } else {
         offers = await this.offerRepository.find({
-          order: { createdAt: 'DESC' },
+          where: {
+            status: 'created'
+          },
+          order: { 
+            createdAt: 'DESC'
+          },
         });
       }
   
@@ -190,6 +200,30 @@ export class OfferService {
       return {
         code: 500,
         message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
+  async getCanceledOffers(req: Request) {
+    try {
+      const token = getBearerToken(req);
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+      const offers = await this.offerRepository.find({ 
+        where: { 
+          customerId: login.id, 
+          status: In(['confirmed', 'created'])
+        },
+        order: { createdAt: 'DESC' },
+      });
+      return {
+        code: 200,
+        data: offers,
+      };
+    } catch (err) {
+      console.log(err);
+      return {
+        code: 500,
+        message:'Internal server error',
       };
     }
   }
