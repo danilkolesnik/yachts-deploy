@@ -30,8 +30,8 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
 
 
     const totalPrice = data.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0);
-    const totalPriceServices = Number(data.services?.priceInEuroWithoutVAT);
-    const totalPriceAllServices = Number(data.services?.priceInEuroWithoutVAT);
+    const totalPriceServices = Number(data.offer?.services?.priceInEuroWithoutVAT);
+    const totalPriceAllServices = Number(data.offer?.services?.priceInEuroWithoutVAT);
 
     const createdAt = new Date();
     const createdAtString = isNaN(createdAt.getTime()) ? 'Invalid Date' : createdAt.toLocaleString();
@@ -53,8 +53,8 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       .replace('{{yachtModelOffer}}', String(data.offer?.yachtModel))
       .replace('{{yachtNameOffer}}', String(data.offer?.yachtName))
       .replace('{{countryCode}}', String(data.countryCode))
-      .replace('{{serviceName}}', String(data.services?.serviceName))
-      .replace('{{serviceDescription}}', String(data.services?.description))
+      .replace('{{serviceName}}', String(data.offer?.services?.serviceName))
+      .replace('{{serviceDescription}}', String(data.offer?.services?.description))
       .replace('{{status}}', String(data.status))
       .replace('{{createdAt}}', createdAtString)
       .replace('{{partsTableRows}}', String(partsTableRows))
