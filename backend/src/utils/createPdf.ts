@@ -37,8 +37,8 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
     const createdAtString = isNaN(createdAt.getTime()) ? 'Invalid Date' : createdAt.toLocaleString();
 
     const totalPriceAll = totalPrice + totalPriceServices;
-    const totalPriceInvoiceServices = Number(data.offer?.services?.priceInEuroWithoutVAT) + Number(data.offer?.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0));
-    const totalPriceInvoiceServicesTwo = Number(data.offer?.services?.priceInEuroWithoutVAT) + Number(data.offer?.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0));
+    const totalPriceInvoiceServices = Number(data.offer?.services?.[0]?.priceInEuroWithoutVAT) + Number(data.offer?.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0));
+    const totalPriceInvoiceServicesTwo = Number(data.offer?.services?.[0]?.priceInEuroWithoutVAT) + Number(data.offer?.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0));
     const idService = Math.floor(Math.random() * 1000000);
 
     const totalPriceTax = totalPriceInvoiceServices * 0.25;
@@ -68,9 +68,9 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       .replace('{{totalPriceAllServices}}', String(totalPriceAllServices))
       .replace('{{orderId}}', String(data.id))
       .replace('{{offerIdInvoice}}', String(data.offer?.id))
-      .replace('{{seriveNameInvoice}}', String(data.offer?.services?.serviceName))
-      .replace('{{servicePriceInvoice}}', String(data.offer?.services?.priceInEuroWithoutVAT))
-      .replace('{{totalPriceInvoiceServices}}', String(data.offer?.services?.priceInEuroWithoutVAT))
+      .replace('{{seriveNameInvoice}}', String(data.offer?.services?.[0]?.serviceName))
+      .replace('{{servicePriceInvoice}}', String(data.offer?.services?.[0]?.priceInEuroWithoutVAT))
+      .replace('{{totalPriceInvoiceServices}}', String(data.offer?.services?.[0]?.priceInEuroWithoutVAT))
       .replace('{{serviceQuantityInvoice}}', String(1))
       .replace('{{idService}}', String(idService))
       .replace('{{totalPriceInvoice}}', String(totalPriceInvoiceServices))
