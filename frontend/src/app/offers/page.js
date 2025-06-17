@@ -139,7 +139,10 @@ const OfferPage = () => {
         ) },
         {
             name: 'Service Category',
-            selector: row => row.services ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A',
+            selector: row => {
+                console.log(row.services);
+                row.services ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A'
+            },
             sortable: true,
         },
         {
