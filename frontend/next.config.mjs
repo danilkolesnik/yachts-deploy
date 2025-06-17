@@ -10,7 +10,16 @@ const nextConfig = {
         ];
       },
       images: {
-        domains: ['localhost', '116.203.198.150'],
+        remotePatterns: [
+          {
+            protocol: 'http',
+            hostname: 'localhost',
+          },
+          {
+            protocol: 'http',
+            hostname: '116.203.198.150',
+          }
+        ],
       },
 };
 

@@ -17,10 +17,16 @@ const OfferDetail = ({ params }) => {
     const [offer, setOffer] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
-    const [role, setRole] = useState(localStorage.getItem('role'));
+    const [role, setRole] = useState(null);
     const [showGallery, setShowGallery] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const router = useRouter();
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setRole(localStorage.getItem('role'));
+        }
+    }, []);
 
     useEffect(() => {
         if (id) {
