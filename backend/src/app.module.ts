@@ -42,6 +42,7 @@ const createUploadDirectories = () => {
   });
 };
 
+// Ensure upload directories exist at app startup
 createUploadDirectories();
 
 @Module({

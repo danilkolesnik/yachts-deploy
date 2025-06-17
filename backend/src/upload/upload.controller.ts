@@ -119,7 +119,15 @@ export class UploadController {
         folder = path.join(__dirname, '..', '..', 'uploads', 'video');
       }
 
-      const fileUrl = `${process.env.SERVER_URL}/${folder}/${file.filename}`;
+      let urlPath = '';
+      if (isImage) {
+        urlPath = `/uploads/image/${file.filename}`;
+      } else if (isVideo) {
+        urlPath = `/uploads/video/${file.filename}`;
+      } else {
+        urlPath = `/uploads/${file.filename}`;
+      }
+      const fileUrl = `${process.env.SERVER_URL}${urlPath}`;
 
       if (isImage) {
         offer.imageUrls = offer.imageUrls ? [...offer.imageUrls, fileUrl] : [fileUrl];
