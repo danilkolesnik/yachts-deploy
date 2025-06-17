@@ -242,12 +242,13 @@ export class OrderService {
         const parts = await this.warehouseRepository.find({ where: { id: In(partIds) } });
         console.log('Found parts in warehouse:', parts);
 
-        for (const part of parts) {
+        for (const part of offer.parts) {
           const warehouseHistory = this.warehouseHistoryRepository.create({
-            warehouseId: part.id,
+            //@ts-expect-error: value property exists in runtime data
+            warehouseId: String(part.value),
             action: 'write-off',
             data: {
-              name: part.name,
+              name: part.partName,
               quantity: part.quantity,
             },
           });
