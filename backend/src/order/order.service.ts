@@ -270,6 +270,11 @@ export class OrderService {
     }
   }
 
+  private normalizeUrl(url: string): string {
+    // Удаляем двойные слеши, кроме http(s)://
+    return url.replace(/([^:]\/)\/+/g, "$1");
+  }
+
   async uploadFileToOrder(orderId: string, file: Express.Multer.File, tab: string): Promise<any> {
     if (!file) {
       return { message: 'Файл не загружен.' };
@@ -290,7 +295,7 @@ export class OrderService {
       folder = '/app/uploads/video';
     }
 
-    const fileUrl = `${process.env.SERVER_URL}/uploads/${isImage ? 'image' : 'video'}/${file.filename}`.replace(/([^:]\/)\/+/g, "$1");
+    const fileUrl = this.normalizeUrl(`${process.env.SERVER_URL}/uploads/${isImage ? 'image' : 'video'}/${file.filename}`);
     
     if (tab === 'process') {
       if (isImage) {
@@ -323,7 +328,14 @@ export class OrderService {
 
     await this.fileRepository.save(newFile);
 
-    return { message: 'Файл успешно загружен.', code: 200, file: newFile };
+    return { 
+      message: 'Файл успешно загружен.', 
+      code: 200, 
+      file: {
+        ...newFile,
+        url: fileUrl // Добавляем URL в ответ
+      }
+    };
   }
 
   async deleteFileFromOrder(orderId: string, fileUrl: string, tab: string): Promise<{ message: string; code: number }> {

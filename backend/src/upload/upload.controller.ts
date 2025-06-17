@@ -17,6 +17,11 @@ export class UploadController {
     private readonly offerRepository: Repository<offer>,
   ) {}
 
+  private normalizeUrl(url: string): string {
+    // Удаляем двойные слеши, кроме http(s)://
+    return url.replace(/([^:]\/)\/+/g, "$1");
+  }
+
 @Post('delete')
 async deleteFile(@Body() body: { url: string; offerId: string }) {
   const { url, offerId } = body;
@@ -98,8 +103,8 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
       folder = 'video';
     }
 
-    // Construct URL using the serveRoot path
-    const fileUrl = `${process.env.SERVER_URL}/uploads/${folder}/${file.filename}`.replace(/([^:]\/)\/+/g, "$1");
+    // Construct URL using the serveRoot path and normalize it
+    const fileUrl = this.normalizeUrl(`${process.env.SERVER_URL}/uploads/${folder}/${file.filename}`);
 
     if (isImage) {
       offer.imageUrls = offer.imageUrls ? [...offer.imageUrls, fileUrl] : [fileUrl];
@@ -118,7 +123,14 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
 
     await this.fileRepository.save(newFile);
 
-    return { message: 'Файл успешно загружен.', code: 200, file: newFile };
+    return { 
+      message: 'Файл успешно загружен.', 
+      code: 200, 
+      file: {
+        ...newFile,
+        url: fileUrl // Добавляем URL в ответ
+      }
+    };
   }
 
   @Get(':id')
@@ -128,7 +140,7 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
       return { message: 'Файл не найден.' };
     }
 
-    const fileUrl = `${process.env.SERVER_URL}/uploads/${file.filename}`.replace(/([^:]\/)\/+/g, "$1");
+    const fileUrl = this.normalizeUrl(`${process.env.SERVER_URL}/uploads/${file.filename}`);
 
     return {
       id: file.id,
