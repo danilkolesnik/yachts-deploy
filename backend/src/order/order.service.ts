@@ -246,7 +246,10 @@ export class OrderService {
           const warehouseHistory = this.warehouseHistoryRepository.create({
             warehouseId: part.id,
             action: 'write-off',
-            data: part,
+            data: {
+              name: part.name,
+              quantity: part.quantity,
+            },
           });
           await this.warehouseHistoryRepository.save(warehouseHistory);
           console.log('Created warehouse history:', warehouseHistory);
