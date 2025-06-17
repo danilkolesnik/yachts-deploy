@@ -236,8 +236,10 @@ export class OrderService {
         await this.offerRepository.save(offer);
        
         const partIds = offer.parts.map(part => part.partName);
+        console.log('Part IDs to update:', partIds);
 
         const parts = await this.warehouseRepository.find({ where: { id: In(partIds) } });
+        console.log('Found parts in warehouse:', parts);
 
         for (const part of parts) {
           const warehouseHistory = this.warehouseHistoryRepository.create({
@@ -246,15 +248,19 @@ export class OrderService {
             data: part,
           });
           await this.warehouseHistoryRepository.save(warehouseHistory);
+          console.log('Created warehouse history:', warehouseHistory);
         }
 
         for (const part of parts) {
-        //@ts-expect-error: value property exists in runtime data
-        const partData = offer.parts.find(p => p.value === part.id);
-        if (part && partData) {
-         //@ts-expect-error: Assuming 'quantity' exists on 'part' for mapping IDs
-          part.quantity = (parseInt(part.quantity, 10) || 0) - 1; 
-          await this.warehouseRepository.save(part);
+          const partData = offer.parts.find(p => p.partName === part.id);
+          console.log('Current part data:', part);
+          console.log('Matching offer part:', partData);
+          
+          if (part && partData) {
+            const oldQuantity = part.quantity;
+            part.quantity = ((parseInt(part.quantity, 10) || 0) - 1).toString();
+            await this.warehouseRepository.save(part);
+            console.log(`Updated part quantity: ${oldQuantity} -> ${part.quantity}`);
           }
         }
 
