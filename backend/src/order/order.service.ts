@@ -243,6 +243,9 @@ export class OrderService {
         console.log('Found parts in warehouse:', parts);
 
         for (const part of offer.parts) {
+          //@ts-expect-error: value property exists in runtime data
+          const warehouse = await this.warehouseRepository.findOne({ where: { id: String(part.value) } });
+
           const warehouseHistory = this.warehouseHistoryRepository.create({
             //@ts-expect-error: value property exists in runtime data
             warehouseId: String(part.value),
@@ -252,7 +255,7 @@ export class OrderService {
               name: part.label,
               quantity: part.quantity,
               //@ts-expect-error: pricePerUnit property exists in runtime data
-              pricePerUnit: part.pricePerUnit,
+              pricePerUnit: warehouse.pricePerUnit,
             },
           });
           await this.warehouseHistoryRepository.save(warehouseHistory);

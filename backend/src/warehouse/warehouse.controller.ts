@@ -32,6 +32,11 @@ export class WarehouseController {
         return this.warehouseService.findAll();
     }
 
+    @Get(':id')
+    async getWarehouseById(@Param('id') id: string) {
+        return this.warehouseService.getWarehouseById(id);
+    }
+
     @Get('history/:id')
     async getWarehouseHistory(@Param('id') id: string) {
         return this.warehouseService.getHistory(id);

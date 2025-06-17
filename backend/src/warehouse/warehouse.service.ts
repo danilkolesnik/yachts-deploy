@@ -166,6 +166,14 @@ export class WarehouseService {
         }
     }
 
+    async getWarehouseById(id: string) {
+        const warehouse = await this.warehouseModule.findOne({ where: { id } });
+        return {
+            code: 200,
+            data: warehouse,
+        };
+    }
+
     async getInStock() {
         const warehouses = await this.warehouseModule.find({ where: { quantity: Not('0') } });
         return {
