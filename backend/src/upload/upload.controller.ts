@@ -1,7 +1,7 @@
 import { Controller, Post, UploadedFile, UseInterceptors, Param, Get, Body } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { File } from './entities/file.entity';
@@ -61,12 +61,12 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
       destination: (req, file, callback) => {
         const isImage = file.mimetype.startsWith('image/');
         const isVideo = file.mimetype.startsWith('video/');
-        let folder = './uploads'; 
+        let folder = '/app/uploads'; 
 
         if (isImage) {
-          folder = './uploads/image';
+          folder = '/app/uploads/image';
         } else if (isVideo) {
-          folder = './uploads/video';
+          folder = '/app/uploads/video';
         }
 
         callback(null, folder);

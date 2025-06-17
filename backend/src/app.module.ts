@@ -49,17 +49,15 @@ createUploadDirectories();
   imports: [
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({isGlobal:true}),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+      serveStaticOptions: {
+        fallthrough: true
+      }
+    }),
     TypeOrmModule.forRootAsync({
-      imports:[
-        ConfigModule,
-        ServeStaticModule.forRoot({
-          rootPath: join(__dirname, '..', 'uploads'),
-          serveRoot: '/uploads',
-          serveStaticOptions: {
-            fallthrough: true
-          }
-        }),
-      ],
+      imports: [ConfigModule],
       useFactory:() =>({
         type:"postgres",
         host:process.env.DATABASE_HOST,
