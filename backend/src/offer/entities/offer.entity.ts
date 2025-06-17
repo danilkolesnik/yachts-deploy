@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, PrimaryColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, CreateDateColumn } from 'typeorm';
 
 @Entity()
 export class offer {
