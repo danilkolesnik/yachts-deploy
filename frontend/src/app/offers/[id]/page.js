@@ -53,7 +53,9 @@ const OfferDetail = ({ params }) => {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            const newFileUrl = `${URL}/${response.data.file.path.replace(/\\/g, '/')}`;
+            
+            const newFileUrl = response.data.file.url;
+            
             if (selectedFile.type.startsWith('video/')) {
                 setOffer((prevOffer) => ({
                     ...prevOffer,

@@ -65,7 +65,10 @@ const OrderDetail = ({ params }) => {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            const newFileUrl = `${URL}/${response.data.file.path.replace(/\\/g, '/')}`;
+            
+            // Используем URL из ответа сервера
+            const newFileUrl = response.data.file.url;
+            
             const isVideo = selectedFile.type.startsWith('video/');
             const key = isVideo ? `${tabName}VideoUrls` : `${tabName}ImageUrls`;
             setOrder((prevOrder) => ({
