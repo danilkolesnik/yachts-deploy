@@ -192,6 +192,7 @@ export class WarehouseService {
 
         try {
             const history = await this.warehouseHistoryRepository.find({ where: { warehouseId } });
+            console.log(history);
             return {
                 code: 200,
                 data: history,
