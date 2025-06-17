@@ -3,6 +3,7 @@ import * as path from 'path';
 import puppeteer from 'puppeteer';
 
 export async function createPdfBuffer(data: any, type: string): Promise<Buffer> {
+  console.log(data);
   try {
     const templatePath = path.join(process.cwd(), 'documents', `${type}.html`);
     let templateString = fs.readFileSync(templatePath, 'utf8');
