@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Put } from '@nestjs/common';
 import { OfferService } from './offer.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { Request } from 'express';
@@ -27,7 +27,7 @@ export class OfferController {
     return this.offerService.getOfferById(id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(@Param('id') id: string, @Body() updateOfferDto: CreateOfferDto) {
     return this.offerService.update(id, updateOfferDto);
   }
