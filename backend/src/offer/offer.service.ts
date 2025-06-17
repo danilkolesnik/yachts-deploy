@@ -150,6 +150,7 @@ export class OfferService {
       }
 
       const result = await this.offerRepository.save(updatedOffer);
+      console.log(result);
 
       return {
         code: 200,
@@ -211,7 +212,7 @@ export class OfferService {
       const offers = await this.offerRepository.find({ 
         where: { 
           customerId: login.id, 
-          status: In(['confirmed', 'created'])
+          status: In(['canceled', 'created'])
         },
         order: { createdAt: 'DESC' },
       });
