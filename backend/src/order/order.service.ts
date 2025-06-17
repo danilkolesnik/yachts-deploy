@@ -326,57 +326,40 @@ export class OrderService {
     return { message: 'Файл успешно загружен.', code: 200, file: newFile };
   }
 
-  async deleteFileFromOrder(orderId: string, fileUrl: string, tab: string): Promise<{ message: string; code: number; error?: string }> {
-    try {
-      const order = await this.orderRepository.findOne({ where: { id: orderId } });
-      if (!order) {
-        return { message: 'Order не найден.', code: 404 };
-      }
-
-      const filename = fileUrl.split('/').pop();
-      if (!filename) {
-        return { message: 'Некорректный URL.', code: 400 };
-      }
-
-      // Сначала обновляем URL в заказе
-      if (tab === 'process') {
-        order.processImageUrls = order.processImageUrls ? order.processImageUrls.filter(url => url !== fileUrl) : [];
-        order.processVideoUrls = order.processVideoUrls ? order.processVideoUrls.filter(url => url !== fileUrl) : [];
-      } else if (tab === 'result') {
-        order.resultImageUrls = order.resultImageUrls ? order.resultImageUrls.filter(url => url !== fileUrl) : [];
-        order.resultVideoUrls = order.resultVideoUrls ? order.resultVideoUrls.filter(url => url !== fileUrl) : [];
-      } else if (tab === 'tab') {
-        order.tabImageUrls = order.tabImageUrls ? order.tabImageUrls.filter(url => url !== fileUrl) : [];
-        order.tabVideoUrls = order.tabVideoUrls ? order.tabVideoUrls.filter(url => url !== fileUrl) : [];
-      }
-
-      // Сохраняем изменения в заказе
-      await this.orderRepository.save(order);
-
-      // Ищем файл в базе данных
-      const file = await this.fileRepository.findOne({ where: { filename, offerId: order.offerId } });
-      if (!file) {
-        return { message: 'Файл не найден в базе данных.', code: 404 };
-      }
-
-      // Проверяем существование файла
-      try {
-        await fs.promises.access(file.path);
-        // Пытаемся удалить файл
-        await unlink(file.path);
-      } catch (error) {
-        console.error('Ошибка при удалении файла:', error);
-        // Продолжаем удаление записи из БД даже если файл не найден или не удален
-      }
-
-      // Удаляем запись из базы данных
-      await this.fileRepository.delete(file.id);
-
-      return { message: 'Файл успешно удалён.', code: 200 };
-    } catch (error) {
-      console.error('Ошибка при удалении файла:', error);
-      return { message: 'Ошибка при удалении файла.', code: 500, error: error.message };
+  async deleteFileFromOrder(orderId: string, fileUrl: string, tab: string): Promise<{ message: string; code: number }> {
+    const order = await this.orderRepository.findOne({ where: { id: orderId } });
+    if (!order) {
+      return { message: 'Order не найден.', code: 404 };
     }
+
+  
+    const filename = fileUrl.split('/').pop();
+    if (!filename) {
+      return { message: 'Некорректный URL.', code: 400 };
+    }
+
+    const file = await this.fileRepository.findOne({ where: { filename, offerId: order.offerId } });
+    if (!file) {
+      return { message: 'Файл не найден.', code: 404 };
+    }
+
+    await unlink(file.path);
+    await this.fileRepository.delete(file.id);
+
+    if (tab === 'process') {
+      order.processImageUrls = order.processImageUrls ? order.processImageUrls.filter(url => url !== fileUrl) : [];
+      order.processVideoUrls = order.processVideoUrls ? order.processVideoUrls.filter(url => url !== fileUrl) : [];
+    } else if (tab === 'result') {
+      order.resultImageUrls = order.resultImageUrls ? order.resultImageUrls.filter(url => url !== fileUrl) : [];
+      order.resultVideoUrls = order.resultVideoUrls ? order.resultVideoUrls.filter(url => url !== fileUrl) : [];
+    } else if (tab === 'tab') {
+      order.tabImageUrls = order.tabImageUrls ? order.tabImageUrls.filter(url => url !== fileUrl) : [];
+      order.tabVideoUrls = order.tabVideoUrls ? order.tabVideoUrls.filter(url => url !== fileUrl) : [];
+    }
+
+    await this.orderRepository.save(order);
+
+    return { message: 'Файл успешно удалён.', code: 200 };
   }
 
   async startTimer(orderId: string, req: Request): Promise<OrderTimer> {
