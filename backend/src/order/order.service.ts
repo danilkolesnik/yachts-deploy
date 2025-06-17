@@ -282,15 +282,15 @@ export class OrderService {
 
     const isImage = file.mimetype.startsWith('image/');
     const isVideo = file.mimetype.startsWith('video/');
-    let folder = 'uploads'; 
+    let folder = '/app/uploads'; 
 
     if (isImage) {
-      folder = 'uploads/image';
+      folder = '/app/uploads/image';
     } else if (isVideo) {
-      folder = 'uploads/video';
+      folder = '/app/uploads/video';
     }
 
-    const fileUrl = `${process.env.SERVER_URL}/${folder}/${file.filename}`;
+    const fileUrl = `${process.env.SERVER_URL}/uploads/${isImage ? 'image' : 'video'}/${file.filename}`.replace(/([^:]\/)\/+/g, "$1");
     
     if (tab === 'process') {
       if (isImage) {
