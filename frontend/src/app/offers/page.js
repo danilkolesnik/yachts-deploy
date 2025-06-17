@@ -42,7 +42,7 @@ const OfferPage = () => {
         yachtModel: '',
         comment: '',
         countryCode: '',
-        services: [],
+        services: null,
         parts: [],
         status: 'created'
     });
@@ -80,7 +80,7 @@ const OfferPage = () => {
         yachtModel: '',
         comment: '',
         countryCode: '',
-        services: [],
+        services: null,
         parts: [],
         status: 'created'
     });
@@ -139,7 +139,7 @@ const OfferPage = () => {
         ) },
         {
             name: 'Service Category',
-            selector: row => `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€`,
+            selector: row => row.services ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A',
             sortable: true,
         },
         {
@@ -292,7 +292,7 @@ const OfferPage = () => {
                 ...formData, 
                 userId: id,
                 customerId: id,
-                services: formData.services ? [formData.services] : [],
+                services: formData.services || null,
                 parts: formData.parts || [],
                 price: 0,
                 description: formData.comment || ''
@@ -323,7 +323,7 @@ const OfferPage = () => {
                     yachtModel: '',
                     comment: '',
                     countryCode: '',
-                    services: [],
+                    services: null,
                     parts: [],
                     status: 'created'
                 });
@@ -557,7 +557,7 @@ const OfferPage = () => {
             'Yacht Model': row.yachtModel,
             'Boat Registration': row.countryCode,
             Status: row.status,
-            'Service Category': `${row.services?.serviceName || ''}, ${row.services?.priceInEuroWithoutVAT || ''}€`,
+            'Service Category': row.services ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A',
             Parts: Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : 'N/A'
         }));
         const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -714,7 +714,7 @@ const OfferPage = () => {
                                             <td>{row.yachtModel}</td>
                                             <td>{row.countryCode}</td>
                                             <td>{row.status}</td>
-                                            <td>{`${row.services?.serviceName || ''}, ${row.services?.priceInEuroWithoutVAT || ''}€`}</td>
+                                            <td>{row.services ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A'}</td>
                                             <td>{Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : 'N/A'}</td>
                                         </tr>
                                     ))}
