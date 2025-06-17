@@ -235,7 +235,7 @@ export class OrderService {
         offer.status = 'confirmed';
         await this.offerRepository.save(offer);
        
-        const partIds = offer.parts.map(part => part.partName);
+        const partIds = offer.parts.map(part => part.id);
         console.log('Part IDs to update:', partIds);
 
         const parts = await this.warehouseRepository.find({ where: { id: In(partIds) } });
@@ -252,7 +252,8 @@ export class OrderService {
         }
 
         for (const part of parts) {
-          const partData = offer.parts.find(p => p.partName === part.id);
+          //@ts-expect-error: value property exists in runtime data
+          const partData = offer.parts.find(p => p.value === part.id);
           console.log('Current part data:', part);
           console.log('Matching offer part:', partData);
           
