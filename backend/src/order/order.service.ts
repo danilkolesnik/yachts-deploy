@@ -9,6 +9,7 @@ import { order } from './entities/order.entity';
 import { File } from 'src/upload/entities/file.entity';
 import { OrderTimer } from './entities/order-timer.entity';
 import { warehouse } from 'src/warehouse/entities/warehouse.entity';
+import { WarehouseHistory } from 'src/warehouse/entities/warehouseHistory.entity';
 import { sendEmail } from 'src/utils/sendEmail';
 import getBearerToken from 'src/methods/getBearerToken';
 
@@ -28,6 +29,8 @@ export class OrderService {
     private readonly orderRepository: Repository<order>,
     @InjectRepository(warehouse)
     private readonly warehouseRepository: Repository<warehouse>,
+    @InjectRepository(WarehouseHistory)
+    private readonly warehouseHistoryRepository: Repository<WarehouseHistory>,
     @InjectRepository(File)
     private readonly fileRepository: Repository<File>,
     @InjectRepository(OrderTimer)
@@ -235,6 +238,15 @@ export class OrderService {
         const partIds = offer.parts.map(part => part.partName);
 
         const parts = await this.warehouseRepository.find({ where: { id: In(partIds) } });
+
+        for (const part of parts) {
+          const warehouseHistory = this.warehouseHistoryRepository.create({
+            warehouseId: part.id,
+            action: 'update',
+            data: part,
+          });
+          await this.warehouseHistoryRepository.save(warehouseHistory);
+        }
 
         for (const part of parts) {
         //@ts-expect-error: value property exists in runtime data
