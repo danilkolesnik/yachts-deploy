@@ -208,6 +208,7 @@ export class WarehouseService {
     async getAllHistory() {
         try {
             const history = await this.warehouseHistoryRepository.find();
+            console.log(history);
             return {
                 code: 200,
                 data: history,
