@@ -32,9 +32,17 @@ export class WarehouseController {
         return this.warehouseService.findAll();
     }
 
-    @Get(':id')
-    async getWarehouseById(@Param('id') id: string) {
-        return this.warehouseService.getWarehouseById(id);
+    @Get('in-stock')
+    async getInStock() {
+        return this.warehouseService.getInStock();
+    }
+
+    @Get('history')
+    async getAllWarehouseHistory() {
+        console.log('getAllWarehouseHistory called');
+        const result = await this.warehouseService.getAllHistory();
+        console.log('getAllWarehouseHistory result:', result);
+        return result;
     }
 
     @Get('history/:id')
@@ -42,13 +50,8 @@ export class WarehouseController {
         return this.warehouseService.getHistory(id);
     }
 
-    @Get('history')
-    async getAllWarehouseHistory() {
-        return this.warehouseService.getAllHistory();
-    }
-
-    @Get('in-stock')
-    async getInStock() {
-        return this.warehouseService.getInStock();
+    @Get(':id')
+    async getWarehouseById(@Param('id') id: string) {
+        return this.warehouseService.getWarehouseById(id);
     }
 }
