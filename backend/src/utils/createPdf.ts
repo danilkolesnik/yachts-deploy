@@ -30,8 +30,8 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
 
 
     const totalPrice = data.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0);
-    const totalPriceServices = Number(data.services?.priceInEuroWithoutVAT);
-    const totalPriceAllServices = Number(data.services?.priceInEuroWithoutVAT);
+    const totalPriceServices = Number(data.services?.[0]?.priceInEuroWithoutVAT);
+    const totalPriceAllServices = Number(data.services?.[0]?.priceInEuroWithoutVAT);
 
     const createdAt = new Date();
     const createdAtString = isNaN(createdAt.getTime()) ? 'Invalid Date' : createdAt.toLocaleString();
@@ -53,15 +53,15 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       .replace('{{yachtModelOffer}}', String(data.offer?.yachtModel))
       .replace('{{yachtNameOffer}}', String(data.offer?.yachtName))
       .replace('{{countryCode}}', String(data.countryCode))
-      .replace('{{serviceName}}', String(data.services?.serviceName))
-      .replace('{{serviceDescription}}', String(data.services?.description))
+      .replace('{{serviceName}}', String(data.services?.[0]?.serviceName))
+      .replace('{{serviceDescription}}', String(data.services?.[0]?.description))
       .replace('{{status}}', String(data.status))
       .replace('{{createdAt}}', createdAtString)
       .replace('{{partsTableRows}}', String(partsTableRows))
       .replace('{{invoiceTableRows}}', String(invoiceTableRows))
       .replace('{{totalPrice}}', String(totalPrice))
-      .replace('{{seriveName}}', String(data.services?.serviceName))
-      .replace('{{servicePrice}}', String(data.services?.priceInEuroWithoutVAT))
+      .replace('{{seriveName}}', String(data.services?.[0]?.serviceName))
+      .replace('{{servicePrice}}', String(data.services?.[0]?.priceInEuroWithoutVAT))
       .replace('{{serviceQuantity}}', String(1))
       .replace('{{totalPriceServices}}', String(totalPriceServices))
       .replace('{{totalPriceAll}}', String(totalPriceAll))
