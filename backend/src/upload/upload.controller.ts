@@ -61,12 +61,12 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
       destination: (req, file, callback) => {
         const isImage = file.mimetype.startsWith('image/');
         const isVideo = file.mimetype.startsWith('video/');
-        let folder = '/app/uploads'; 
+        let folder = 'uploads'; 
 
         if (isImage) {
-          folder = '/app/uploads/image';
+          folder = 'uploads/image';
         } else if (isVideo) {
-          folder = '/app/uploads/video';
+          folder = 'uploads/video';
         }
 
         callback(null, folder);

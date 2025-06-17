@@ -10,11 +10,15 @@ async function bootstrap() {
   app.setViewEngine('ejs');
 
   app.useStaticAssets(join(__dirname, '..', '..', 'uploads'), {
-    prefix: '/uploads/',
+    prefix: '/uploads',
+    setHeaders: (res) => {
+      res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
   });
 
   app.enableCors({
     origin: ['http://localhost:3000', 'https://g000l4c6-3000.euw.devtunnels.ms', 'http://116.203.198.150:3000'],
+    credentials: true,
   });
 
   await app.listen(5000);
