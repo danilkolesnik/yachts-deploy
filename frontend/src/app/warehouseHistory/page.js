@@ -28,12 +28,12 @@ const WarehouseHistoryPage = () => {
         },
         {
             name: 'Quantity',
-            selector: row => row.data.quantity,
+            selector: row => row.data?.quantity,
             sortable: true,
         },
         {
             name: 'Price per unit',
-            selector: row => row.data.pricePerUnit,
+            selector: row => row.data?.pricePerUnit,
             sortable: true,
         }
     ];
@@ -60,6 +60,10 @@ const WarehouseHistoryPage = () => {
             {loading ? (
                 <div className="flex justify-center items-center min-h-screen">
                     <Loader loading={loading} />
+                </div>
+            ) : data.length === 0 ? (
+                <div className="flex justify-center items-center min-h-[50vh]">
+                    <p className="text-gray-500 text-lg">No warehouse history records found</p>
                 </div>
             ) : (
                 <div className="w-full space-y-6 bg-white rounded shadow-md">
