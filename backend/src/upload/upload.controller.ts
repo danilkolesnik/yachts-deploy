@@ -90,15 +90,16 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
 
     const isImage = file.mimetype.startsWith('image/');
     const isVideo = file.mimetype.startsWith('video/');
-    let folder = 'uploads'; 
+    let folder = 'image'; 
 
     if (isImage) {
-      folder = 'uploads/image';
+      folder = 'image';
     } else if (isVideo) {
-      folder = 'uploads/video';
+      folder = 'video';
     }
 
-    const fileUrl = `${process.env.SERVER_URL}/${folder}/${file.filename}`;
+    // Construct URL using the serveRoot path
+    const fileUrl = `${process.env.SERVER_URL}/uploads/${folder}/${file.filename}`;
 
     if (isImage) {
       offer.imageUrls = offer.imageUrls ? [...offer.imageUrls, fileUrl] : [fileUrl];
@@ -127,7 +128,7 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
       return { message: 'Файл не найден.' };
     }
 
-    const fileUrl = `${process.env.SERVER_URL}/${file.filename}`;
+    const fileUrl = `${process.env.SERVER_URL}/uploads/${file.filename}`;
 
     return {
       id: file.id,
