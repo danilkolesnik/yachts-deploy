@@ -17,6 +17,11 @@ const ConfirmedOffersPage = () => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [role, setRole] = useState(null);
+    const [pdfExportLoading, setPdfExportLoading] = useState({});
+    const [emailModalOpen, setEmailModalOpen] = useState(false);
+    const [emailLoading, setEmailLoading] = useState(false);
+    const [emailAddress, setEmailAddress] = useState('');
+    const [selectedOfferId, setSelectedOfferId] = useState(null);
 
     const [filters, setFilters] = useState({
         searchCriteria: 'id',
@@ -90,9 +95,27 @@ const ConfirmedOffersPage = () => {
             cell: row => (
                 <button
                     onClick={() => handleExportPdf(row.id)}
-                    className="px-2 py-2 bg-green-500 text-white rounded hover:bg-green-700"
+                    disabled={pdfExportLoading[row.id]}
+                    className={`px-2 py-2 text-white rounded ${
+                        pdfExportLoading[row.id] 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-green-500 hover:bg-green-700'
+                    }`}
                 >
-                    Export PDF
+                    {pdfExportLoading[row.id] ? 'Generating...' : 'Export PDF'}
+                </button>
+            ),
+            ignoreRowClick: true,
+            button: true.toString(),
+        }] : []),
+        ...(role !== 'user' ? [{
+            name: '',
+            cell: row => (
+                <button
+                    onClick={() => handleSendEmail(row.id)}
+                    className="px-2 py-2 bg-orange-500 text-white rounded hover:bg-orange-700"
+                >
+                    Send Email
                 </button>
             ),
             ignoreRowClick: true,
@@ -119,6 +142,7 @@ const ConfirmedOffersPage = () => {
     };
 
     const handleExportPdf = async (offerId) => {
+        setPdfExportLoading(prev => ({ ...prev, [offerId]: true }));
         try {
             const response = await axios.get(`${URL}/offer/${offerId}/export-pdf`, {
                 responseType: 'blob',
@@ -137,6 +161,47 @@ const ConfirmedOffersPage = () => {
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Error exporting PDF:', error);
+        } finally {
+            setPdfExportLoading(prev => ({ ...prev, [offerId]: false }));
+        }
+    };
+
+    const handleSendEmail = async (offerId) => {
+        setSelectedOfferId(offerId);
+        setEmailModalOpen(true);
+    };
+
+    const handleEmailSubmit = async () => {
+        if (!emailAddress.trim()) {
+            alert('Please enter an email address');
+            return;
+        }
+
+        setEmailLoading(true);
+        try {
+            const response = await axios.post(`${URL}/offer/${selectedOfferId}/send-email`, 
+                { email: emailAddress },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            
+            if (response.data.code === 200) {
+                alert('Email sent successfully!');
+                setEmailModalOpen(false);
+                setEmailAddress('');
+                setSelectedOfferId(null);
+            } else {
+                alert('Error sending email: ' + response.data.message);
+            }
+        } catch (error) {
+            console.error('Error sending email:', error);
+            alert('Error sending email');
+        } finally {
+            setEmailLoading(false);
         }
     };
 
@@ -269,6 +334,42 @@ const ConfirmedOffersPage = () => {
                     </div>
                 )}
             </div>
+
+            {/* Email Modal */}
+            {emailModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg w-96">
+                        <h3 className="text-lg font-bold mb-4">Send Offer PDF to Email</h3>
+                        <input
+                            type="email"
+                            placeholder="Enter email address"
+                            value={emailAddress}
+                            onChange={(e) => setEmailAddress(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded mb-4"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <Button 
+                                variant="text" 
+                                color="red" 
+                                onClick={() => {
+                                    setEmailModalOpen(false);
+                                    setEmailAddress('');
+                                    setSelectedOfferId(null);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                color="green" 
+                                onClick={handleEmailSubmit}
+                                disabled={emailLoading}
+                            >
+                                {emailLoading ? 'Sending...' : 'Send'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

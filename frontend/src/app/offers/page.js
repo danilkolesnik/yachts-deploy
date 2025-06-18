@@ -33,6 +33,11 @@ const OfferPage = () => {
     const [createServiceModalIsOpen, setCreateServiceModalIsOpen] = useState(false);
     const [createPartModalIsOpen, setCreatePartModalIsOpen] = useState(false);
     const [role, setRole] = useState(null);
+    const [pdfExportLoading, setPdfExportLoading] = useState({});
+    const [emailModalOpen, setEmailModalOpen] = useState(false);
+    const [emailLoading, setEmailLoading] = useState(false);
+    const [emailAddress, setEmailAddress] = useState('');
+    const [selectedOfferId, setSelectedOfferId] = useState(null);
 
     const [loadingCreateOffer, setLoadingCreateOffer] = useState(false);
 
@@ -188,9 +193,27 @@ const OfferPage = () => {
             cell: row => (
                 <button
                     onClick={() => handleExportPdf(row.id)}
-                    className="px-2 py-2 bg-green-500 text-white rounded hover:bg-green-700"
+                    disabled={pdfExportLoading[row.id]}
+                    className={`px-2 py-2 text-white rounded ${
+                        pdfExportLoading[row.id] 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-green-500 hover:bg-green-700'
+                    }`}
                 >
-                    Export PDF
+                    {pdfExportLoading[row.id] ? 'Generating...' : 'Export PDF'}
+                </button>
+            ),
+            ignoreRowClick: true,
+            button: true.toString(),
+        }] : []),
+        ...(role !== 'user' ? [{
+            name: '',
+            cell: row => (
+                <button
+                    onClick={() => handleSendEmail(row.id)}
+                    className="px-2 py-2 bg-orange-500 text-white rounded hover:bg-orange-700"
+                >
+                    Send Email
                 </button>
             ),
             ignoreRowClick: true,
@@ -499,6 +522,7 @@ const OfferPage = () => {
     };
 
     const handleExportPdf = async (offerId) => {
+        setPdfExportLoading(prev => ({ ...prev, [offerId]: true }));
         try {
             const response = await axios.get(`${URL}/offer/${offerId}/export-pdf`, {
                 responseType: 'blob',
@@ -517,6 +541,47 @@ const OfferPage = () => {
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Error exporting PDF:', error);
+        } finally {
+            setPdfExportLoading(prev => ({ ...prev, [offerId]: false }));
+        }
+    };
+
+    const handleSendEmail = async (offerId) => {
+        setSelectedOfferId(offerId);
+        setEmailModalOpen(true);
+    };
+
+    const handleEmailSubmit = async () => {
+        if (!emailAddress.trim()) {
+            alert('Please enter an email address');
+            return;
+        }
+
+        setEmailLoading(true);
+        try {
+            const response = await axios.post(`${URL}/offer/${selectedOfferId}/send-email`, 
+                { email: emailAddress },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            
+            if (response.data.code === 200) {
+                alert('Email sent successfully!');
+                setEmailModalOpen(false);
+                setEmailAddress('');
+                setSelectedOfferId(null);
+            } else {
+                alert('Error sending email: ' + response.data.message);
+            }
+        } catch (error) {
+            console.error('Error sending email:', error);
+            alert('Error sending email');
+        } finally {
+            setEmailLoading(false);
         }
     };
 
@@ -920,6 +985,25 @@ const OfferPage = () => {
                             </Button>
                         </div>
                     </form>
+                </Modal>
+                <Modal isOpen={emailModalOpen} onClose={() => setEmailModalOpen(false)} title="Send Email">
+                    <div className="space-y-4">
+                        <Input
+                            label="Email Address"
+                            name="emailAddress"
+                            value={emailAddress}
+                            onChange={(e) => setEmailAddress(e.target.value)}
+                            required
+                        />
+                        <div className="flex justify-end space-x-2">
+                            <Button variant="text" color="red" onClick={() => setEmailModalOpen(false)} className="mr-1">
+                                <span>Cancel</span>
+                            </Button>
+                            <Button color="green" onClick={handleEmailSubmit}>
+                                <span>Send</span>
+                            </Button>
+                        </div>
+                    </div>
                 </Modal>
             </div>
         </>

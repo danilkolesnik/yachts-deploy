@@ -20,6 +20,10 @@ const OfferDetail = ({ params }) => {
     const [role, setRole] = useState(null);
     const [showGallery, setShowGallery] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [pdfExportLoading, setPdfExportLoading] = useState(false);
+    const [emailModalOpen, setEmailModalOpen] = useState(false);
+    const [emailLoading, setEmailLoading] = useState(false);
+    const [emailAddress, setEmailAddress] = useState('');
     const router = useRouter();
 
     useEffect(() => {
@@ -93,6 +97,7 @@ const OfferDetail = ({ params }) => {
     };
 
     const handleExportPdf = async () => {
+        setPdfExportLoading(true);
         try {
             const response = await axios.get(`${URL}/offer/${id}/export-pdf`, {
                 responseType: 'blob',
@@ -111,6 +116,41 @@ const OfferDetail = ({ params }) => {
             window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Error exporting PDF:', error);
+        } finally {
+            setPdfExportLoading(false);
+        }
+    };
+
+    const handleSendEmail = async () => {
+        if (!emailAddress.trim()) {
+            alert('Please enter an email address');
+            return;
+        }
+
+        setEmailLoading(true);
+        try {
+            const response = await axios.post(`${URL}/offer/${id}/send-email`, 
+                { email: emailAddress },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            
+            if (response.data.code === 200) {
+                alert('Email sent successfully!');
+                setEmailModalOpen(false);
+                setEmailAddress('');
+            } else {
+                alert('Error sending email: ' + response.data.message);
+            }
+        } catch (error) {
+            console.error('Error sending email:', error);
+            alert('Error sending email');
+        } finally {
+            setEmailLoading(false);
         }
     };
 
@@ -136,9 +176,21 @@ const OfferDetail = ({ params }) => {
                 <div className="flex justify-between items-center mb-6">
                     <Button color="blue" onClick={() => router.push('/offers')}>Back</Button>
                     {role !== 'user' && (
-                        <Button color="green" onClick={handleExportPdf}>
-                            Export PDF
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button 
+                                color="green" 
+                                onClick={handleExportPdf}
+                                disabled={pdfExportLoading}
+                            >
+                                {pdfExportLoading ? 'Generating PDF...' : 'Export PDF'}
+                            </Button>
+                            <Button 
+                                color="orange" 
+                                onClick={() => setEmailModalOpen(true)}
+                            >
+                                Send Email
+                            </Button>
+                        </div>
                     )}
                 </div>
                 <h1 className="text-4xl font-extrabold mb-6 text-black pt-4">Offer Details</h1>
@@ -259,6 +311,41 @@ const OfferDetail = ({ params }) => {
                             >
                                 <XMarkIcon className="w-6 h-6" />
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Email Modal */}
+            {emailModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg w-96">
+                        <h3 className="text-lg font-bold mb-4">Send Offer PDF to Email</h3>
+                        <input
+                            type="email"
+                            placeholder="Enter email address"
+                            value={emailAddress}
+                            onChange={(e) => setEmailAddress(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded mb-4"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <Button 
+                                variant="text" 
+                                color="red" 
+                                onClick={() => {
+                                    setEmailModalOpen(false);
+                                    setEmailAddress('');
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                color="green" 
+                                onClick={handleSendEmail}
+                                disabled={emailLoading}
+                            >
+                                {emailLoading ? 'Sending...' : 'Send'}
+                            </Button>
                         </div>
                     </div>
                 </div>
