@@ -11,6 +11,7 @@ import { OrderTimer } from './entities/order-timer.entity';
 import { warehouse } from 'src/warehouse/entities/warehouse.entity';
 import { WarehouseHistory } from 'src/warehouse/entities/warehouseHistory.entity';
 import { sendEmail } from 'src/utils/sendEmail';
+import { OfferHistory } from 'src/offer/entities/offer-history.entity';
 import getBearerToken from 'src/methods/getBearerToken';
 
 import { JwtPayload } from 'jsonwebtoken';
@@ -35,6 +36,8 @@ export class OrderService {
     private readonly fileRepository: Repository<File>,
     @InjectRepository(OrderTimer)
     private readonly orderTimerRepository: Repository<OrderTimer>,
+    @InjectRepository(OfferHistory)
+    private readonly offerHistoryRepository: Repository<OfferHistory>,
   ) {}
 
   async create(data: CreateOrderDto) {
@@ -234,6 +237,14 @@ export class OrderService {
 
         offer.status = 'confirmed';
         await this.offerRepository.save(offer);
+
+        const offerHistory = this.offerHistoryRepository.create({
+          offerId: offer.id,
+          userId: offer.customerId,
+          changeDate: new Date(),
+          changeDescription: JSON.stringify({ status: 'confirmed' }),
+        });
+        await this.offerHistoryRepository.save(offerHistory);
        
         //@ts-expect-error: value property exists in runtime data
         const partIds = offer.parts.map(part => part.value);
