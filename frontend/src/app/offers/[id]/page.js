@@ -187,8 +187,9 @@ const OfferDetail = ({ params }) => {
                             <Button 
                                 color="orange" 
                                 onClick={() => setEmailModalOpen(true)}
+                                disabled={emailLoading}
                             >
-                                Send Email
+                                {emailLoading ? 'Sending...' : 'Send Email'}
                             </Button>
                         </div>
                     )}

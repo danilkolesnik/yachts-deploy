@@ -18,6 +18,8 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       services: data.services ? { ...data.services } : {},
       // Duplicate image URLs
       imageUrls: data.imageUrls ? [...data.imageUrls] : [],
+      // Duplicate video URLs
+      videoUrls: data.videoUrls ? [...data.videoUrls] : [],
       // Duplicate offer data if exists
       offer: data.offer ? { ...data.offer } : null
     };
@@ -51,6 +53,24 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
             <div style="text-align: center;">
               <img src="${url}" alt="Image ${index + 1}" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 5px;">
               <p style="font-size: 12px; margin-top: 5px;">Image ${index + 1}</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : '';
+
+    // Generate videos HTML if videos exist
+    const videosHtml = exportData.videoUrls && exportData.videoUrls.length > 0 ? `
+      <div style="margin-top: 30px; page-break-before: always;">
+        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center;">Videos / Video</h2>
+        <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 15px; margin-bottom: 20px;">
+          ${exportData.videoUrls.map((url: string, index: number) => `
+            <div style="text-align: center;">
+              <div style="border: 1px solid #ccc; border-radius: 5px; padding: 10px; background-color: #f5f5f5;">
+                <p style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">Video ${index + 1}</p>
+                <p style="font-size: 12px; color: #666; margin-bottom: 5px;">Video file available at:</p>
+                <a href="${url}" style="font-size: 11px; color: #0066cc; text-decoration: underline; word-break: break-all;">${url}</a>
+              </div>
             </div>
           `).join('')}
         </div>
@@ -107,7 +127,8 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       .replace('{{totalPriceInvoiceTwo}}', String(totalPriceInvoiceTwo))
       .replace('{{totalPriceInvoiceServicesTwo}}', String(totalPriceInvoiceServicesTwo))
       .replace('{{totalPriceTaxTwo}}', String(totalPriceTaxTwo))
-      .replace('{{imagesSection}}', imagesHtml);
+      .replace('{{imagesSection}}', imagesHtml)
+      .replace('{{videosSection}}', videosHtml);
 
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox']

@@ -38,6 +38,7 @@ const OfferPage = () => {
     const [emailLoading, setEmailLoading] = useState(false);
     const [emailAddress, setEmailAddress] = useState('');
     const [selectedOfferId, setSelectedOfferId] = useState(null);
+    const [emailSendingLoading, setEmailSendingLoading] = useState({});
 
     const [loadingCreateOffer, setLoadingCreateOffer] = useState(false);
 
@@ -211,9 +212,14 @@ const OfferPage = () => {
             cell: row => (
                 <button
                     onClick={() => handleSendEmail(row.id)}
-                    className="px-2 py-2 bg-orange-500 text-white rounded hover:bg-orange-700"
+                    disabled={emailSendingLoading[row.id]}
+                    className={`px-2 py-2 text-white rounded ${
+                        emailSendingLoading[row.id] 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-orange-500 hover:bg-orange-700'
+                    }`}
                 >
-                    Send Email
+                    {emailSendingLoading[row.id] ? 'Sending...' : 'Send Email'}
                 </button>
             ),
             ignoreRowClick: true,
@@ -558,6 +564,7 @@ const OfferPage = () => {
         }
 
         setEmailLoading(true);
+        setEmailSendingLoading(prev => ({ ...prev, [selectedOfferId]: true }));
         try {
             const response = await axios.post(`${URL}/offer/${selectedOfferId}/send-email`, 
                 { email: emailAddress },
@@ -582,6 +589,7 @@ const OfferPage = () => {
             alert('Error sending email');
         } finally {
             setEmailLoading(false);
+            setEmailSendingLoading(prev => ({ ...prev, [selectedOfferId]: false }));
         }
     };
 
