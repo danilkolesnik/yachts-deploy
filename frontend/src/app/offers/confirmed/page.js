@@ -85,6 +85,19 @@ const ConfirmedOffersPage = () => {
                 : 'N/A',
             sortable: true,
         },
+        ...(role !== 'user' ? [{
+            name: '',
+            cell: row => (
+                <button
+                    onClick={() => handleExportPdf(row.id)}
+                    className="px-2 py-2 bg-green-500 text-white rounded hover:bg-green-700"
+                >
+                    Export PDF
+                </button>
+            ),
+            ignoreRowClick: true,
+            button: true.toString(),
+        }] : []),
     ];
 
     const getData = async () => {
@@ -98,6 +111,32 @@ const ConfirmedOffersPage = () => {
             return res.data.data;
         } catch (error) {
             console.error(error);
+        }
+    };
+
+    const handleBackClick = () => {
+        router.push('/offers');
+    };
+
+    const handleExportPdf = async (offerId) => {
+        try {
+            const response = await axios.get(`${URL}/offer/${offerId}/export-pdf`, {
+                responseType: 'blob',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `offer-${offerId}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error exporting PDF:', error);
         }
     };
 
@@ -206,6 +245,9 @@ const ConfirmedOffersPage = () => {
                             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto justify-end">
                                 {role !== 'user' && (
                                     <>
+                                        <Button onClick={handleBackClick} color="gray" className="w-full sm:w-auto">
+                                            Back
+                                        </Button>
                                         <Button color="purple" className="w-full sm:w-auto" onClick={exportToExcel}>
                                             Export to Excel
                                         </Button>

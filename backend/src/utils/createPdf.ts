@@ -27,6 +27,20 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       </div>
     `).join('');
 
+    // Generate images HTML if images exist
+    const imagesHtml = data.imageUrls && data.imageUrls.length > 0 ? `
+      <div style="margin-top: 30px; page-break-before: always;">
+        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center;">Images / Slike</h2>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+          ${data.imageUrls.map((url: string, index: number) => `
+            <div style="text-align: center;">
+              <img src="${url}" alt="Image ${index + 1}" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 5px;">
+              <p style="font-size: 12px; margin-top: 5px;">Image ${index + 1}</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : '';
 
     const totalPrice = data.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0);
     const totalPriceServices = Number(data.services?.priceInEuroWithoutVAT);
@@ -77,8 +91,8 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       .replace('{{totalPriceInvoiceAll}}', String(totalPriceInvoice))
       .replace('{{totalPriceInvoiceTwo}}', String(totalPriceInvoiceTwo))
       .replace('{{totalPriceInvoiceServicesTwo}}', String(totalPriceInvoiceServicesTwo))
-      .replace('{{totalPriceTaxTwo}}', String(totalPriceTaxTwo));
-
+      .replace('{{totalPriceTaxTwo}}', String(totalPriceTaxTwo))
+      .replace('{{imagesSection}}', imagesHtml);
 
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox']

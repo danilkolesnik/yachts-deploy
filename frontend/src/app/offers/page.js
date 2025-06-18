@@ -183,6 +183,19 @@ const OfferPage = () => {
             ignoreRowClick: true,
             button: true.toString(),
         }] : []),
+        ...(role !== 'user' ? [{
+            name: '',
+            cell: row => (
+                <button
+                    onClick={() => handleExportPdf(row.id)}
+                    className="px-2 py-2 bg-green-500 text-white rounded hover:bg-green-700"
+                >
+                    Export PDF
+                </button>
+            ),
+            ignoreRowClick: true,
+            button: true.toString(),
+        }] : []),
     ];
 
     const getData = async () => {
@@ -485,6 +498,32 @@ const OfferPage = () => {
         router.push('/offersHistory');
     };
 
+    const handleExportPdf = async (offerId) => {
+        try {
+            const response = await axios.get(`${URL}/offer/${offerId}/export-pdf`, {
+                responseType: 'blob',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `offer-${offerId}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error exporting PDF:', error);
+        }
+    };
+
+    const handleConfirmedOffersClick = () => {
+        router.push('/offers/confirmed');
+    };
+
     const partOptions = parts.map((part) => ({
         value: part.id,
         label: part.name,
@@ -674,6 +713,9 @@ const OfferPage = () => {
                                 </Button>
                                 <Button onClick={handleHistoryClick} color="green" className="w-full sm:w-auto">
                                 History
+                            </Button>
+                            <Button onClick={handleConfirmedOffersClick} color="orange" className="w-full sm:w-auto">
+                                Confirmed Offers
                             </Button>
                             <Button color="purple" className="w-full sm:w-auto" onClick={exportToExcel}>
                                 Export to Excel

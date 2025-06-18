@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Put, Res } from '@nestjs/common';
 import { OfferService } from './offer.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
-import { Request } from 'express';
+import { Request, Response } from 'express';
+import { createPdfBuffer } from '../utils/createPdf';
 
 @Controller('offer')
 export class OfferController {
@@ -20,6 +21,29 @@ export class OfferController {
   @Get('canceled')
   getCanceledOffers() {
     return this.offerService.getCanceledOffers();
+  }
+
+  @Get(':id/export-pdf')
+  async exportPdf(@Param('id') id: string, @Res() res: Response) {
+    try {
+      const offer = await this.offerService.getOfferById(id);
+      if (offer.code !== 200) {
+        return res.status(404).json({ message: 'Offer not found' });
+      }
+
+      const pdfBuffer = await createPdfBuffer(offer.data, 'offer');
+      
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="offer-${id}.pdf"`,
+        'Content-Length': pdfBuffer.length,
+      });
+      
+      res.end(pdfBuffer);
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      res.status(500).json({ message: 'Error generating PDF' });
+    }
   }
 
   @Get(':id')

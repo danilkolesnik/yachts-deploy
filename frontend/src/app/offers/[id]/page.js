@@ -92,6 +92,28 @@ const OfferDetail = ({ params }) => {
         setShowGallery(true);
     };
 
+    const handleExportPdf = async () => {
+        try {
+            const response = await axios.get(`${URL}/offer/${id}/export-pdf`, {
+                responseType: 'blob',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `offer-${id}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error exporting PDF:', error);
+        }
+    };
+
     const images = offer?.imageUrls?.map(url => ({
         original: url,
         thumbnail: url,
@@ -111,7 +133,14 @@ const OfferDetail = ({ params }) => {
         <div className="min-h-screen bg-gray-100">
             <Header />
             <div className="max-w-4xl mx-auto p-8 bg-white shadow-lg rounded-lg">
-                <Button color="blue" onClick={() => router.push('/offers')}>Back</Button>
+                <div className="flex justify-between items-center mb-6">
+                    <Button color="blue" onClick={() => router.push('/offers')}>Back</Button>
+                    {role !== 'user' && (
+                        <Button color="green" onClick={handleExportPdf}>
+                            Export PDF
+                        </Button>
+                    )}
+                </div>
                 <h1 className="text-4xl font-extrabold mb-6 text-black pt-4">Offer Details</h1>
                 <div className="space-y-6">
                     <div className="flex items-center">
