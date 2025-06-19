@@ -53,7 +53,45 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backups:/backups
+    command: >
+      sh -c "
+        echo '#!/bin/bash' > /backup.sh &&
+        echo 'pg_dump -U postgres -d yachts --clean --if-exists --no-owner --no-privileges > /backups/backup_\$(date +%Y%m%d_%H%M%S).sql' >> /backup.sh &&
+        chmod +x /backup.sh &&
+        echo '0 2 * * * /backup.sh' > /etc/cron.d/backup-cron &&
+        chmod 0644 /etc/cron.d/backup-cron &&
+        crontab /etc/cron.d/backup-cron &&
+        cron -f &
+        docker-entrypoint.sh postgres"
+
+  backup:
+    image: postgres:15
+    restart: always
+    depends_on:
+      - db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345678
+      POSTGRES_DB: yachts
+      PGHOST: db
+      PGPORT: 5432
+      PGPASSWORD: 12345678
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backups:/backups
+    command: >
+      sh -c "
+        echo '#!/bin/bash' > /backup.sh &&
+        echo 'pg_dump -h db -U postgres -d yachts --clean --if-exists --no-owner --no-privileges > /backups/backup_\$(date +%Y%m%d_%H%M%S).sql' >> /backup.sh &&
+        chmod +x /backup.sh &&
+        echo '0 2 * * * /backup.sh' > /etc/cron.d/backup-cron &&
+        chmod 0644 /etc/cron.d/backup-cron &&
+        crontab /etc/cron.d/backup-cron &&
+        cron -f"
 
 volumes:
   postgres_data:
   uploads_data:
+  backup_data:

@@ -61,6 +61,49 @@ export class AuthService {
         }
     }
 
+    // async createClient(data: CreateAuthDto) {
+    //   if (!data.email || !data.password) {
+    //     return {
+    //       code: 400,
+    //       message: 'Not all arguments',
+    //     };
+    //   }
+
+    //   try {
+    //     const checkUser = await this.usersModule.findOne({
+    //       where: { email: data.email },
+    //     });
+
+    //     if (checkUser) {
+    //       return {
+    //         code: 409,
+    //         message: 'This user already exists',
+    //       };
+    //     }
+
+    //     const generateId = generateRandomId();
+
+    //     const result = await this.usersModule.save(
+    //       this.usersModule.create({
+    //         id: generateId,
+    //         email: data.email,
+    //         fullName: data.fullName,
+    //         password: bcrypt.hashSync(data.password),
+    //       }),
+    //     );
+
+    //     return {
+    //       code: 201,
+    //       data: result,
+    //     };
+    //   } catch (err) {
+    //     return {
+    //       code: 500,
+    //       message: err,
+    //     };
+    //   }
+    // }
+
     async loginClient(data: LoginAuthDto) {
       if (!data.email || !data.password) {
         return {
