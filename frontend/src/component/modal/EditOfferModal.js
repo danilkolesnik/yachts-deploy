@@ -40,7 +40,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     onClick={openCreateCustomerModal} 
                     color="blue" 
                     size="sm"
-                    className="w-full"
+                    className="w-auto px-4"
                 >
                     Add New Customer
                 </Button>

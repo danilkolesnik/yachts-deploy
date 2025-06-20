@@ -47,7 +47,7 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
                     onClick={openCreateCustomerModal} 
                     color="blue" 
                     size="sm"
-                    className="w-full"
+                    className="w-auto px-4"
                 >
                     Add New Customer
                 </Button>
