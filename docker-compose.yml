@@ -44,6 +44,9 @@ services:
   db:
     image: postgres:15
     restart: always
+    # Убираем внешний доступ к БД - только внутренний доступ
+    # ports:
+    #   - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: Yachts2024!Secure#DB
@@ -52,22 +55,14 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./backups:/backups
+    # Добавляем лимиты ресурсов чтобы избежать крашей
     deploy:
       resources:
         limits:
           memory: 1G
         reservations:
           memory: 512M
-    command: >
-      sh -c "
-        echo '#!/bin/bash' > /backup.sh &&
-        echo 'pg_dump -U postgres -d yachts --clean --if-exists --no-owner --no-privileges > /backups/backup_\$(date +%Y%m%d_%H%M%S).sql' >> /backup.sh &&
-        chmod +x /backup.sh &&
-        echo '0 2 * * * /backup.sh' > /etc/cron.d/backup-cron &&
-        chmod 0644 /etc/cron.d/backup-cron &&
-        crontab /etc/cron.d/backup-cron &&
-        cron -f &
-        docker-entrypoint.sh postgres"
+    command: docker-entrypoint.sh postgres
 
 volumes:
   postgres_data:
