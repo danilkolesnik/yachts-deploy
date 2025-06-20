@@ -25,7 +25,7 @@ services:
       - NODE_ENV=production
       - DATABASE_HOST=db
       - DATABASE_USER=postgres
-      - DATABASE_PASSWORD=12345678
+      - DATABASE_PASSWORD=Yachts2024!Secure#DB
       - DATABASE_NAME=yachts
       - DATABASE_PORT=5432
       - SERVER_URL=http://116.203.198.150:5000
@@ -44,16 +44,20 @@ services:
   db:
     image: postgres:15
     restart: always
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345678
+      POSTGRES_PASSWORD: Yachts2024!Secure#DB
       POSTGRES_DB: yachts
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./backups:/backups
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
     command: >
       sh -c "
         echo '#!/bin/bash' > /backup.sh &&
@@ -65,33 +69,6 @@ services:
         cron -f &
         docker-entrypoint.sh postgres"
 
-  backup:
-    image: postgres:15
-    restart: always
-    depends_on:
-      - db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 12345678
-      POSTGRES_DB: yachts
-      PGHOST: db
-      PGPORT: 5432
-      PGPASSWORD: 12345678
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./backups:/backups
-    command: >
-      sh -c "
-        echo '#!/bin/bash' > /backup.sh &&
-        echo 'pg_dump -h db -U postgres -d yachts --clean --if-exists --no-owner --no-privileges > /backups/backup_\$(date +%Y%m%d_%H%M%S).sql' >> /backup.sh &&
-        chmod +x /backup.sh &&
-        echo '0 2 * * * /backup.sh' > /etc/cron.d/backup-cron &&
-        chmod 0644 /etc/cron.d/backup-cron &&
-        crontab /etc/cron.d/backup-cron &&
-        cron -f"
-
 volumes:
   postgres_data:
   uploads_data:
-  backup_data:
