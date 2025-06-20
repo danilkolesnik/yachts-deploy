@@ -11,42 +11,39 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                 <label htmlFor="customer-select" className="block text-sm font-medium text-gray-700">
                     Select Customer
                 </label>
-                <div className="flex gap-2 mt-1">
-                    <div className="flex-1">
-                        <ReactSelect
-                            id="customer-select"
-                            options={userOptions}
-                            value={userOptions.find(option => option.label === formData.customerFullName)}
-                            onChange={selectedOption => handleChange({ target: { name: 'customerFullName', value: selectedOption ? selectedOption.label : '' } })}
-                            placeholder="Select a customer..."
-                            isClearable
-                            isSearchable
-                            styles={{
-                                control: (provided) => ({
-                                    ...provided,
-                                }),
-                                singleValue: (provided) => ({
-                                    ...provided,
-                                    color: 'black',
-                                }),
-                                option: (provided, state) => ({
-                                    ...provided,
-                                    color: 'black',
-                                    backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
-                                }),
-                            }}
-                        />
-                    </div>
-                    <Button 
-                        type="button"
-                        onClick={openCreateCustomerModal} 
-                        color="blue" 
-                        size="sm"
-                        className="px-3"
-                    >
-                        Add New
-                    </Button>
-                </div>
+                <ReactSelect
+                    id="customer-select"
+                    options={userOptions}
+                    value={userOptions.find(option => option.label === formData.customerFullName)}
+                    onChange={selectedOption => handleChange({ target: { name: 'customerFullName', value: selectedOption ? selectedOption.label : '' } })}
+                    placeholder="Select a customer..."
+                    isClearable
+                    isSearchable
+                    className="mb-2"
+                    styles={{
+                        control: (provided) => ({
+                            ...provided,
+                        }),
+                        singleValue: (provided) => ({
+                            ...provided,
+                            color: 'black',
+                        }),
+                        option: (provided, state) => ({
+                            ...provided,
+                            color: 'black',
+                            backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                    }}
+                />
+                <Button 
+                    type="button"
+                    onClick={openCreateCustomerModal} 
+                    color="blue" 
+                    size="sm"
+                    className="w-full"
+                >
+                    Add New Customer
+                </Button>
             </div>
             <Input
                 label="Yacht Name"
