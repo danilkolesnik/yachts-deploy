@@ -601,7 +601,7 @@ export class OrderService {
         startTime: 'DESC',
       },
       where:{
-        status: 'Completed'
+        status: In(['Completed', 'Paused'])
       }
     });
 
