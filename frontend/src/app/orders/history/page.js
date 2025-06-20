@@ -124,14 +124,6 @@ const OrdersHistoryPage = () => {
                             columns={columns}
                             data={filteredHistory}
                             className="min-w-full border-collapse"
-                            pagination
-                            paginationPerPage={10}
-                            paginationRowsPerPageOptions={[10, 20, 50]}
-                            noDataComponent={
-                                <div className="text-center py-4">
-                                    {searchTerm ? 'No workers found matching your search' : 'No timer history found'}
-                                </div>
-                            }
                         />
                     </div>
                 </div>
