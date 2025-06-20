@@ -472,6 +472,16 @@ export class OrderService {
     timer.isPaused = true;
     timer.status = 'Paused';
     timer.pauseTime = now;
+    
+    // Вычисляем общее время работы до паузы
+    let totalDuration = now.getTime() - timer.startTime.getTime();
+    
+    // Вычитаем накопленное время пауз
+    if (timer.totalPausedTime) {
+      totalDuration -= timer.totalPausedTime;
+    }
+    
+    timer.totalDuration = Math.max(0, totalDuration);
   
     return this.orderTimerRepository.save(timer);
   }
