@@ -31,6 +31,11 @@ export class AuthController {
       return this.authService.verify(request);
     }
 
+    @Post('register/client')
+    registerClient(@Body() data: CreateAuthDto) {
+      return this.authService.createClient(data);
+    }
+
     @Put(':id/password')
     async changePassword(
       @Param('id') id: string,

@@ -99,6 +99,14 @@ const OfferPage = () => {
 
     const tableRef = useRef(null);
 
+    // Customer creation modal state
+    const [createCustomerModalIsOpen, setCreateCustomerModalIsOpen] = useState(false);
+    const [createCustomerLoading, setCreateCustomerLoading] = useState(false);
+    const [createCustomerFormData, setCreateCustomerFormData] = useState({
+        email: '',
+        fullName: ''
+    });
+
     const columns = [
         {
             name: 'ID',
@@ -738,6 +746,48 @@ const OfferPage = () => {
         }
     }, []);
 
+    const openCreateCustomerModal = () => {
+        setCreateCustomerModalIsOpen(true);
+    };
+
+    const closeCreateCustomerModal = () => {
+        setCreateCustomerModalIsOpen(false);
+        setCreateCustomerFormData({
+            email: '',
+            fullName: ''
+        });
+    };
+
+    const handleCustomerChange = (e) => {
+        const { name, value } = e.target;
+        setCreateCustomerFormData({ ...createCustomerFormData, [name]: value });
+    };
+
+    const createCustomer = async (e) => {
+        e.preventDefault();
+        setCreateCustomerLoading(true);
+        try {
+            await axios.post(`${URL}/auth/register/client`, createCustomerFormData);
+            
+            // Refresh users list after creating customer
+            const updatedUsers = await getUsers();
+            setUsers(updatedUsers || []);
+            
+            // Update user options
+            if (updatedUsers && updatedUsers.length > 0) {
+                const options = updatedUsers.map(user => ({ value: user.id, label: user.fullName }));
+                setUserOptions(options);
+            }
+            
+            closeCreateCustomerModal();
+        } catch (error) {
+            console.error('Error creating customer:', error);
+            alert('Error creating customer. Please try again.');
+        } finally {
+            setCreateCustomerLoading(false);
+        }
+    };
+
     return (
         <>
             <Header />
@@ -859,6 +909,7 @@ const OfferPage = () => {
                     partOptions={partOptions}
                     openCreateServiceModal={openCreateServiceModal}
                     openCreatePartModal={openCreatePartModal}
+                    openCreateCustomerModal={openCreateCustomerModal}
                     loading={loadingCreateOffer}
                     yachts={yachts}
                     handleYachtSelect={handleYachtSelect}
@@ -875,6 +926,7 @@ const OfferPage = () => {
                     partOptions={partOptions}
                     openCreateServiceModal={openCreateServiceModal}
                     openCreatePartModal={openCreatePartModal}
+                    openCreateCustomerModal={openCreateCustomerModal}
                 />
                 <Modal isOpen={createOrderModalIsOpen} onClose={closeCreateOrderModal} title="Create Order">
                     <div className="space-y-4">
@@ -1012,6 +1064,32 @@ const OfferPage = () => {
                             </Button>
                         </div>
                     </div>
+                </Modal>
+                <Modal isOpen={createCustomerModalIsOpen} onClose={closeCreateCustomerModal} title="Create Customer">
+                    <form onSubmit={createCustomer} className="space-y-4">
+                        <Input
+                            label="Email"
+                            name="email"
+                            value={createCustomerFormData.email}
+                            onChange={handleCustomerChange}
+                            required
+                        />
+                        <Input
+                            label="Full Name"
+                            name="fullName"
+                            value={createCustomerFormData.fullName}
+                            onChange={handleCustomerChange}
+                            required
+                        />
+                        <div className="flex justify-end">
+                            <Button variant="text" color="red" onClick={closeCreateCustomerModal} className="mr-1">
+                                <span>Cancel</span>
+                            </Button>
+                            <Button color="green" type="submit">
+                                <span>Create</span>
+                            </Button>
+                        </div>
+                    </form>
                 </Modal>
             </div>
         </>

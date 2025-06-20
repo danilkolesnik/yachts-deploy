@@ -61,48 +61,50 @@ export class AuthService {
         }
     }
 
-    // async createClient(data: CreateAuthDto) {
-    //   if (!data.email || !data.password) {
-    //     return {
-    //       code: 400,
-    //       message: 'Not all arguments',
-    //     };
-    //   }
+    async createClient(data: CreateAuthDto) {
+      if (!data.email || !data.fullName) {
+        return {
+          code: 400,
+          message: 'Not all arguments',
+        };
+      }
 
-    //   try {
-    //     const checkUser = await this.usersModule.findOne({
-    //       where: { email: data.email },
-    //     });
+      const genaratePassword = generateRandomId();
 
-    //     if (checkUser) {
-    //       return {
-    //         code: 409,
-    //         message: 'This user already exists',
-    //       };
-    //     }
+      try {
+        const checkUser = await this.usersModule.findOne({
+          where: { email: data.email },
+        });
 
-    //     const generateId = generateRandomId();
+        if (checkUser) {
+          return {
+            code: 409,
+            message: 'This user already exists',
+          };
+        }
 
-    //     const result = await this.usersModule.save(
-    //       this.usersModule.create({
-    //         id: generateId,
-    //         email: data.email,
-    //         fullName: data.fullName,
-    //         password: bcrypt.hashSync(data.password),
-    //       }),
-    //     );
+        const generateId = generateRandomId();
 
-    //     return {
-    //       code: 201,
-    //       data: result,
-    //     };
-    //   } catch (err) {
-    //     return {
-    //       code: 500,
-    //       message: err,
-    //     };
-    //   }
-    // }
+        const result = await this.usersModule.save(
+          this.usersModule.create({
+            id: generateId,
+            email: data.email,
+            fullName: data.fullName,
+            password: bcrypt.hashSync(genaratePassword),
+          }),
+        );
+
+        return {
+          code: 201,
+          data: result,
+        };
+      } catch (err) {
+        return {
+          code: 500,
+          message: err,
+        };
+      }
+    }
 
     async loginClient(data: LoginAuthDto) {
       if (!data.email || !data.password) {

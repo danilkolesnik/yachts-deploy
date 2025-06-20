@@ -5,7 +5,7 @@ import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import ReactSelect from 'react-select';
 
-const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal, loading, yachts, handleYachtSelect }) => {
+const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal, openCreateCustomerModal, loading, yachts, handleYachtSelect }) => {
     const yachtOptions = yachts.map(yacht => ({
         value: yacht,
         label: `${yacht.name} - ${yacht.model}`
@@ -14,29 +14,47 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
     return(
         <Modal isOpen={isOpen} onClose={onClose} title="Create Offer">
         <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto h-full" style={{ height: '400px', overflowY: 'auto' }}>
-            <ReactSelect
-                options={userOptions}
-                value={userOptions.find(option => option.label === formData.customerFullName) || null}
-                onChange={selectedOption => handleChange({ target: { name: 'customerFullName', value: selectedOption ? selectedOption.label : '' } })}
-                placeholder="Select a customer..."
-                isClearable
-                isSearchable
-                className="mb-4"
-                styles={{
-                    control: (provided) => ({
-                        ...provided,
-                    }),
-                    singleValue: (provided) => ({
-                        ...provided,
-                        color: 'black',
-                    }),
-                    option: (provided, state) => ({
-                        ...provided,
-                        color: 'black',
-                        backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
-                    }),
-                }}
-            />
+            <div className="mb-4">
+                <label htmlFor="customer-select" className="block text-sm font-medium text-gray-700">
+                    Select Customer
+                </label>
+                <div className="flex gap-2 mt-1">
+                    <div className="flex-1">
+                        <ReactSelect
+                            id="customer-select"
+                            options={userOptions}
+                            value={userOptions.find(option => option.label === formData.customerFullName) || null}
+                            onChange={selectedOption => handleChange({ target: { name: 'customerFullName', value: selectedOption ? selectedOption.label : '' } })}
+                            placeholder="Select a customer..."
+                            isClearable
+                            isSearchable
+                            styles={{
+                                control: (provided) => ({
+                                    ...provided,
+                                }),
+                                singleValue: (provided) => ({
+                                    ...provided,
+                                    color: 'black',
+                                }),
+                                option: (provided, state) => ({
+                                    ...provided,
+                                    color: 'black',
+                                    backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                                }),
+                            }}
+                        />
+                    </div>
+                    <Button 
+                        type="button"
+                        onClick={openCreateCustomerModal} 
+                        color="blue" 
+                        size="sm"
+                        className="px-3"
+                    >
+                        Add New
+                    </Button>
+                </div>
+            </div>
             <div className="mb-4">
                 <label htmlFor="yacht-select" className="block text-sm font-medium text-gray-700">
                     Select Yacht
