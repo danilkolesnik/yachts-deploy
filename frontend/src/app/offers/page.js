@@ -190,7 +190,8 @@ const OfferPage = () => {
             cell: row => (
                 <button
                     onClick={() => openCreateOrderModal(row)}
-                    className="px-2 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+                    className="px-2 py-2 bg-[#dd3333] text-white rounded hover:bg-blue-700"
+                
                 >
                     Work Order
                 </button>

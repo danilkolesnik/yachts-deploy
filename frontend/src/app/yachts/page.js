@@ -182,7 +182,7 @@ const YachtsPage = () => {
                                 </div>
                             </div>
                             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto justify-end">
-                                <Button onClick={() => setModalIsOpen(true)} color="blue" className="w-full sm:w-auto">
+                                <Button onClick={() => setModalIsOpen(true)} className="w-full sm:w-auto bg-[#dd3333] text-white">
                                     Create
                                 </Button>
                             </div>
@@ -222,7 +222,7 @@ const YachtsPage = () => {
                             <Button variant="text" color="red" onClick={() => setModalIsOpen(false)} className="mr-1">
                                 <span>Cancel</span>
                             </Button>
-                            <Button color="green" type="submit">
+                            <Button className="w-full sm:w-auto bg-[#dd3333] text-white" type="submit">
                                 <span>Create</span>
                             </Button>
                         </div>
