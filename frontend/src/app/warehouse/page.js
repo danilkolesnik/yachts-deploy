@@ -250,7 +250,7 @@ const WarehousePage = () => {
                             <Button onClick={openModal} className="w-full md:w-auto bg-[#dd3333] text-white">
                                 Create
                             </Button>
-                            <Button color="#282828" className="w-full md:w-auto" onClick={exportToExcel}>
+                            <Button className="w-full md:w-auto bg-[#282828] text-white" onClick={exportToExcel}>
                                 Export to Excel
                             </Button>
                             <Button onClick={handleHistoryClick} color="white" className="w-full md:w-auto border-[2px] border-[#D33] text-[#000]">

@@ -848,10 +848,10 @@ const OfferPage = () => {
                                 <Button onClick={handleHistoryClick} color="green" className="w-full sm:w-auto">
                                 History
                             </Button>
-                            <Button onClick={handleConfirmedOffersClick} color="orange" className="w-full sm:w-auto">
+                            <Button onClick={handleConfirmedOffersClick} className="w-full sm:w-auto bg-[#3e4a66] text-white" >
                                 Confirmed Offers
                             </Button>
-                            <Button color="#282828" className="w-full sm:w-auto" onClick={exportToExcel}>
+                            <Button className="w-full sm:w-auto bg-[#282828] text-white" onClick={exportToExcel}>
                                 Export to Excel
                             </Button>
                                 </>
