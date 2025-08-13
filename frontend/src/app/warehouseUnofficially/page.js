@@ -116,6 +116,22 @@ const WarehouseUnofficiallyPage = () => {
                 await axios.put(`${URL}/warehouse/${editId}`, formData);
                 toast.success("Warehouse updated successfully");
             } else {
+                if(formData.serviceCategory.serviceName === ''){
+                    toast.error("Error: Service category is required");
+                    return;
+                }
+                if(formData.pricePerUnit === ''){
+                    toast.error("Error: Price per unit is required");
+                    return;
+                }
+                if(formData.name === ''){
+                    toast.error("Error: Name is required");
+                    return;
+                }
+                if(formData.quantity === ''){
+                    toast.error("Error: Quantity is required");
+                    return;
+                }
                 await axios.post(`${URL}/warehouse/create`, {
                     ...formData,
                     unofficially: false

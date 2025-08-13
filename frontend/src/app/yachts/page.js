@@ -86,6 +86,14 @@ const YachtsPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            if(formData.name === ''){
+                toast.error("Error: Name is required");
+                return;
+            }
+            if(formData.model === ''){
+                toast.error("Error: Model is required");
+                return;
+            }
             const response = await axios.post(`${URL}/yachts`, formData);
             if (response.data.code === 201) {
                 setFormData({ name: '', model: '' });
