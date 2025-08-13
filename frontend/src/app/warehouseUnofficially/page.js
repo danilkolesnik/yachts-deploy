@@ -340,11 +340,11 @@ const WarehouseUnofficiallyPage = () => {
                         className="text-black"
                         labelProps={{ className: "text-black" }}
                     >
-                        {catagoryData.map((category) => (
+                        {/* {catagoryData.map((category) => (
                             <Option key={category.id} value={category} className="text-black">
                                 {category.serviceName}
                             </Option>
-                        ))}
+                        ))} */}
                     </Select>
                     <div className="flex justify-end gap-2">
                         <Button variant="text" color="red" onClick={closeModal} className="w-full md:w-auto">
