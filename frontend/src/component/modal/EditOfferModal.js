@@ -4,6 +4,11 @@ import { Button, Select, Option } from "@material-tailwind/react";
 import ReactSelect from 'react-select';
 
 const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal, openCreateCustomerModal }) => {
+    const combinedParts = partOptions.map(part => ({
+        ...part,
+        color: part.value.unofficially ? 'green' : 'red'
+    }));
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit Offer">
         <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto h-96" style={{ height: '400px', overflowY: 'auto' }}>
@@ -90,7 +95,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                 <ReactSelect
                     id="parts-select"
                     isMulti
-                    options={partOptions}
+                    options={combinedParts}
                     value={formData.parts}
                     onChange={(selectedOptions) => handleSelectChange(selectedOptions, 'parts')}
                     placeholder="Select parts..."
@@ -101,7 +106,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         option: (provided, state) => ({
                             ...provided,
-                            color: 'black',
+                            color: state.data.color,
                             backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
                         }),
                     }}

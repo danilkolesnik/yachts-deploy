@@ -11,6 +11,11 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
         label: `${yacht.name} - ${yacht.model}`
     }));
 
+    const combinedParts = partOptions.map(part => ({
+        ...part,
+        color: part.value.unofficially ? 'green' : 'red'
+    }));
+
     return(
         <Modal isOpen={isOpen} onClose={onClose} title="Create Offer">
         <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto h-full" style={{ height: '400px', overflowY: 'auto' }}>
@@ -108,7 +113,7 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
                 <ReactSelect
                     id="parts-select"
                     isMulti
-                    options={partOptions}
+                    options={combinedParts}
                     value={formData.parts}
                     onChange={(selectedOptions) => handleSelectChange(selectedOptions, 'parts')}
                     placeholder="Select parts..."
@@ -119,7 +124,7 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
                         }),
                         option: (provided, state) => ({
                             ...provided,
-                            color: 'black',
+                            color: state.data.color,
                             backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
                         }),
                     }}

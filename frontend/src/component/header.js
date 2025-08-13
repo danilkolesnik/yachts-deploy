@@ -113,7 +113,7 @@ function NavList({ isOpen, setIsOpen }) {
       <Link href="/auth/login" onClick={() => { clearLocalStorage(); handleClick(); }} className=" font-bold">
         <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
           <LockClosedIcon className="h-5 w-5 mr-2" />
-          <span>Auth</span>
+          <span>Logout</span>
         </ListItem>
       </Link>
     </List>

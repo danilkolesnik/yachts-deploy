@@ -191,7 +191,15 @@ export class WarehouseService {
     }
 
     async getInStock() {
-        const warehouses = await this.warehouseModule.find({ where: { quantity: Not('0') } });
+        const warehouses = await this.warehouseModule.find({ where: { quantity: Not('0'), unofficially: true } });
+        return {
+            code: 200,
+            data: warehouses,
+        };
+    }
+
+    async getInStockUnofficially() {
+        const warehouses = await this.warehouseModule.find({ where: { quantity: Not('0'), unofficially: false } });
         return {
             code: 200,
             data: warehouses,

@@ -24,6 +24,7 @@ const OfferPage = () => {
     const [data, setData] = useState([]);
     const [catagoryData, setCatagoryData] = useState([]);
     const [parts, setParts] = useState([]);
+    const [partsUnofficially, setPartsUnofficially] = useState([]);
     const [users, setUsers] = useState([]);
     const [workers, setWorkers] = useState([]);
     const [yachts, setYachts] = useState([]);
@@ -267,6 +268,15 @@ const OfferPage = () => {
         }
     };
 
+    const getWareHouseUnofficially = async () => {
+        try {
+            const res = await axios.get(`${URL}/warehouse/in-stock-unofficially`);
+            return res.data.data;
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const getUsers = async () => {
         try {
             const res = await axios.get(`${URL}/users/role/user`);
@@ -332,7 +342,6 @@ const OfferPage = () => {
         }
     };
     
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoadingCreateOffer(true);
@@ -605,11 +614,10 @@ const OfferPage = () => {
         router.push('/offers/confirmed');
     };
 
-    const partOptions = parts.map((part) => ({
+    const combinedParts = [...parts, ...partsUnofficially].map(part => ({
         value: part.id,
         label: part.name,
-        quantity: '1',
-        pricePerUnit: part.pricePerUnit,
+        unofficially: part.unofficially
     }));
 
     const closeEditModal = () => {
@@ -708,14 +716,15 @@ const OfferPage = () => {
 
     useEffect(() => {
         setLoading(true);
-        Promise.all([getData(), getDataCatagory(), getWareHouse(), getUsers(), getWorkers(), getYachts()])
-            .then(([res1, res2, res3, res4, res5, res6]) => {
+        Promise.all([getData(), getDataCatagory(), getWareHouse(), getUsers(), getWorkers(), getYachts(), getWareHouseUnofficially()])
+            .then(([res1, res2, res3, res4, res5, res6, res7]) => {
                 setData(res1 || []);
                 setCatagoryData(res2 || []);
                 setParts(res3 || []);
                 setUsers(res4 || []);
                 setWorkers(res5 || []);
                 setYachts(res6 || []);
+                setPartsUnofficially(res7 || []);
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
@@ -906,7 +915,7 @@ const OfferPage = () => {
                     handleSelectChange={handleSelectChange}
                     userOptions={userOptions}
                     catagoryData={catagoryData}
-                    partOptions={partOptions}
+                    partOptions={combinedParts}
                     openCreateServiceModal={openCreateServiceModal}
                     openCreatePartModal={openCreatePartModal}
                     openCreateCustomerModal={openCreateCustomerModal}
@@ -923,7 +932,7 @@ const OfferPage = () => {
                     handleSelectChange={handleEditSelectChange}
                     userOptions={userOptions}
                     catagoryData={catagoryData}
-                    partOptions={partOptions}
+                    partOptions={combinedParts}
                     openCreateServiceModal={openCreateServiceModal}
                     openCreatePartModal={openCreatePartModal}
                     openCreateCustomerModal={openCreateCustomerModal}

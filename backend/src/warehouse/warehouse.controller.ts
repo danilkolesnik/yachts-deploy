@@ -42,6 +42,11 @@ export class WarehouseController {
         return this.warehouseService.getInStock();
     }
 
+    @Get('in-stock-unofficially')
+    async getInStockUnofficially() {
+        return this.warehouseService.getInStockUnofficially();
+    }
+
     @Get('history')
     async getAllWarehouseHistory() {
         console.log('getAllWarehouseHistory called');
