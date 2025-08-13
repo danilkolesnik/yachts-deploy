@@ -252,7 +252,7 @@ const WarehouseUnofficiallyPage = () => {
                             <Button color="#282828" className="w-full md:w-auto" onClick={exportToExcel}>
                                 Export to Excel
                             </Button>
-                            <Button onClick={handleHistoryClick} color="white" className="w-full md:w-auto border-[2px] border-[#D33]">
+                            <Button onClick={handleHistoryClick} color="white" className="w-full md:w-auto border-[2px] border-[#D33] text-[#000]">
                                 View History
                             </Button>
                         </div>
