@@ -34,10 +34,10 @@ export default function RootLayout({ children }) {
         </Head>
         <StoreProvider>
           <AuthProvider>
-            <ToastContainer />
             {children}
           </AuthProvider>
         </StoreProvider>
+        <ToastContainer />
       </body>
     </html>
   );

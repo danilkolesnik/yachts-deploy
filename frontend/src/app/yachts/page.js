@@ -87,11 +87,17 @@ const YachtsPage = () => {
         e.preventDefault();
         try {
             if(formData.name === ''){
-                toast.error("Error: Name is required");
+                toast.error("Error: Name is required",{
+                    position: "bottom-right",
+                    zIndex: 1000,     
+                });
                 return;
             }
             if(formData.model === ''){
-                toast.error("Error: Model is required");
+                toast.error("Error: Model is required",{
+                    position: "bottom-right",
+                    zIndex: 1000,     
+                });
                 return;
             }
             const response = await axios.post(`${URL}/yachts`, formData);
@@ -99,11 +105,17 @@ const YachtsPage = () => {
                 setFormData({ name: '', model: '' });
                 setModalIsOpen(false);
                 fetchYachts();
-                toast.success("Yacht created successfully");
+                toast.success("Yacht created successfully",{
+                    position: "bottom-right",
+                    zIndex: 1000,     
+                });
             }
         } catch (error) {
             console.error('Error creating yacht:', error);
-            toast.error("Error creating yacht");
+            toast.error("Error creating yacht",{
+                position: "bottom-right",
+                zIndex: 1000,     
+            });
         }
     };
 
@@ -116,15 +128,35 @@ const YachtsPage = () => {
         e.preventDefault();
         try {
             const response = await axios.put(`${URL}/yachts/${editingYacht.id}`, editingYacht);
+            if(formData.name === ''){
+                toast.error("Error: Name is required",{
+                    position: "bottom-right",
+                    zIndex: 1000,     
+                });
+                return;
+            }
+            if(formData.model === ''){
+                toast.error("Error: Model is required",{
+                    position: "bottom-right",
+                    zIndex: 1000,     
+                });
+                return;
+            }
             if (response.data.code === 200) {
                 setEditingYacht(null);
                 setEditModalIsOpen(false);
                 fetchYachts();
-                toast.success("Yacht updated successfully");
+                toast.success("Yacht updated successfully",{
+                    position: "bottom-right",
+                    zIndex: 1000,     
+                });
             }
         } catch (error) {
             console.error('Error updating yacht:', error);
-            toast.error("Error updating yacht");
+            toast.error("Error updating yacht",{
+                position: "bottom-right",
+                zIndex: 1000,     
+            });
         }
     };
 
@@ -250,14 +282,12 @@ const YachtsPage = () => {
                             name="name"
                             value={editingYacht?.name || ''}
                             onChange={handleEditChange}
-                            required
                         />
                         <Input
                             label="Model"
                             name="model"
                             value={editingYacht?.model || ''}
                             onChange={handleEditChange}
-                            required
                         />
                         <div className="flex justify-end space-x-2">
                             <Button variant="text" color="red" onClick={() => setEditModalIsOpen(false)} className="mr-1">
