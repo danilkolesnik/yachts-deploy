@@ -90,6 +90,12 @@ function NavList({ isOpen, setIsOpen }) {
               <span>Warehouse</span>
             </ListItem>
           </Link>
+          <Link href="/warehouseUnofficially" onClick={handleClick} className=" font-bold"> 
+            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
+              <ArchiveBoxIcon className="h-5 w-5 mr-2" />
+              <span>Warehouse Unofficially</span>
+            </ListItem>
+          </Link>
           <Link href="/priceList" onClick={handleClick} className=" font-bold">
             <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
               <CurrencyDollarIcon className="h-5 w-5 mr-2" />
