@@ -39,9 +39,9 @@ export default function RootLayout({ children }) {
         </StoreProvider>
         <ToastContainer 
           position="bottom-right"
-          zIndex={1000}
+          zIndex={10000}
           style={{
-            zIndex: 1000,
+            zIndex: 10000,
             position: "bottom-right",
           }}
         />
