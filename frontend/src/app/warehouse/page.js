@@ -247,7 +247,7 @@ const WarehousePage = () => {
                             <SearchInput search={search} setSearch={setSearch} filteredData={filteredData} onSearchSelect={handleSearchSelect} />
                         </div>
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-                            <Button onClick={openModal} color="#D33" className="w-full md:w-auto">
+                            <Button onClick={openModal} color="#dd3333" className="w-full md:w-auto">
                                 Create
                             </Button>
                             <Button color="#282828" className="w-full md:w-auto" onClick={exportToExcel}>
