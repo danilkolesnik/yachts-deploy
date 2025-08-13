@@ -11,6 +11,8 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
         label: `${yacht.name} - ${yacht.model}`
     }));
 
+    console.log(partOptions);
+
     const combinedParts = partOptions.map(part => ({
         ...part,
         color: part.value.unofficially ? 'green' : 'red'
