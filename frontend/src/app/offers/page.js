@@ -6,6 +6,7 @@ import { Button, Select, Option } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { useAppSelector } from '@/lib/hooks';
+import { toast } from 'react-toastify';
 import axios from 'axios';
 import DataTable from 'react-data-table-component';
 import Loader from '@/ui/loader';
@@ -532,12 +533,13 @@ const OfferPage = () => {
                 offerId: id,
                 customerId,
             });
-
-            console.log("Заказ успешно создан:", response.data);
+            toast.success("Order created successfully");
+            console.log("Order created successfully:", response.data);
             closeCreateOrderModal();
             router.push('/orders');
         } catch (error) {
-            console.error("Ошибка при создании заказа:", error.response ? error.response.data : error.message);
+            toast.error("Error creating order");
+            console.error("Error creating order:", error.response ? error.response.data : error.message);
         }
     };
 
