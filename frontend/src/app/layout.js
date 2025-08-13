@@ -29,9 +29,9 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* <Head>
-          <link rel="icon" href="/favicon.ico" />
-        </Head> */}
+        <Head>
+          <link rel="icon" href="../../public/favicon.ico" />
+        </Head>
         <StoreProvider>
           <AuthProvider>
             <ToastContainer />
