@@ -302,7 +302,7 @@ const OrderPage = () => {
                             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto justify-end">
                                 {role !== 'user' && (
                                     <>
-                                    <Button color="purple" className="w-full sm:w-auto" onClick={exportToExcel}>
+                                    <Button color="#282828" className="w-full sm:w-auto" onClick={exportToExcel}>
                                         Export to Excel
                                     </Button>
                                 <Button color="green" onClick={() => router.push('/orders/history')} className="w-full sm:w-auto">

@@ -321,7 +321,7 @@ const ConfirmedOffersPage = () => {
                                         <Button onClick={handleBackClick} color="gray" className="w-full sm:w-auto">
                                             Back
                                         </Button>
-                                        <Button color="purple" className="w-full sm:w-auto" onClick={exportToExcel}>
+                                        <Button color="#282828" className="w-full sm:w-auto" onClick={exportToExcel}>
                                             Export to Excel
                                         </Button>
                                     </>

@@ -246,13 +246,13 @@ const WarehouseUnofficiallyPage = () => {
                             <SearchInput search={search} setSearch={setSearch} filteredData={filteredData} onSearchSelect={handleSearchSelect} />
                         </div>
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-                            <Button onClick={openModal} color="blue" className="w-full md:w-auto">
+                            <Button onClick={openModal} color="#D33" className="w-full md:w-auto">
                                 Create
                             </Button>
-                            <Button color="purple" className="w-full md:w-auto" onClick={exportToExcel}>
+                            <Button color="#282828" className="w-full md:w-auto" onClick={exportToExcel}>
                                 Export to Excel
                             </Button>
-                            <Button onClick={handleHistoryClick} color="green" className="w-full md:w-auto">
+                            <Button onClick={handleHistoryClick} color="white" className="w-full md:w-auto border-[2px] border-[#D33]">
                                 View History
                             </Button>
                         </div>

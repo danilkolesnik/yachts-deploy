@@ -223,10 +223,10 @@ const PriceListPage = () => {
                                 />
                             </div>
                             <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                                <Button color="purple" className="w-full sm:w-auto" onClick={exportToExcel}>
+                                <Button color="#282828" className="w-full sm:w-auto" onClick={exportToExcel}>
                                     Export to Excel
                                 </Button>
-                                <Button onClick={openModal} color="blue" className="w-full sm:w-auto">
+                                <Button onClick={openModal} color="#D33" className="w-full sm:w-auto">
                                     Create
                                 </Button>     
                             </div>
