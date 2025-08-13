@@ -37,7 +37,14 @@ export default function RootLayout({ children }) {
             {children}
           </AuthProvider>
         </StoreProvider>
-        <ToastContainer />
+        <ToastContainer 
+          position="bottom-right"
+          zIndex={1000}
+          style={{
+            zIndex: 1000,
+            position: "bottom-right",
+          }}
+        />
       </body>
     </html>
   );
