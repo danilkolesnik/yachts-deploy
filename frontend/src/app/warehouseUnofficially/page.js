@@ -200,18 +200,18 @@ const WarehouseUnofficiallyPage = () => {
 
     // --- SheetJS Export Function ---
     const exportToExcel = () => {
-        const exportData = filteredData.map(row => ({
-            'Boat Registration': row.countryCode || '',
-            Name: row.name || '',
-            Quantity: row.quantity || '',
-            Comment: row.comment || '',
-            Price: `${row.pricePerUnit || ''}€`,
-            'Service Category': row.serviceCategory?.serviceName || ''
-        }));
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Warehouse');
-        XLSX.writeFile(workbook, 'warehouse_export.xlsx');
+        // const exportData = filteredData.map(row => ({
+        //     'Boat Registration': row.countryCode || '',
+        //     Name: row.name || '',
+        //     Quantity: row.quantity || '',
+        //     Comment: row.comment || '',
+        //     Price: `${row.pricePerUnit || ''}€`,
+        //     'Service Category': row.serviceCategory?.serviceName || ''
+        // }));
+        // const worksheet = XLSX.utils.json_to_sheet(exportData);
+        // const workbook = XLSX.utils.book_new();
+        // XLSX.utils.book_append_sheet(workbook, worksheet, 'Warehouse');
+        // XLSX.writeFile(workbook, 'warehouse_export.xlsx');
     };
 
     useEffect(() => {
@@ -271,7 +271,7 @@ const WarehouseUnofficiallyPage = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredData.map((row) => (
+                                {/* {filteredData.map((row) => (
                                     <tr key={row.id}>
                                         <td>{row.countryCode || ''}</td>
                                         <td>{row.name || ''}</td>
@@ -280,7 +280,7 @@ const WarehouseUnofficiallyPage = () => {
                                         <td>{`${row.pricePerUnit || ''}€`}</td>
                                         <td>{row.serviceCategory?.serviceName || ''}</td>
                                     </tr>
-                                ))}
+                                ))} */}
                             </tbody>
                         </table>
                         <DataTable
