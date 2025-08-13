@@ -845,7 +845,7 @@ const OfferPage = () => {
                                 <Button onClick={openCreateModal} className="w-full sm:w-auto bg-[#dd3333] text-white">
                                     Create
                                 </Button>
-                                <Button onClick={handleHistoryClick} color="green" className="w-full sm:w-auto">
+                                <Button onClick={handleHistoryClick} color="white" className="w-full md:w-auto border-[2px] border-[#D33] text-[#000]">
                                 History
                             </Button>
                             <Button onClick={handleConfirmedOffersClick} className="w-full sm:w-auto bg-[#3e4a66] text-white" >
