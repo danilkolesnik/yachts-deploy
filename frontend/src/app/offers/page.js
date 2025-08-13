@@ -617,6 +617,8 @@ const OfferPage = () => {
     const combinedParts = [...parts, ...partsUnofficially].map(part => ({
         value: part.id,
         label: part.name,
+        pricePerUnit: part.pricePerUnit,
+        quantity: '1',
         unofficially: part.unofficially
     }));
 
