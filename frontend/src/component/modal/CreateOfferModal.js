@@ -126,7 +126,7 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
                         }),
                         option: (provided, state) => ({
                             ...provided,
-                            color: state.data.color,
+                            color: state.color,
                             backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
                         }),
                     }}
