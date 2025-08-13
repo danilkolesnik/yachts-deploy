@@ -359,11 +359,7 @@ const OfferPage = () => {
                 description: formData.comment || ''
             };
 
-            console.log('Form Data:', formData);
-            console.log('Offer Data being sent:', offerData);
-
             if (editMode) {
-                console.log('Sending PUT request with data:', JSON.stringify(offerData));
                 await axios.put(`${URL}/offer/${editId}`, offerData, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -371,7 +367,6 @@ const OfferPage = () => {
                     }
                 });
             } else {
-                console.log('Sending POST request with data:', JSON.stringify(offerData));
                 await axios.post(`${URL}/offer`, offerData, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -398,8 +393,10 @@ const OfferPage = () => {
             setEditMode(false);
             setEditId(null);
             setLoadingCreateOffer(false);
+            toast.success("Offer created successfully");
         } catch (error) {
             console.error('Error creating offer:', error);
+            toast.error("Error creating offer");
             setLoadingCreateOffer(false);
         }
     };
