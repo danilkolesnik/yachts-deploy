@@ -224,14 +224,12 @@ const YachtsPage = () => {
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
-                            required
                         />
                         <Input
                             label="Model"
                             name="model"
                             value={formData.model}
                             onChange={handleChange}
-                            required
                         />
                         <div className="flex justify-end space-x-2">
                             <Button variant="text" color="red" onClick={() => setModalIsOpen(false)} className="mr-1">
