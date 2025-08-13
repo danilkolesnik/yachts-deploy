@@ -126,8 +126,12 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, h
                         }),
                         option: (provided, state) => ({
                             ...provided,
-                            color: state.data.unofficially ? 'green' : 'red',
+                            color: state.data.unofficially ? 'green' : 'gray',
                             backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
+                        }),
+                        multiValueLabel: (provided, state) => ({
+                            ...provided,
+                            color: state.data.unofficially ? 'green' : 'gray',
                         }),
                     }}
                 />

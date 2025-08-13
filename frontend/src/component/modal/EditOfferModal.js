@@ -106,8 +106,12 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         option: (provided, state) => ({
                             ...provided,
-                            color: state.data.color,
+                            color: state.data.unofficially ? 'green' : 'gray',
                             backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
+                        }),
+                        multiValueLabel: (provided, state) => ({
+                            ...provided,
+                            color: state.data.unofficially ? 'green' : 'gray',
                         }),
                     }}
                 />
