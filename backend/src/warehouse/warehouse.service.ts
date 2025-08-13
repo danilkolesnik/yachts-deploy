@@ -45,6 +45,7 @@ export class WarehouseService {
               countryCode: data.countryCode,
               serviceCategory: data.serviceCategory,
               pricePerUnit: data.pricePerUnit,
+              unofficially: data.unofficially,
             })
           );
     
@@ -153,7 +154,22 @@ export class WarehouseService {
 
     async findAll() {
         try {
-            const warehouses = await this.warehouseModule.find();
+            const warehouses = await this.warehouseModule.find({ where: { unofficially: true } });
+            return {
+                code: 200,
+                data: warehouses,
+            };
+        } catch (err) {
+            return {
+                code: 500,
+                message: err instanceof Error ? err.message : 'Internal server error',
+            };
+        }
+    }
+
+    async findAllUnofficially() {
+        try {
+            const warehouses = await this.warehouseModule.find({ where: { unofficially: false } });
             return {
                 code: 200,
                 data: warehouses,

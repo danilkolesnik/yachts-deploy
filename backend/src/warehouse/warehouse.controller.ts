@@ -32,6 +32,11 @@ export class WarehouseController {
         return this.warehouseService.findAll();
     }
 
+    @Get('unofficially')
+    async getAllWarehousesUnofficially() {
+        return this.warehouseService.findAllUnofficially();
+    }
+
     @Get('in-stock')
     async getInStock() {
         return this.warehouseService.getInStock();

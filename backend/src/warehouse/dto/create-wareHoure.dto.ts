@@ -9,4 +9,5 @@ export class CreateWareHourehDto {
       serviceName: string;
       priceInEuroWithoutVAT: number;
     };
+    unofficially: boolean;
   }

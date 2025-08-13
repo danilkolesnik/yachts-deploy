@@ -23,6 +23,9 @@ export class warehouse {
   @Column({ nullable: false, default: '' })
   countryCode: string;
 
+  @Column({ default: false })
+  unofficially: boolean;
+
   @Column('json', { default: {} })
   serviceCategory: {
     serviceName: string;
