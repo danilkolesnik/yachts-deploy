@@ -1,17 +1,18 @@
 "use client"
 import React, { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
+import { Button, Select, Option } from "@material-tailwind/react";
+import { URL } from '@/utils/constants';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
+import Header from '@/component/header';
+import SearchInput from '@/component/search';
 import DataTable from 'react-data-table-component';
 import Loader from '@/ui/loader';
 import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
-import { Button, Select, Option } from "@material-tailwind/react";
-import { URL } from '@/utils/constants';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
-import Header from '@/component/header';
-import SearchInput from '@/component/search';
-import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
+import axios from 'axios';
 
 const WarehousePage = () => {
     const [data, setData] = useState([]);
@@ -114,11 +115,13 @@ const WarehousePage = () => {
         try {
             if (editMode) {
                 await axios.put(`${URL}/warehouse/${editId}`, formData);
+                toast.success("Warehouse updated successfully");
             } else {
                 await axios.post(`${URL}/warehouse/create`, {
                     ...formData,
                     unofficially: true
                 });
+                toast.success("Warehouse created successfully");
             }
             getData().then((res) => {
                 setData(res);
@@ -129,6 +132,7 @@ const WarehousePage = () => {
             setEditId(null);
         } catch (error) {
             console.log(error);
+            toast.error("Error updating warehouse");
         }
     };
 
@@ -154,8 +158,10 @@ const WarehousePage = () => {
                 setData(res);
                 setFilteredData(res);
             })
+            toast.success("Warehouse deleted successfully");
         } catch (error) {
             console.log(error);
+            toast.error("Error deleting warehouse");
         }
     };
 

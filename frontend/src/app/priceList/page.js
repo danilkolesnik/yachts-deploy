@@ -8,6 +8,7 @@ import Input from '@/ui/Input';
 import { Button } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { toast } from 'react-toastify';
 import Header from '@/component/header';
 import ReactSelect from 'react-select';
 import * as XLSX from 'xlsx';
@@ -90,8 +91,10 @@ const PriceListPage = () => {
         try {
             if (editMode) {
                 await axios.put(`${URL}/pricelist/${editId}`, formData);
+                toast.success("Price list updated successfully");
             } else {
                 await axios.post(`${URL}/pricelist/create`, formData);
+                toast.success("Price list created successfully");
             }
             getData();
             setModalIsOpen(false);
@@ -99,6 +102,7 @@ const PriceListPage = () => {
             setEditId(null);
         } catch (error) {
             console.log(error);
+            toast.error("Error updating price list");
         }
     };
 
@@ -118,8 +122,10 @@ const PriceListPage = () => {
         try {
             await axios.post(`${URL}/pricelist/delete/${id}`);
             getData();
+            toast.success("Price list deleted successfully");
         } catch (error) {
             console.log(error);
+            toast.error("Error deleting price list");
         }
     };
 

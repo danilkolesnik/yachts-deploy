@@ -6,6 +6,7 @@ import Header from '@/component/header';
 import axios from 'axios';
 import DataTable from 'react-data-table-component';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { toast } from 'react-toastify'; 
 import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import Loader from '@/ui/loader';
@@ -90,9 +91,11 @@ const YachtsPage = () => {
                 setFormData({ name: '', model: '' });
                 setModalIsOpen(false);
                 fetchYachts();
+                toast.success("Yacht created successfully");
             }
         } catch (error) {
             console.error('Error creating yacht:', error);
+            toast.error("Error creating yacht");
         }
     };
 
@@ -109,9 +112,11 @@ const YachtsPage = () => {
                 setEditingYacht(null);
                 setEditModalIsOpen(false);
                 fetchYachts();
+                toast.success("Yacht updated successfully");
             }
         } catch (error) {
             console.error('Error updating yacht:', error);
+            toast.error("Error updating yacht");
         }
     };
 
@@ -120,9 +125,11 @@ const YachtsPage = () => {
             const response = await axios.delete(`${URL}/yachts/${id}`);
             if (response.data.code === 200) {
                 fetchYachts();
+                toast.success("Yacht deleted successfully");
             }
         } catch (error) {
             console.error('Error deleting yacht:', error);
+            toast.error("Error deleting yacht");
         }
     };
 

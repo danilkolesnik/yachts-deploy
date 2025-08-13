@@ -10,6 +10,7 @@ import { Button, Select, Option } from '@material-tailwind/react';
 import Modal from '@/ui/Modal';
 import ReactSelect from 'react-select';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { toast } from 'react-toastify';
 
 const UsersPage = () => {
     const [users, setUsers] = useState([]);
@@ -93,11 +94,14 @@ const UsersPage = () => {
             if (response.data.code === 200) {
                 setUsers(users.map(user => user.id === selectedUser.id ? { ...user, role: newRole } : user));
                 closeEditRoleModal();
+                toast.success("User role updated successfully");
             } else {
                 console.error('Failed to update role:', response.data.message);
+                toast.error("Failed to update role");
             }
         } catch (error) {
             console.error('Error updating role:', error);
+            toast.error("Error updating role");
         }
     };
 
@@ -112,11 +116,14 @@ const UsersPage = () => {
 
             if (response.data.code === 200) {
                 setUsers(users.filter(user => user.id !== userId));
+                toast.success("User deleted successfully");
             } else {
                 console.error('Failed to delete user:', response.data.message);
+                toast.error("Failed to delete user");
             }
         } catch (error) {
             console.error('Error deleting user:', error);
+            toast.error("Error deleting user");
         }
     };
 
