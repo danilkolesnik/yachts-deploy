@@ -139,9 +139,12 @@ const Header = () => {
   return (
     <Navbar className="mx-auto max-w-screen-xl px-4 py-2 rounded-none bg-white">
       <div className="flex items-center justify-between text-blue-gray-900 relative">
-        <div className="absolute left-[10px] top-[10px]">
-          <Image src={'http://116.203.198.150:5000/uploads/logo/Logo.png'} alt="logo" width={120} height={80} />
-        </div>
+        {isMobile && (
+          <div className="absolute left-[10px] top-[10px]">
+            <Image src={'http://116.203.198.150:5000/uploads/logo/Logo.png'} alt="logo" width={120} height={80} />
+          </div>
+        )}
+        
         <div className="flex-grow"></div>
         <div className={isMobile ? 'hidden' : 'block'}>
           <NavList isOpen={isOpen} setIsOpen={setIsOpen} />
