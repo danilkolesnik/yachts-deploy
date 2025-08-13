@@ -18,7 +18,6 @@ import {
 } from "@heroicons/react/24/solid";
 import { useAppDispatch } from '@/lib/hooks';
 import { setId } from '@/lib/features/todos/usersDataSlice';
-import logo from '@/public/logo/logo.png';
 import Image from 'next/image';
 
 import Link from 'next/link'
@@ -141,7 +140,7 @@ const Header = () => {
     <Navbar className="mx-auto max-w-screen-xl px-4 py-2 rounded-none bg-white">
       <div className="flex items-center justify-between text-blue-gray-900">
         <div className="flex-grow"></div>
-        <Image src={logo} alt="logo" width={200} height={66} />
+        <Image src={'http://116.203.198.150:5000/uploads/logo/Logo.png'} alt="logo" width={200} height={66} />
         <div className={isMobile ? 'hidden' : 'block'}>
           <NavList isOpen={isOpen} setIsOpen={setIsOpen} />
         </div>
