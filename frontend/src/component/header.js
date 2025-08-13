@@ -138,31 +138,32 @@ const Header = () => {
 
   return (
     <Navbar className="mx-auto max-w-screen-xl px-4 py-2 rounded-none bg-white">
-      <div className="flex items-center justify-between text-blue-gray-900">
-        <div className="flex-grow flex items-center justify-start">
-            <Image src={'http://116.203.198.150:5000/uploads/logo/Logo.png'} alt="logo" width={200} height={66} />
-        </div>
-        <div className={isMobile ? 'hidden' : 'block'}>
-          <NavList isOpen={isOpen} setIsOpen={setIsOpen} />
-        </div>
-        <div className={isMobile ? 'block' : 'hidden'}>
-          <IconButton
-            variant="text"
-            color="black"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            {isOpen ? (
-              <XMarkIcon className="h-6 w-6" />
-            ) : (
-              <Bars3Icon className="h-6 w-6" />
-            )}
-          </IconButton>
-        </div>
+    <div className="flex items-center justify-between text-blue-gray-900">
+      <div className="absolute left-[10px]">
+        <Image src={'http://116.203.198.150:5000/uploads/logo/Logo.png'} alt="logo" width={100} height={66} />
       </div>
-      <Collapse open={isOpen}>
+      <div className="flex-grow"></div>
+      <div className={isMobile ? 'hidden' : 'block'}>
         <NavList isOpen={isOpen} setIsOpen={setIsOpen} />
-      </Collapse>
-    </Navbar>
+      </div>
+      <div className={isMobile ? 'block' : 'hidden'}>
+        <IconButton
+          variant="text"
+          color="black"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {isOpen ? (
+            <XMarkIcon className="h-6 w-6" />
+          ) : (
+            <Bars3Icon className="h-6 w-6" />
+          )}
+        </IconButton>
+      </div>
+    </div>
+    <Collapse open={isOpen}>
+      <NavList isOpen={isOpen} setIsOpen={setIsOpen} />
+    </Collapse>
+  </Navbar>
   );
 };
 
