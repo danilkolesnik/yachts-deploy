@@ -116,7 +116,7 @@ const WarehouseUnofficiallyPage = () => {
             } else {
                 await axios.post(`${URL}/warehouse/create`, {
                     ...formData,
-                    unofficially: true
+                    unofficially: false
                 });
             }
             getData().then((res) => {
