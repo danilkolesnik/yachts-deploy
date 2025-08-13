@@ -13,7 +13,7 @@ import SearchInput from '@/component/search';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
 
-const WarehousePage = () => {
+const WarehouseUnofficiallyPage = () => {
     const [data, setData] = useState([]);
     const [catagoryData, setCatagoryData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -90,7 +90,7 @@ const WarehousePage = () => {
 
     const getData = async () => {
         try {
-            const res = await axios.get('/api/warehouse');
+            const res = await axios.get(`${URL}/warehouse/unofficially`);
             console.log(res.data);
             return res.data;
         } catch (error) {
@@ -117,7 +117,7 @@ const WarehousePage = () => {
             } else {
                 await axios.post(`${URL}/warehouse/create`, {
                     ...formData,
-                    unofficially: true
+                    unofficially: false
                 });
             }
             getData().then((res) => {
@@ -361,4 +361,4 @@ const WarehousePage = () => {
     );
 };
 
-export default WarehousePage;
+export default WarehouseUnofficiallyPage;
