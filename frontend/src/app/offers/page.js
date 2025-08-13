@@ -842,7 +842,7 @@ const OfferPage = () => {
                             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto justify-end">
                                 {role !== 'user' && (
                                 <>
-                                <Button onClick={openCreateModal} color="#D33" className="w-full sm:w-auto">
+                                <Button onClick={openCreateModal} className="w-full sm:w-auto bg-[#dd3333] text-white">
                                     Create
                                 </Button>
                                 <Button onClick={handleHistoryClick} color="green" className="w-full sm:w-auto">
