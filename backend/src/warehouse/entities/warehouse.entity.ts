@@ -23,7 +23,7 @@ export class warehouse {
   @Column({ nullable: false, default: '' })
   countryCode: string;
 
-  @Column({ default: false })
+  @Column({ default: true })
   unofficially: boolean;
 
   @Column('json', { default: {} })
