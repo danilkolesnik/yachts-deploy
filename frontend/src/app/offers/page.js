@@ -508,6 +508,7 @@ const OfferPage = () => {
 
     const createOrder = async () => {
         if (!selectedRow) {
+            toast.error("Error: No row selected for order!");
             console.error("Ошибка: Не выбрана строка с данными заказа!");
             return;
         }
@@ -515,11 +516,13 @@ const OfferPage = () => {
         const { id, customerId } = selectedRow;
 
         if (!id || !customerId) {
+            toast.error("Error: Not enough data to create an order!");
             console.error("Ошибка: Недостаточно данных для создания заказа!");
             return;
         }
 
         if (!createOrderFormData.length) {
+            toast.error("Error: No users selected for order!");
             console.error("Ошибка: Не выбраны пользователи для заказа!");
             return;
         }
