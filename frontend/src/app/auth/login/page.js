@@ -84,6 +84,11 @@ const Login = () => {
                         Register
                     </Link>
                 </p>
+                <p className="text-center text-sm text-black">
+                    <Link href="/auth/send-email" className="text-blue-500 hover:underline">
+                        Forgot Password?
+                    </Link>
+                </p>
             </div>
         </div>
     );
