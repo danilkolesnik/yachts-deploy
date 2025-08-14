@@ -15,6 +15,7 @@ const SendEmail = () => {
             const response = await axios.post(`${URL}/auth/send-email`, { email });
             if (response.data.code === 200) {
                 toast.success('Email sent successfully');
+                router.push(`/auth/login`);
             } else {
                 toast.error(response.data.message);
             }
