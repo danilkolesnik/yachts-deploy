@@ -24,6 +24,8 @@ const AuthProvider = ({ children }) => {
           return response.data.data;
         }
       }else{
+        console.log(router.pathname);
+        
         if (router.pathname !== '/auth/reset-password') {
           router.push('/auth/login');
         }
