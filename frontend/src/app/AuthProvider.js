@@ -3,12 +3,13 @@ import { useEffect } from 'react';
 import axios from 'axios';
 import { URL } from '@/utils/constants';
 import { useAppDispatch } from '@/lib/hooks';
-import { useRouter } from 'next/navigation';
+import { useRouter,usePathname  } from 'next/navigation';
 import { setEmail,setRole,setId } from '@/lib/features/todos/usersDataSlice';
 
 const AuthProvider = ({ children }) => {
   const dispatch = useAppDispatch();
   const router = useRouter()
+  const pathname = usePathname()
 
   const verifyUser = async () => {
     try {
@@ -24,9 +25,9 @@ const AuthProvider = ({ children }) => {
           return response.data.data;
         }
       }else{
-        console.log(router);
+        console.log(pathname);
         
-        if (router.pathname !== '/auth/reset-password') {
+        if (pathname !== '/auth/reset-password') {
           router.push('/auth/login');
         }
       }
