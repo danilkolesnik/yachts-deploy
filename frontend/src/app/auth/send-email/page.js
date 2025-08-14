@@ -9,6 +9,8 @@ import Link from 'next/link';
 const SendEmail = () => {
     const [email, setEmail] = useState('');
 
+    const router = useRouter();
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
