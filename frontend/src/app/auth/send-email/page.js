@@ -35,10 +35,9 @@ const SendEmail = () => {
                             value={email}
                             onChange={(e) => {
                                 setEmail(e.target.value);
-                                if (errorMessage) setErrorMessage('');
                             }}
                             required
-                            className={`w-full px-3 py-2 border ${errorMessage ? 'border-red-500' : 'border-gray-300'} rounded focus:outline-none focus:ring focus:ring-blue-200 text-black`}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-blue-200 text-black`}
                         />
                     </div>
                     <button
