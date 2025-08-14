@@ -19,7 +19,7 @@ function ResetPasswordForm() {
       const response = await axios.post(`${URL}/auth/reset-password`, { userId, newPassword });
       if (response.data.code === 200) {
         toast.success('Password reset successfully');
-        router.push('/auth/login');
+        // router.push('/auth/login');
       } else {
         toast.error(response.data.message);
       }
@@ -53,7 +53,7 @@ function ResetPasswordForm() {
             Reset Password
           </button>
           <p className="text-center text-sm text-black">
-            Already have an account?{' '}
+            Already have an account?{''}
             <Link href="/auth/login" className="text-blue-500 hover:underline">
               Login
             </Link>
