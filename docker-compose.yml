@@ -29,6 +29,7 @@ services:
       - DATABASE_NAME=yachts
       - DATABASE_PORT=5432
       - SERVER_URL=http://116.203.198.150:5000
+      - CLIENT_URL=http://116.203.198.150:3000
       - ZOHO_APP_PASSWORD=fV3U2ZA#u4:6$Gg
       - ZOHO_EMAIL=kirill.hetman@zohomail.eu
     depends_on:

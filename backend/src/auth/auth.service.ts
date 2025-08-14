@@ -7,6 +7,7 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import generateRandomId from 'src/methods/generateRandomId';
 import getBearerToken from 'src/methods/getBearerToken';
+import * as nodemailer from 'nodemailer';
 
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
@@ -196,7 +197,7 @@ export class AuthService {
       }
     }
 
-    async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    async changePassword(userId: string, newPassword: string) {
       try {
         const user = await this.usersModule.findOne({ where: { id: userId } });
 
@@ -204,15 +205,6 @@ export class AuthService {
           return {
             code: 404,
             message: 'User not found',
-          };
-        }
-
-        // Verify current password
-        const isMatch = bcrypt.compareSync(currentPassword, user.password);
-        if (!isMatch) {
-          return {
-            code: 400,
-            message: 'Current password is incorrect',
           };
         }
 
@@ -234,4 +226,51 @@ export class AuthService {
         };
       }
     }
+
+    async sendEmail(email: string) {
+      try {
+        const user = await this.usersModule.findOne({ where: { email } });
+
+        if (!user) {
+          return {
+            code: 404,
+            message: 'User not found',
+          };
+        }
+      const transporter = nodemailer.createTransport({
+        host: "smtp.zoho.eu", 
+        port: 465, 
+        secure: true,
+        auth: {
+          user: 'kirill.hetman@zohomail.eu',
+          pass: 'fV3U2ZA#u4:6$Gg',
+        },
+      });
+
+      const message = `
+        <p>You can reset your password by clicking the following link:</p>
+        <a href="${process.env.CLIENT_URL}/auth/reset-password/${user.id}">Reset Password</a>
+      `
+
+      const mailOptions: nodemailer.SendMailOptions = {
+        from: 'kirill.hetman@zohomail.eu',
+        to: email,
+        subject: 'Reset Password',
+        text: 'Reset Password',
+        html: message,
+      };
+
+      await transporter.sendMail(mailOptions);
+
+      return {
+        code: 200,
+        message: 'Email sent successfully',
+      };
+    } catch (err) {
+      return {
+        code: 500,
+        message: err,
+      };
+    }
+  }
 }

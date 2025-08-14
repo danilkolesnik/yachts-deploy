@@ -36,12 +36,21 @@ export class AuthController {
       return this.authService.createClient(data);
     }
 
+    @Post('send-email')
+    sendEmail(@Body() data: { email: string}) {
+      return this.authService.sendEmail(data.email);
+    }
+
+    @Post('reset-password')
+    resetPassword(@Body() data: { userId: string, newPassword: string }) {
+      return this.authService.changePassword(data.userId, data.newPassword);
+    }
+
     @Put(':id/password')
     async changePassword(
       @Param('id') id: string,
-      @Body('currentPassword') currentPassword: string,
       @Body('newPassword') newPassword: string,
     ) {
-      return this.authService.changePassword(id, currentPassword, newPassword);
+      return this.authService.changePassword(id, newPassword);
     }
 }
