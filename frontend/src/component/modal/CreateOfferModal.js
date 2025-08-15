@@ -5,13 +5,27 @@ import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import ReactSelect from 'react-select';
 
-const CreateOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal, openCreateCustomerModal, loading, yachts, handleYachtSelect }) => {
+const CreateOfferModal = ({ 
+    isOpen, 
+    onClose, 
+    onSubmit, 
+    formData, 
+    handleChange, 
+    handleSelectChange, 
+    userOptions, 
+    catagoryData, 
+    partOptions, 
+    openCreateServiceModal, 
+    openCreatePartModal, 
+    openCreateCustomerModal, 
+    loading, 
+    yachts,
+    handleYachtSelect 
+}) => {
     const yachtOptions = yachts.map(yacht => ({
         value: yacht,
         label: `${yacht.name} - ${yacht.model}`
     }));
-
-    console.log(partOptions);
 
     const combinedParts = partOptions.map(part => ({
         ...part,

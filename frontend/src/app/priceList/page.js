@@ -89,21 +89,19 @@ const PriceListPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if(formData.serviceName.trim() === ''){
-                toast.error("Error: Service name is required");
-                return;
-            }
-            if(formData.priceInEuroWithoutVAT.trim() === ''){
-                toast.error("Error: Price in EURO without VAT is required");
-                return;
-            }
-            if(formData.unitsOfMeasurement.trim() === ''){
-                toast.error("Error: Units of measurement is required");
-                return;
-            }
-            if(formData.description.trim() === ''){
-                toast.error("Error: Description is required");
-                return;
+            switch (true) {
+                case formData.serviceName.trim() === '':
+                    toast.error("Error: Service name is required");
+                    return;
+                case formData.priceInEuroWithoutVAT.trim() === '':
+                    toast.error("Error: Price in EURO without VAT is required");
+                    return;
+                case formData.unitsOfMeasurement.trim() === '':
+                    toast.error("Error: Units of measurement is required");
+                    return;
+                case formData.description.trim() === '':
+                    toast.error("Error: Description is required");
+                    return;
             }
             if (editMode) {
                 const res = await axios.put(`${URL}/pricelist/${editId}`, formData);

@@ -347,6 +347,30 @@ const OfferPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoadingCreateOffer(true);
+
+        switch (true) {
+            case formData.yachtName.trim() === '' || formData.yachtModel.trim() === '':
+                toast.error("Error: Yacht name and model are required");
+                return;
+            case formData.countryCode.trim() === '':
+                toast.error("Error: Yacht model is required");
+                return;
+            case formData.comment.trim() === '':
+                toast.error("Error: Comment is required");
+                return;
+            case formData.services.serviceName.trim() === '':
+                toast.error("Error: Service name is required");
+                return;
+            case formData.services.priceInEuroWithoutVAT.trim() === '':
+                toast.error("Error: Price in Euro Without VAT is required");
+                return;
+            case formData.parts.length === 0:
+                toast.error("Error: Parts are required");
+                return;
+            case formData.services.length === 0:
+                toast.error("Error: Services are required");
+                return;
+        }
         try {
             const token = localStorage.getItem('token');
             const offerData = { 

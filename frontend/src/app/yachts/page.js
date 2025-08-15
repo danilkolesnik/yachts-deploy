@@ -86,14 +86,14 @@ const YachtsPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if(formData.name === ''){
+            if(formData.name.trim() === ''){
                 toast.error("Error: Name is required",{
                     position: "bottom-right",
                     zIndex: 1000,     
                 });
                 return;
             }
-            if(formData.model === ''){
+            if(formData.model.trim() === ''){
                 toast.error("Error: Model is required",{
                     position: "bottom-right",
                     zIndex: 1000,     
