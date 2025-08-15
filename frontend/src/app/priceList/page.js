@@ -89,16 +89,20 @@ const PriceListPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if(formData.serviceName === ''){
+            if(formData.serviceName.trim() === ''){
                 toast.error("Error: Service name is required");
                 return;
             }
-            if(formData.priceInEuroWithoutVAT === ''){
+            if(formData.priceInEuroWithoutVAT.trim() === ''){
                 toast.error("Error: Price in EURO without VAT is required");
                 return;
             }
-            if(formData.unitsOfMeasurement === ''){
+            if(formData.unitsOfMeasurement.trim() === ''){
                 toast.error("Error: Units of measurement is required");
+                return;
+            }
+            if(formData.description.trim() === ''){
+                toast.error("Error: Description is required");
                 return;
             }
             if (editMode) {
@@ -106,14 +110,14 @@ const PriceListPage = () => {
                 if(res.data.code === 200){
                     toast.success("Price list updated successfully");
                 }else{
-                    toast.error(res.data.message);
+                    toast.error("Error: Price list not updated");
                 }
             } else {
                 const res = await axios.post(`${URL}/pricelist/create`, formData);
                 if(res.data.code === 201){
                     toast.success("Price list created successfully");
                 }else{
-                    toast.error(res.data.message);
+                    toast.error("Error: Price list not created");
                 }
             }
             getData();
@@ -297,21 +301,18 @@ const PriceListPage = () => {
                             name="serviceName"
                             value={formData.serviceName}
                             onChange={handleChange}
-                            required
                         />
                         <Input
                             label="Price in Euro Without VAT"
                             name="priceInEuroWithoutVAT"
                             value={formData.priceInEuroWithoutVAT}
                             onChange={handleChange}
-                            required
                         />
                         <Input
                             label="Units of Measurement"
                             name="unitsOfMeasurement"
                             value={formData.unitsOfMeasurement}
                             onChange={handleChange}
-                            required
                         />
                         <Input
                             label="Description"
