@@ -19,10 +19,10 @@ const SendEmail = () => {
                 toast.success('Email sent successfully');
                 router.push('/auth/login');
             } else {
-                // toast.error(response.data.message);
+                toast.error(response.data.message);
             }
         } catch (error) {
-            // toast.error('Network error. Please try again later.');
+            toast.error('Network error. Please try again later.');
         }
     };
 

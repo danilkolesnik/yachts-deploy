@@ -102,11 +102,19 @@ const PriceListPage = () => {
                 return;
             }
             if (editMode) {
-                await axios.put(`${URL}/pricelist/${editId}`, formData);
-                toast.success("Price list updated successfully");
+                const res = await axios.put(`${URL}/pricelist/${editId}`, formData);
+                if(res.data.code === 200){
+                    toast.success("Price list updated successfully");
+                }else{
+                    toast.error(res.data.message);
+                }
             } else {
-                await axios.post(`${URL}/pricelist/create`, formData);
-                toast.success("Price list created successfully");
+                const res = await axios.post(`${URL}/pricelist/create`, formData);
+                if(res.data.code === 201){
+                    toast.success("Price list created successfully");
+                }else{
+                    toast.error(res.data.message);
+                }
             }
             getData();
             setModalIsOpen(false);
