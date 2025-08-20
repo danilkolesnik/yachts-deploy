@@ -22,7 +22,7 @@ import Link from 'next/link'
 import Loader from '@/ui/loader';
 import Image from 'next/image';
 import logo from '../../public/logo/logo.svg';
-import yacht from '../../public/logo/yacht.png';
+import yacht from '../../public/yacht.png';
 
 
 function NavList({ isOpen, setIsOpen }) {
