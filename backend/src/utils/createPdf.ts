@@ -4,23 +4,15 @@ import puppeteer from 'puppeteer';
 
 export async function createPdfBuffer(data: any, type: string): Promise<Buffer> {
   try {
-    // Use export template for PDF export, regular template for email
     const templateName = type === 'offer-export' ? 'offer-export' : type;
     const templatePath = path.join(process.cwd(), 'documents', `${templateName}.html`);
     let templateString = fs.readFileSync(templatePath, 'utf8');
-
-    // Duplicate data to avoid issues with template processing
     const exportData = {
       ...data,
-      // Duplicate parts data
       parts: data.parts ? [...data.parts] : [],
-      // Duplicate services data
       services: data.services ? { ...data.services } : {},
-      // Duplicate image URLs
       imageUrls: data.imageUrls ? [...data.imageUrls] : [],
-      // Duplicate video URLs
       videoUrls: data.videoUrls ? [...data.videoUrls] : [],
-      // Duplicate offer data if exists
       offer: data.offer ? { ...data.offer } : null
     };
 

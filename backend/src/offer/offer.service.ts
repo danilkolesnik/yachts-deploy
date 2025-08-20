@@ -82,16 +82,16 @@ export class OfferService {
         })
       );
 
-      const subject = 'Offer created';
-      const message = `
-        <p>Offer created. Please find the attached PDF.</p>
-        <p>You can confirm your offer by clicking the following link:</p>
-        <a href="${process.env.SERVER_URL}/offer/confirm/${result.id}">Confirm Offer</a>
-        <p>You can cancel your offer by clicking the following link:</p>
-        <a href="${process.env.SERVER_URL}/offer/cancel/${result.id}">Cancel Offer</a>
-      `
+      // const subject = 'Offer created';
+      // const message = `
+      //   <p>Offer created. Please find the attached PDF.</p>
+      //   <p>You can confirm your offer by clicking the following link:</p>
+      //   <a href="${process.env.SERVER_URL}/offer/confirm/${result.id}">Confirm Offer</a>
+      //   <p>You can cancel your offer by clicking the following link:</p>
+      //   <a href="${process.env.SERVER_URL}/offer/cancel/${result.id}">Cancel Offer</a>
+      // `
 
-      await sendEmail(customer.email, result, 'offer', subject, message);
+      // await sendEmail(customer.email, result, 'offer', subject, message);
      
       return {
         code: 201,

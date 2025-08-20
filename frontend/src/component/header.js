@@ -22,6 +22,7 @@ import Link from 'next/link'
 import Loader from '@/ui/loader';
 import Image from 'next/image';
 import logo from '../../public/logo/logo.svg';
+import yacht from '../../public/logo/yacht.png';
 
 
 function NavList({ isOpen, setIsOpen }) {
@@ -82,7 +83,7 @@ function NavList({ isOpen, setIsOpen }) {
         <>
           <Link href="/yachts" onClick={handleClick} className=" font-bold">
             <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
-  
+              <Image src={yacht} alt="yacht" width={20} height={20} className="mr-2" />
               <span>Yachts</span>
             </ListItem>
           </Link>
@@ -95,7 +96,7 @@ function NavList({ isOpen, setIsOpen }) {
           <Link href="/warehouseUnofficially" onClick={handleClick} className=" font-bold"> 
             <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
               <ArchiveBoxIcon className="h-5 w-5 mr-2" />
-              <span>Warehouse Unofficially</span>
+              <span>Internal warehouse</span>
             </ListItem>
           </Link>
           <Link href="/priceList" onClick={handleClick} className=" font-bold">

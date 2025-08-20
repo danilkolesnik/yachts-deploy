@@ -108,7 +108,7 @@ const OfferDetail = ({ params }) => {
             
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
-            link.href = url;
+            link.href = `${url}?${new Date().getTime()}`; // Добавление уникального параметра
             link.setAttribute('download', `offer-${id}.pdf`);
             document.body.appendChild(link);
             link.click();
