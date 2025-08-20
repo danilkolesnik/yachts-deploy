@@ -83,7 +83,7 @@ function NavList({ isOpen, setIsOpen }) {
         <>
           <Link href="/yachts" onClick={handleClick} className=" font-bold">
             <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
-              <Image src={yacht} alt="yacht" width={20} height={20} className="mr-2" />
+              <Image src={yacht} alt="yacht" width={38} height={38} className="mr-2" />
               <span>Yachts</span>
             </ListItem>
           </Link>
