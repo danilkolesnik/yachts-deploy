@@ -24,7 +24,8 @@ const YachtsPage = () => {
 
     const [formData, setFormData] = useState({
         name: '',
-        model: ''
+        model: '',
+        repairTime: ''
     });
 
     const columns = [
@@ -41,6 +42,11 @@ const YachtsPage = () => {
         {
             name: 'Model',
             selector: row => row.model,
+            sortable: true,
+        },
+        {
+            name: 'Repair Time',
+            selector: row => row.repairTime,
             sortable: true,
         },
         {
@@ -102,7 +108,7 @@ const YachtsPage = () => {
             }
             const response = await axios.post(`${URL}/yachts`, formData);
             if (response.data.code === 201) {
-                setFormData({ name: '', model: '' });
+                setFormData({ name: '', model: '', repairTime: '' });
                 setModalIsOpen(false);
                 fetchYachts();
                 toast.success("Yacht created successfully",{
@@ -263,6 +269,12 @@ const YachtsPage = () => {
                             value={formData.model}
                             onChange={handleChange}
                         />
+                        <Input
+                            label="Repair Time"
+                            name="repairTime"
+                            value={formData.repairTime}
+                            onChange={handleChange}
+                        />
                         <div className="flex justify-end space-x-2">
                             <Button variant="text" color="red" onClick={() => setModalIsOpen(false)} className="mr-1">
                                 <span>Cancel</span>
@@ -287,6 +299,12 @@ const YachtsPage = () => {
                             label="Model"
                             name="model"
                             value={editingYacht?.model || ''}
+                            onChange={handleEditChange}
+                        />
+                        <Input
+                            label="Repair Time"
+                            name="repairTime"
+                            value={editingYacht?.repairTime || ''}
                             onChange={handleEditChange}
                         />
                         <div className="flex justify-end space-x-2">
