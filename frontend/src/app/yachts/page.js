@@ -30,8 +30,8 @@ const YachtsPage = () => {
 
     const columns = [
         {
-            name: 'ID',
-            selector: row => row.id,
+            name: "Date",
+            selector: row => row.createdAt,
             sortable: true,
         },
         {
@@ -46,7 +46,7 @@ const YachtsPage = () => {
         },
         {
             name: 'Repair Time',
-            selector: row => row.repairTime,
+            selector: row => `${row.repairTime}h`,
             sortable: true,
         },
         {
