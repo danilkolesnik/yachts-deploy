@@ -93,17 +93,15 @@ const YachtsPage = () => {
         e.preventDefault();
         try {
             if(formData.name.trim() === ''){
-                toast.error("Error: Name is required",{
-                    position: "bottom-right",
-                    zIndex: 1000,     
-                });
+                toast.error("Error: Name is required");
                 return;
             }
             if(formData.model.trim() === ''){
-                toast.error("Error: Model is required",{
-                    position: "bottom-right",
-                    zIndex: 1000,     
-                });
+                toast.error("Error: Model is required");
+                return;
+            }
+            if(formData.repairTime.trim() === ''){
+                toast.error("Error: Repair Time is required");
                 return;
             }
             const response = await axios.post(`${URL}/yachts`, formData);
@@ -134,20 +132,6 @@ const YachtsPage = () => {
         e.preventDefault();
         try {
             const response = await axios.put(`${URL}/yachts/${editingYacht.id}`, editingYacht);
-            if(formData.name === ''){
-                toast.error("Error: Name is required",{
-                    position: "bottom-right",
-                    zIndex: 1000,     
-                });
-                return;
-            }
-            if(formData.model === ''){
-                toast.error("Error: Model is required",{
-                    position: "bottom-right",
-                    zIndex: 1000,     
-                });
-                return;
-            }
             if (response.data.code === 200) {
                 setEditingYacht(null);
                 setEditModalIsOpen(false);
