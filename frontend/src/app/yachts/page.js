@@ -306,7 +306,7 @@ const YachtsPage = () => {
                         label="Boat Registration"
                         name="countryCode"
                         value={editingYacht?.countryCode || ''}
-                        onChange={handleChange}
+                        onChange={handleEditChange}
                         required
                     />
                         <Input
