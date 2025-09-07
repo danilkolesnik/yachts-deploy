@@ -36,11 +36,11 @@ const WarehousePage = () => {
     const tableRef = useRef(null);
 
     const columns = [
-        {
-            name: 'Boat Registration',
-            selector: row => row.countryCode,
-            sortable: true,
-        },
+        // {
+        //     name: 'Boat Registration',
+        //     selector: row => row.countryCode,
+        //     sortable: true,
+        // },
         {
             name: 'Name',
             selector: row => row.name,
@@ -156,7 +156,7 @@ const WarehousePage = () => {
             quantity: row.quantity,
             inventory: row.inventory,
             comment: row.comment,
-            countryCode: row.countryCode,
+            countryCode: "",
             serviceCategory: row.serviceCategory,
             pricePerUnit: row.pricePerUnit
         });
@@ -293,7 +293,7 @@ const WarehousePage = () => {
                             <tbody>
                                 {filteredData.map((row) => (
                                     <tr key={row.id}>
-                                        <td>{row.countryCode || ''}</td>
+                                        {/* <td>{row.countryCode || ''}</td> */}
                                         <td>{row.name || ''}</td>
                                         <td>{row.quantity || ''}</td>
                                         <td>{row.comment || ''}</td>
@@ -338,13 +338,13 @@ const WarehousePage = () => {
                         onChange={handleChange}
                         required
                     />
-                    <Input
+                    {/* <Input
                         label="Boat Registration"
                         name="countryCode"
                         value={formData.countryCode}
                         onChange={handleChange}
                         required
-                    />
+                    /> */}
                     <Input
                         label="Price"
                         name="pricePerUnit"

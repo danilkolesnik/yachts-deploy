@@ -14,6 +14,9 @@ export class Yacht {
   @Column({ nullable: true })
   repairTime: string;
 
+  @Column({ default: '' })
+  countryCode: string
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 

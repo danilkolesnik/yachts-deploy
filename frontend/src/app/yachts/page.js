@@ -25,10 +25,16 @@ const YachtsPage = () => {
     const [formData, setFormData] = useState({
         name: '',
         model: '',
-        repairTime: ''
+        repairTime: '',
+        countryCode:''
     });
 
     const columns = [
+        {
+            name: 'Boat Registration',
+            selector: row => row.countryCode,
+            sortable: true,
+        },
         {
             name: "Date",
             selector: row => row.createdAt,
@@ -102,6 +108,10 @@ const YachtsPage = () => {
             }
             if(formData.repairTime.trim() === ''){
                 toast.error("Error: Repair Time is required");
+                return;
+            }
+            if(formData.countryCode.trim() === ''){
+                toast.error("Error: Country code is required");
                 return;
             }
             const response = await axios.post(`${URL}/yachts`, formData);
@@ -253,6 +263,13 @@ const YachtsPage = () => {
                             value={formData.model}
                             onChange={handleChange}
                         />
+                        <Input
+                        label="Boat Registration"
+                        name="countryCode"
+                        value={formData.countryCode}
+                        onChange={handleChange}
+                        required
+                    />
                         <Input
                             label="Repair Time"
                             name="repairTime"
