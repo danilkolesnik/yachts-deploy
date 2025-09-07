@@ -302,6 +302,13 @@ const YachtsPage = () => {
                             value={editingYacht?.model || ''}
                             onChange={handleEditChange}
                         />
+                         <Input
+                        label="Boat Registration"
+                        name="countryCode"
+                        value={editingYacht?.countryCode || ''}
+                        onChange={handleChange}
+                        required
+                    />
                         <Input
                             label="Repair Time"
                             name="repairTime"
