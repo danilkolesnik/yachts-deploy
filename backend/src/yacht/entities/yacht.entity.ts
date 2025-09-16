@@ -22,4 +22,19 @@ export class Yacht {
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
+
+  @Column({ nullable: true })
+  ownerContacts: string;
+
+  @Column({ nullable: true })
+  registrationNameOrType: string;
+
+  @Column({ type: 'int', nullable: true })
+  enginesCount: number;
+
+  @Column({ type: 'int', nullable: true })
+  engineHours: number;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
 } 
