@@ -4,8 +4,6 @@ export class CreateYachtDto {
   repairTime?: string;
   countryCode?: string;
   ownerContacts?: string;
-  registrationNameOrType?: string;
-  enginesCount?: number;
   engineHours?: number;
   description?: string;
 } 

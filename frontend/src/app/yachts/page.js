@@ -28,8 +28,6 @@ const YachtsPage = () => {
         repairTime: '',
         countryCode:'',
         ownerContacts:'',
-        registrationNameOrType:'',
-        enginesCount:'',
         engineHours:'',
         description:''
     });
@@ -64,16 +62,6 @@ const YachtsPage = () => {
             name: 'Owner Contacts',
             selector: row => row.ownerContacts,
             sortable: false,
-        },
-        {
-            name: 'Reg. Name/Type',
-            selector: row => row.registrationNameOrType,
-            sortable: false,
-        },
-        {
-            name: 'Engines',
-            selector: row => row.enginesCount,
-            sortable: true,
         },
         {
             name: 'Engine Hours',
@@ -139,10 +127,6 @@ const YachtsPage = () => {
                 toast.error("Error: Country code is required");
                 return;
             }
-            if(formData.enginesCount && isNaN(Number(formData.enginesCount))){
-                toast.error("Error: Engines count must be a number");
-                return;
-            }
             if(formData.engineHours && isNaN(Number(formData.engineHours))){
                 toast.error("Error: Engine hours must be a number");
                 return;
@@ -150,7 +134,7 @@ const YachtsPage = () => {
             const response = await axios.post(`${URL}/yachts`, formData);
             if (response.data.code === 201) {
                 setFormData({ 
-                    name: '', model: '', repairTime: '', countryCode:'', ownerContacts:'', registrationNameOrType:'', enginesCount:'', engineHours:'', description:''
+                    name: '', model: '', repairTime: '', countryCode:'', ownerContacts:'', engineHours:'', description:''
                 });
                 setModalIsOpen(false);
                 fetchYachts();
@@ -312,18 +296,6 @@ const YachtsPage = () => {
                             onChange={handleChange}
                         />
                         <Input
-                            label="Registration Name/Type"
-                            name="registrationNameOrType"
-                            value={formData.registrationNameOrType}
-                            onChange={handleChange}
-                        />
-                        <Input
-                            label="Engines Count"
-                            name="enginesCount"
-                            value={formData.enginesCount}
-                            onChange={handleChange}
-                        />
-                        <Input
                             label="Engine Hours"
                             name="engineHours"
                             value={formData.engineHours}
@@ -378,18 +350,6 @@ const YachtsPage = () => {
                             label="Owner Contacts"
                             name="ownerContacts"
                             value={editingYacht?.ownerContacts || ''}
-                            onChange={handleEditChange}
-                        />
-                        <Input
-                            label="Registration Name/Type"
-                            name="registrationNameOrType"
-                            value={editingYacht?.registrationNameOrType || ''}
-                            onChange={handleEditChange}
-                        />
-                        <Input
-                            label="Engines Count"
-                            name="enginesCount"
-                            value={editingYacht?.enginesCount || ''}
                             onChange={handleEditChange}
                         />
                         <Input

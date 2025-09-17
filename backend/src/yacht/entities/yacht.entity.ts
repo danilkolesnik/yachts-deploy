@@ -26,12 +26,6 @@ export class Yacht {
   @Column({ nullable: true })
   ownerContacts: string;
 
-  @Column({ nullable: true })
-  registrationNameOrType: string;
-
-  @Column({ type: 'int', nullable: true })
-  enginesCount: number;
-
   @Column({ type: 'int', nullable: true })
   engineHours: number;
 

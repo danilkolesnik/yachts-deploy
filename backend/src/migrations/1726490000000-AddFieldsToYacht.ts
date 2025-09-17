@@ -5,8 +5,6 @@ export class AddFieldsToYacht1726490000000 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "yacht" ADD "ownerContacts" character varying`);
-        await queryRunner.query(`ALTER TABLE "yacht" ADD "registrationNameOrType" character varying`);
-        await queryRunner.query(`ALTER TABLE "yacht" ADD "enginesCount" integer`);
         await queryRunner.query(`ALTER TABLE "yacht" ADD "engineHours" integer`);
         await queryRunner.query(`ALTER TABLE "yacht" ADD "description" text`);
     }
@@ -14,8 +12,6 @@ export class AddFieldsToYacht1726490000000 implements MigrationInterface {
     public async down(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "yacht" DROP COLUMN "description"`);
         await queryRunner.query(`ALTER TABLE "yacht" DROP COLUMN "engineHours"`);
-        await queryRunner.query(`ALTER TABLE "yacht" DROP COLUMN "enginesCount"`);
-        await queryRunner.query(`ALTER TABLE "yacht" DROP COLUMN "registrationNameOrType"`);
         await queryRunner.query(`ALTER TABLE "yacht" DROP COLUMN "ownerContacts"`);
     }
 }
