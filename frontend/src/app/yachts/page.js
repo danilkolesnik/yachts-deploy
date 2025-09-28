@@ -53,11 +53,11 @@ const YachtsPage = () => {
             selector: row => row.model,
             sortable: true,
         },
-        {
-            name: 'Repair Time',
-            selector: row => `${row.repairTime}h`,
-            sortable: true,
-        },
+        // {
+        //     name: 'Repair Time',
+        //     selector: row => `${row.repairTime}h`,
+        //     sortable: true,
+        // },
         {
             name: 'Owner Contacts',
             selector: row => row.ownerContacts,
@@ -119,10 +119,10 @@ const YachtsPage = () => {
                 toast.error("Error: Model is required");
                 return;
             }
-            if(formData.repairTime.trim() === ''){
-                toast.error("Error: Repair Time is required");
-                return;
-            }
+            // if(formData.repairTime.trim() === ''){
+            //     toast.error("Error: Repair Time is required");
+            //     return;
+            // }
             if(formData.countryCode.trim() === ''){
                 toast.error("Error: Country code is required");
                 return;
@@ -301,12 +301,12 @@ const YachtsPage = () => {
                             value={formData.engineHours}
                             onChange={handleChange}
                         />
-                        <Input
+                        {/* <Input
                             label="Repair Time"
                             name="repairTime"
                             value={formData.repairTime}
                             onChange={handleChange}
-                        />
+                        /> */}
                         <Input
                             label="Description"
                             name="description"
@@ -358,12 +358,12 @@ const YachtsPage = () => {
                             value={editingYacht?.engineHours || ''}
                             onChange={handleEditChange}
                         />
-                        <Input
+                        {/* <Input
                             label="Repair Time"
                             name="repairTime"
                             value={editingYacht?.repairTime || ''}
                             onChange={handleEditChange}
-                        />
+                        /> */}
                         <Input
                             label="Description"
                             name="description"
