@@ -41,6 +41,9 @@ export class offer {
   @Column('json', { nullable: true, default: [] })
   videoUrls: string[];
 
+  @Column({ default: 'en' })
+  language: string;
+
   @CreateDateColumn()
   createdAt: Date;
 }

@@ -52,7 +52,8 @@ const OfferPage = () => {
         countryCode: '',
         services: {},
         parts: [],
-        status: 'created'
+        status: 'created',
+        language: 'en'
     });
 
     const [createServiceFormData, setCreateServiceFormData] = useState({
@@ -89,7 +90,8 @@ const OfferPage = () => {
         countryCode: '',
         services: {},
         parts: [],
-        status: 'created'
+        status: 'created',
+        language: 'en'
     });
 
     const [filters, setFilters] = useState({
@@ -443,7 +445,8 @@ const OfferPage = () => {
             countryCode: row.countryCode,
             services: row.services || {},
             parts: row.parts,
-            status: row.status
+            status: row.status,
+            language: row.language || 'en'
         });
         setEditMode(true);
         setEditId(row.id);

@@ -14,4 +14,5 @@ export class CreateOfferDto {
     price: number;
     imageUrls?: string[];
     videoUrls?: string[];
+    language?: 'en' | 'de' | 'hr';
 }

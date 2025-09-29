@@ -77,6 +77,7 @@ export class OfferService {
           services: data.services,
           parts: data.parts,
           status: data.status,
+          language: data.language || 'en',
           versions: [],
           createdAt: new Date(),
         })

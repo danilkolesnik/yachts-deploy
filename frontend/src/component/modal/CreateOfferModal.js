@@ -106,6 +106,18 @@ const CreateOfferModal = ({
                 required
             />
             <Select
+                label="Language"
+                value={formData.language}
+                onChange={(value) => handleSelectChange(value, 'language')}
+                required
+                className="text-black"
+                labelProps={{ className: "text-black" }}
+            >
+                <Option value="hr" className="text-black">Hrvatski</Option>
+                <Option value="en" className="text-black">English</Option>
+                <Option value="de" className="text-black">Deutsch</Option>
+            </Select>
+            <Select
                 label="Services"
                 value={formData.services}
                 onChange={(value) => handleSelectChange(value, 'services')}
