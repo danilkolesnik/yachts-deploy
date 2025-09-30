@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import puppeteer from 'puppeteer';
+import { getTranslations } from './translations';
 
 export async function createPdfBuffer(data: any, type: string): Promise<Buffer> {
   try {
@@ -15,6 +16,8 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       videoUrls: data.videoUrls ? [...data.videoUrls] : [],
       offer: data.offer ? { ...data.offer } : null
     };
+
+    const t = getTranslations(exportData.language);
 
     const partsTableRows = exportData.parts?.map((part: any, index: number) => `
       <tr>
@@ -39,12 +42,12 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
     // Generate images HTML if images exist
     const imagesHtml = exportData.imageUrls && exportData.imageUrls.length > 0 ? `
       <div style="margin-top: 30px; page-break-before: always;">
-        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center;">Images / Slike</h2>
+        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center;">${t.IMAGES}</h2>
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
           ${exportData.imageUrls.map((url: string, index: number) => `
             <div style="text-align: center;">
               <img src="${url}" alt="Image ${index + 1}" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 5px;">
-              <p style="font-size: 12px; margin-top: 5px;">Image ${index + 1}</p>
+              <p style="font-size: 12px; margin-top: 5px;">${t.IMAGE_LABEL} ${index + 1}</p>
             </div>
           `).join('')}
         </div>
@@ -54,13 +57,13 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
     // Generate videos HTML if videos exist
     const videosHtml = exportData.videoUrls && exportData.videoUrls.length > 0 ? `
       <div style="margin-top: 30px; page-break-before: always;">
-        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center;">Videos / Video</h2>
+        <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center;">${t.VIDEOS}</h2>
         <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 15px; margin-bottom: 20px;">
           ${exportData.videoUrls.map((url: string, index: number) => `
             <div style="text-align: center;">
               <div style="border: 1px solid #ccc; border-radius: 5px; padding: 10px; background-color: #f5f5f5;">
-                <p style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">Video ${index + 1}</p>
-                <p style="font-size: 12px; color: #666; margin-bottom: 5px;">Video file available at:</p>
+                <p style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">${t.VIDEO_LABEL} ${index + 1}</p>
+                <p style="font-size: 12px; color: #666; margin-bottom: 5px;">${t.VIDEO_FILE_AVAILABLE}</p>
                 <a href="${url}" style="font-size: 11px; color: #0066cc; text-decoration: underline; word-break: break-all;">${url}</a>
               </div>
             </div>
@@ -120,7 +123,29 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       .replace('{{totalPriceInvoiceServicesTwo}}', String(totalPriceInvoiceServicesTwo))
       .replace('{{totalPriceTaxTwo}}', String(totalPriceTaxTwo))
       .replace('{{imagesSection}}', imagesHtml)
-      .replace('{{videosSection}}', videosHtml);
+      .replace('{{videosSection}}', videosHtml)
+      // Translations
+      .replace('OFFER / PONUDA', `${t.OFFER} / ${t.OFFER === 'OFFER' ? 'PONUDA' : t.OFFER}`)
+      .replace('Number/Broj:', `${t.NUMBER}/Broj:`)
+      .replace('Date/Datum:', `${t.DATE}/Datum:`)
+      .replace('Customer/Kupac:', `${t.CUSTOMER}/Kupac:`)
+      .replace('Address/Adresa:', `${t.ADDRESS}/Adresa:`)
+      .replace('Description/Opis:', `${t.DESCRIPTION}/Opis:`)
+      .replace('Non Schedule Service / Usluga izvan rasporeda', `${t.DESCRIPTION_VALUE}${t.DESCRIPTION_VALUE ? '' : ''}`)
+      .replace('Yacht Name/Ime jahte:', `${t.YACHT_NAME}/Ime jahte:`)
+      .replace('Yacht Model / Model jahte/ SN/SB:', `${t.YACHT_MODEL} / Model jahte/ SN/SB:`)
+      .replace('Reg. Number/Reg. Broj:', `${t.REG_NUMBER}/Reg. Broj:`)
+      .replace('Location/Mjesto:', `${t.LOCATION}/Mjesto:`)
+      .replace('Products / Proizvodi', `${t.PRODUCTS} / Proizvodi`)
+      .replace('<th>No.</th>', `<th>${t.NO}</th>`)
+      .replace('<th>Products / Proizvodi</th>', `<th>${t.PRODUCTS} / Proizvodi</th>`)
+      .replace('<th>Quantity / Količina</th>', `<th>${t.QUANTITY} / Količina</th>`)
+      .replace('<th>Price in EURO per pcs/ Cijena u Eurima ed/kom</th>', `<th>${t.PRICE_PER_PCS}/ Cijena u Eurima ed/kom</th>`)
+      .replace('<th>Price in EURO/ Cijena u Eurima</th>', `<th>${t.PRICE}/ Cijena u Eurima</th>`)
+      .replace('SUBTOTAL / UKUPNO:', `${t.SUBTOTAL} / UKUPNO:`)
+      .replace('Provided Services / Pružene usluge:', `${t.PROVIDED_SERVICES} / Pružene usluge:`)
+      .replace('<th>Service / Servis</th>', `<th>${t.SERVICE} / Servis</th>`)
+      .replace('TOTAL AMOUNT / SVEUKUPNI IZNOS:', `${t.TOTAL_AMOUNT} / SVEUKUPNI IZNOS:`);
 
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox']
