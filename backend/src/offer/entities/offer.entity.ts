@@ -24,6 +24,9 @@ export class offer {
   countryCode: string;
 
   @Column('json', { default: [] })
+  yachts: { id: string; name: string; model: string; countryCode: string }[];
+
+  @Column('json', { default: [] })
   services: { serviceName: string; priceInEuroWithoutVAT: number }[];
 
   @Column('json', { default: [] })

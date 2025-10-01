@@ -50,6 +50,7 @@ const OfferPage = () => {
         yachtModel: '',
         comment: '',
         countryCode: '',
+        yachts: [],
         services: [],
         parts: [],
         status: 'created',
@@ -88,6 +89,7 @@ const OfferPage = () => {
         yachtModel: '',
         comment: '',
         countryCode: '',
+        yachts: [],
         services: [],
         parts: [],
         status: 'created',
@@ -131,18 +133,27 @@ const OfferPage = () => {
             sortable: true,
         },
         {
-            name: 'Yacht Name',
-            selector: row => row.yachtName,
-            sortable: true,
-        },
-        {
-            name: 'Yacht Model',
-            selector: row => row.yachtModel,
+            name: 'Yachts',
+            selector: row => {
+                if (Array.isArray(row.yachts) && row.yachts.length > 0) {
+                    return row.yachts.map(yacht => `${yacht.name} - ${yacht.model}`).join(', ');
+                } else if (row.yachtName) {
+                    return `${row.yachtName} - ${row.yachtModel}`;
+                }
+                return 'N/A';
+            },
             sortable: true,
         },
         {
             name: 'Boat Registration',
-            selector: row => row.countryCode,
+            selector: row => {
+                if (Array.isArray(row.yachts) && row.yachts.length > 0) {
+                    return row.yachts.map(yacht => yacht.countryCode).join(', ');
+                } else if (row.countryCode) {
+                    return row.countryCode;
+                }
+                return 'N/A';
+            },
             sortable: true,
         },
         { name: 'Status', selector: row => row.status, sortable: true, cell: row => (
@@ -358,11 +369,8 @@ const OfferPage = () => {
         setLoadingCreateOffer(true);
 
         switch (true) {
-            case formData.yachtName.trim() === '' || formData.yachtModel.trim() === '':
-                toast.error("Error: Yacht name and model are required");
-                return;
-            case formData.countryCode.trim() === '':
-                toast.error("Error: Yacht model is required");
+            case !Array.isArray(formData.yachts) || formData.yachts.length === 0:
+                toast.error("Error: At least one yacht is required");
                 return;
             case formData.comment.trim() === '':
                 toast.error("Error: Comment is required");
@@ -406,6 +414,7 @@ const OfferPage = () => {
                     yachtModel: '',
                     comment: '',
                     countryCode: '',
+                    yachts: [],
                     services: [],
                     parts: [],
                     status: 'created',
@@ -446,6 +455,12 @@ const OfferPage = () => {
             yachtModel: row.yachtModel,
             comment: row.comment || '',
             countryCode: row.countryCode,
+            yachts: Array.isArray(row.yachts) ? row.yachts : (row.yachtName ? [{ 
+                id: '', 
+                name: row.yachtName, 
+                model: row.yachtModel, 
+                countryCode: row.countryCode 
+            }] : []),
             services: Array.isArray(row.services) ? row.services : (row.services ? [row.services] : []),
             parts: row.parts,
             status: row.status,
@@ -715,9 +730,12 @@ const OfferPage = () => {
             ID: row.id,
             Date: new Date(row.createdAt).toLocaleString(),
             Customer: row.customerFullName || '',
-            'Yacht Name': row.yachtName,
-            'Yacht Model': row.yachtModel,
-            'Boat Registration': row.countryCode,
+            'Yachts': Array.isArray(row.yachts) && row.yachts.length > 0 
+                ? row.yachts.map(yacht => `${yacht.name} - ${yacht.model}`).join(', ')
+                : (row.yachtName ? `${row.yachtName} - ${row.yachtModel}` : 'N/A'),
+            'Boat Registration': Array.isArray(row.yachts) && row.yachts.length > 0 
+                ? row.yachts.map(yacht => yacht.countryCode).join(', ')
+                : (row.countryCode || 'N/A'),
             Status: row.status,
             'Service Category': Array.isArray(row.services) && row.services.length > 0 
                 ? row.services.map(service => `${service.serviceName}, ${service.priceInEuroWithoutVAT}€`).join('; ')
@@ -730,22 +748,21 @@ const OfferPage = () => {
         XLSX.writeFile(workbook, 'offers_export.xlsx');
     };
 
-    const handleYachtSelect = (selectedYacht) => {
-        if (selectedYacht) {
+    const handleYachtSelect = (selectedYachts) => {
+        if (selectedYachts && Array.isArray(selectedYachts)) {
             setFormData({
                 ...formData,
-                yachtName: selectedYacht.name,
-                yachtModel: selectedYacht.model,
-                countryCode: selectedYacht.countryCode || '',
-                yachtId: selectedYacht.id
+                yachts: selectedYachts.map(yacht => ({
+                    id: yacht.id,
+                    name: yacht.name,
+                    model: yacht.model,
+                    countryCode: yacht.countryCode || ''
+                }))
             });
         } else {
             setFormData({
                 ...formData,
-                yachtName: '',
-                yachtModel: '',
-                countryCode: '',
-                yachtId: ''
+                yachts: []
             });
         }
     };
@@ -900,8 +917,7 @@ const OfferPage = () => {
                                         <th>ID</th>
                                         <th>Date</th>
                                         <th>Customer</th>
-                                        <th>Yacht Name</th>
-                                        <th>Yacht Model</th>
+                                        <th>Yachts</th>
                                         <th>Boat Registration</th>
                                         <th>Status</th>
                                         <th>Service Category</th>
@@ -920,9 +936,18 @@ const OfferPage = () => {
                                                 minute: '2-digit'
                                             })}</td>
                                             <td>{row.customerFullName || ''}</td>
-                                            <td>{row.yachtName}</td>
-                                            <td>{row.yachtModel}</td>
-                                            <td>{row.countryCode}</td>
+                                            <td>
+                                                {Array.isArray(row.yachts) && row.yachts.length > 0 
+                                                    ? row.yachts.map(yacht => `${yacht.name} - ${yacht.model}`).join(', ')
+                                                    : (row.yachtName ? `${row.yachtName} - ${row.yachtModel}` : 'N/A')
+                                                }
+                                            </td>
+                                            <td>
+                                                {Array.isArray(row.yachts) && row.yachts.length > 0 
+                                                    ? row.yachts.map(yacht => yacht.countryCode).join(', ')
+                                                    : (row.countryCode || 'N/A')
+                                                }
+                                            </td>
                                             <td>{row.status}</td>
                                             <td>
                                                 {Array.isArray(row.services) && row.services.length > 0 
@@ -977,6 +1002,8 @@ const OfferPage = () => {
                     openCreateServiceModal={openCreateServiceModal}
                     openCreatePartModal={openCreatePartModal}
                     openCreateCustomerModal={openCreateCustomerModal}
+                    yachts={yachts}
+                    handleYachtSelect={handleYachtSelect}
                 />
                 <Modal isOpen={createOrderModalIsOpen} onClose={closeCreateOrderModal} title="Create Order">
                     <div className="space-y-4">

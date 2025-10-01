@@ -3,10 +3,15 @@ import Input from '@/ui/Input';
 import { Button, Select, Option } from "@material-tailwind/react";
 import ReactSelect from 'react-select';
 
-const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal, openCreateCustomerModal }) => {
+const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal, openCreateCustomerModal, yachts, handleYachtSelect }) => {
     const combinedParts = partOptions.map(part => ({
         ...part,
         color: part.value.unofficially ? 'green' : 'red'
+    }));
+
+    const yachtOptions = yachts.map(yacht => ({
+        value: yacht,
+        label: `${yacht.name} - ${yacht.model}`
     }));
 
     return (
@@ -50,27 +55,34 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     Add New Customer
                 </Button>
             </div>
-            <Input
-                label="Yacht Name"
-                name="yachtName"
-                value={formData.yachtName}
-                onChange={handleChange}
-                required
-            />
-            <Input
-                label="Yacht Model"
-                name="yachtModel"
-                value={formData.yachtModel}
-                onChange={handleChange}
-                required
-            />
-            <Input
-                label="Boat Registration"
-                name="countryCode"
-                value={formData.countryCode}
-                onChange={handleChange}
-                required
-            />
+            <div className="mb-4">
+                <label htmlFor="yacht-select" className="block text-sm font-medium text-gray-700">
+                    Select Yachts
+                </label>
+                <ReactSelect
+                    id="yacht-select"
+                    options={yachtOptions}
+                    value={yachtOptions.filter(option => 
+                        formData.yachts.some(yacht => yacht.name === option.value.name && yacht.model === option.value.model)
+                    )}
+                    onChange={selectedOptions => handleYachtSelect(selectedOptions?.map(option => option.value) || [])}
+                    placeholder="Select yachts..."
+                    isClearable
+                    isSearchable
+                    isMulti
+                    className="mt-1"
+                    styles={{
+                        control: (provided) => ({
+                            ...provided,
+                        }),
+                        option: (provided, state) => ({
+                            ...provided,
+                            color: 'black',
+                            backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                    }}
+                />
+            </div>
             <Select
                 label="Language"
                 value={formData.language}

@@ -29,7 +29,7 @@ export class OfferService {
   ) {}
 
   async create(data: CreateOfferDto) {
-    if (!data.customerFullName || !data.yachtName || !data.yachtModel || !data.countryCode || !data.services || !data.parts || !data.status) {
+    if (!data.customerFullName || (!data.yachts || data.yachts.length === 0) || !data.services || !data.parts || !data.status) {
       return {
         code: 400,
         message: 'Not all arguments',
@@ -75,15 +75,22 @@ export class OfferService {
   
       const normalizedServices = Array.isArray(data.services) ? data.services : [data.services];
 
+      // Set yachtName, yachtModel, countryCode from first yacht for backward compatibility
+      const firstYacht = data.yachts[0];
+      const yachtName = firstYacht?.name || '';
+      const yachtModel = firstYacht?.model || '';
+      const countryCode = firstYacht?.countryCode || '';
+
       const result = await this.offerRepository.save(
         this.offerRepository.create({
           id: generateId,
           customerFullName: customer.fullName,
           customerId: customer.id,
-          yachtName: data.yachtName,
-          yachtModel: data.yachtModel,
+          yachtName: yachtName,
+          yachtModel: yachtModel,
           comment: data.comment || '',
-          countryCode: data.countryCode,
+          countryCode: countryCode,
+          yachts: data.yachts,
           services: normalizedServices,
           parts: data.parts,
           status: data.status,
@@ -146,8 +153,17 @@ export class OfferService {
         }
       }
 
+      // Handle yacht data - update yachtName, yachtModel, countryCode from first yacht for backward compatibility
+      const yachtData = data.yachts ? {
+        yachtName: data.yachts[0]?.name || '',
+        yachtModel: data.yachts[0]?.model || '',
+        countryCode: data.yachts[0]?.countryCode || '',
+        yachts: data.yachts
+      } : {};
+
       const updatedOffer = Object.assign(offer, {
         ...data,
+        ...yachtData,
         services: Array.isArray(data.services)
           ? data.services
           : (data.services ? [data.services] : offer.services),

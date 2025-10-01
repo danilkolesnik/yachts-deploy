@@ -75,16 +75,19 @@ const CreateOfferModal = ({
             </div>
             <div className="mb-4">
                 <label htmlFor="yacht-select" className="block text-sm font-medium text-gray-700">
-                    Select Yacht
+                    Select Yachts
                 </label>
                 <ReactSelect
                     id="yacht-select"
                     options={yachtOptions}
-                    value={yachtOptions.find(option => option.value.name === formData.yachtName && option.value.model === formData.yachtModel) || null}
-                    onChange={selectedOption => handleYachtSelect(selectedOption?.value)}
-                    placeholder="Select a yacht..."
+                    value={yachtOptions.filter(option => 
+                        formData.yachts.some(yacht => yacht.name === option.value.name && yacht.model === option.value.model)
+                    )}
+                    onChange={selectedOptions => handleYachtSelect(selectedOptions?.map(option => option.value) || [])}
+                    placeholder="Select yachts..."
                     isClearable
                     isSearchable
+                    isMulti
                     className="mt-1"
                     styles={{
                         control: (provided) => ({
