@@ -6,7 +6,7 @@ export class CreateOfferDto {
     yachtModel: string;
     comment?: string;
     countryCode: string;
-    services: { serviceName: string; priceInEuroWithoutVAT: number };
+    services: { serviceName: string; priceInEuroWithoutVAT: number } | { serviceName: string; priceInEuroWithoutVAT: number }[];
     parts: { partName: string; quantity: number }[];
     status: string;
     yachtId: string;

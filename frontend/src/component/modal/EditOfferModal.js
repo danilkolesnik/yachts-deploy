@@ -83,20 +83,33 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                 <Option value="en" className="text-black">English</Option>
                 <Option value="de" className="text-black">Deutsch</Option>
             </Select>
-            <Select
-                label="Services"
-                value={formData.services}
-                onChange={(value) => handleSelectChange(value, 'services')}
-                required
-                className="text-black"
-                labelProps={{ className: "text-black" }}
-            >
-                {catagoryData.map((category) => (
-                    <Option key={category.id} value={category} className="text-black">
-                        {`${category.serviceName} - ${category.priceInEuroWithoutVAT}€`}
-                    </Option>
-                ))}
-            </Select>
+            <div className="mb-4">
+                <label htmlFor="services-select" className="block text-sm font-medium text-gray-700">
+                    Select Services
+                </label>
+                <ReactSelect
+                    id="services-select"
+                    isMulti
+                    options={catagoryData.map(category => ({
+                        value: category,
+                        label: `${category.serviceName} - ${category.priceInEuroWithoutVAT}€`
+                    }))}
+                    value={formData.services}
+                    onChange={(selectedOptions) => handleSelectChange(selectedOptions, 'services')}
+                    placeholder="Select services..."
+                    className="mt-1"
+                    styles={{
+                        control: (provided) => ({
+                            ...provided,
+                        }),
+                        option: (provided, state) => ({
+                            ...provided,
+                            color: 'black',
+                            backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                    }}
+                />
+            </div>
             <Button onClick={openCreateServiceModal} color="blue">
                 Add Service
             </Button>

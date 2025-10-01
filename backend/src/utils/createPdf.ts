@@ -45,6 +45,32 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       </div>
     `).join('');
 
+    // Generate services table rows for both array and single service
+    const servicesTableRows = (() => {
+      if (Array.isArray(exportData.services) && exportData.services.length > 0) {
+        return exportData.services.map((service: any, index: number) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${service.serviceName}</td>
+            <td>1</td>
+            <td>${service.priceInEuroWithoutVAT}</td>
+            <td>${service.priceInEuroWithoutVAT}</td>
+          </tr>
+        `).join('');
+      } else if (exportData.services && typeof exportData.services === 'object') {
+        return `
+          <tr>
+            <td>1</td>
+            <td>${exportData.services.serviceName}</td>
+            <td>1</td>
+            <td>${exportData.services.priceInEuroWithoutVAT}</td>
+            <td>${exportData.services.priceInEuroWithoutVAT}</td>
+          </tr>
+        `;
+      }
+      return '';
+    })();
+
     // Generate images HTML if images exist
     const imagesHtml = exportData.imageUrls && exportData.imageUrls.length > 0 ? `
       <div style="margin-top: 30px; page-break-before: always;">
@@ -79,8 +105,17 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
     ` : '';
 
     const totalPrice = exportData.parts?.reduce((acc: number, part: any) => acc + part?.quantity * part?.pricePerUnit, 0);
-    const totalPriceServices = Number(exportData.services?.priceInEuroWithoutVAT);
-    const totalPriceAllServices = Number(exportData.services?.priceInEuroWithoutVAT);
+    
+    // Handle both array and single service object for backward compatibility
+    let totalPriceServices = 0;
+    let totalPriceAllServices = 0;
+    if (Array.isArray(exportData.services)) {
+      totalPriceServices = exportData.services.reduce((acc: number, service: any) => acc + Number(service?.priceInEuroWithoutVAT || 0), 0);
+      totalPriceAllServices = totalPriceServices;
+    } else if (exportData.services && typeof exportData.services === 'object') {
+      totalPriceServices = Number(exportData.services?.priceInEuroWithoutVAT || 0);
+      totalPriceAllServices = totalPriceServices;
+    }
 
     const createdAt = new Date();
     const createdAtString = isNaN(createdAt.getTime()) ? 'Invalid Date' : createdAt.toLocaleString();
@@ -102,12 +137,17 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       .replace('{{yachtModelOffer}}', String(exportData.offer?.yachtModel))
       .replace('{{yachtNameOffer}}', String(exportData.offer?.yachtName))
       .replace('{{countryCode}}', String(exportData.countryCode))
-      .replace('{{serviceName}}', String(exportData.services?.serviceName))
-      .replace('{{serviceDescription}}', String(exportData.services?.description))
+      .replace('{{serviceName}}', Array.isArray(exportData.services) && exportData.services.length > 0 
+        ? exportData.services.map(s => s.serviceName).join(', ')
+        : String(exportData.services?.serviceName || ''))
+      .replace('{{serviceDescription}}', Array.isArray(exportData.services) && exportData.services.length > 0 
+        ? exportData.services.map(s => s.description || s.serviceName).join(', ')
+        : String(exportData.services?.description || ''))
       .replace('{{status}}', String(exportData.status))
       .replace('{{createdAt}}', createdAtString)
       .replace('{{partsTableRows}}', String(partsTableRows))
       .replace('{{invoiceTableRows}}', String(invoiceTableRows))
+      .replace('{{servicesTableRows}}', String(servicesTableRows))
       .replace('{{totalPrice}}', String(totalPrice))
       .replace('{{seriveName}}', String(exportData.services?.serviceName))
       .replace('{{servicePrice}}', String(exportData.services?.priceInEuroWithoutVAT))

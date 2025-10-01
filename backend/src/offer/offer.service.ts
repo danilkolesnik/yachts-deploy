@@ -36,6 +36,14 @@ export class OfferService {
       };
     }
 
+    // Validate services - should be array or object
+    if (!Array.isArray(data.services) && (!data.services || typeof data.services !== 'object')) {
+      return {
+        code: 400,
+        message: 'Services must be an array or object',
+      };
+    }
+
     console.log(data);
 
     try {

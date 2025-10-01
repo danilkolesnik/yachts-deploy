@@ -50,7 +50,7 @@ const OfferPage = () => {
         yachtModel: '',
         comment: '',
         countryCode: '',
-        services: {},
+        services: [],
         parts: [],
         status: 'created',
         language: 'en'
@@ -88,7 +88,7 @@ const OfferPage = () => {
         yachtModel: '',
         comment: '',
         countryCode: '',
-        services: {},
+        services: [],
         parts: [],
         status: 'created',
         language: 'en'
@@ -156,7 +156,15 @@ const OfferPage = () => {
         ) },
         {
             name: 'Service Category',
-            selector: row => row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A',
+            selector: row => {
+                if (Array.isArray(row.services) && row.services.length > 0) {
+                    return row.services.map(service => `${service.serviceName}, ${service.priceInEuroWithoutVAT}€`).join('; ');
+                } else if (row.services && Object.keys(row.services).length > 0) {
+                    // Backward compatibility for single service object
+                    return `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€`;
+                }
+                return 'N/A';
+            },
             sortable: true,
         },
         {
@@ -359,17 +367,11 @@ const OfferPage = () => {
             case formData.comment.trim() === '':
                 toast.error("Error: Comment is required");
                 return;
-            case formData.services.serviceName.trim() === '':
-                toast.error("Error: Service name is required");
-                return;
-            case formData.services.priceInEuroWithoutVAT.trim() === '':
-                toast.error("Error: Price in Euro Without VAT is required");
+            case !Array.isArray(formData.services) || formData.services.length === 0:
+                toast.error("Error: At least one service is required");
                 return;
             case formData.parts.length === 0:
                 toast.error("Error: Parts are required");
-                return;
-            case formData.services.length === 0:
-                toast.error("Error: Services are required");
                 return;
         }
         try {
@@ -404,9 +406,10 @@ const OfferPage = () => {
                     yachtModel: '',
                     comment: '',
                     countryCode: '',
-                    services: {},
+                    services: [],
                     parts: [],
-                    status: 'created'
+                    status: 'created',
+                    language: 'en'
                 });
             }
             getData()
@@ -443,7 +446,7 @@ const OfferPage = () => {
             yachtModel: row.yachtModel,
             comment: row.comment || '',
             countryCode: row.countryCode,
-            services: row.services || {},
+            services: Array.isArray(row.services) ? row.services : (row.services ? [row.services] : []),
             parts: row.parts,
             status: row.status,
             language: row.language || 'en'
@@ -716,7 +719,9 @@ const OfferPage = () => {
             'Yacht Model': row.yachtModel,
             'Boat Registration': row.countryCode,
             Status: row.status,
-            'Service Category': row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A',
+            'Service Category': Array.isArray(row.services) && row.services.length > 0 
+                ? row.services.map(service => `${service.serviceName}, ${service.priceInEuroWithoutVAT}€`).join('; ')
+                : (row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A'),
             Parts: Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : 'N/A'
         }));
         const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -919,7 +924,12 @@ const OfferPage = () => {
                                             <td>{row.yachtModel}</td>
                                             <td>{row.countryCode}</td>
                                             <td>{row.status}</td>
-                                            <td>{row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A'}</td>
+                                            <td>
+                                                {Array.isArray(row.services) && row.services.length > 0 
+                                                    ? row.services.map(service => `${service.serviceName}, ${service.priceInEuroWithoutVAT}€`).join('; ')
+                                                    : (row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A')
+                                                }
+                                            </td>
                                             <td>{Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : 'N/A'}</td>
                                         </tr>
                                     ))}
