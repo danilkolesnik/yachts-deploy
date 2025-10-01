@@ -5,7 +5,13 @@ import { getTranslations } from './translations';
 
 export async function createPdfBuffer(data: any, type: string): Promise<Buffer> {
   try {
-    const templateName = type === 'offer-export' ? 'offer-export' : type;
+    const normalizedType = String(type || '').toLowerCase();
+    const templateName =
+      normalizedType === 'offer-export'
+        ? 'offer-export'
+        : normalizedType === 'invoice'
+          ? 'Invoice'
+          : normalizedType;
     const templatePath = path.join(process.cwd(), 'documents', `${templateName}.html`);
     let templateString = fs.readFileSync(templatePath, 'utf8');
     const exportData = {
@@ -145,7 +151,51 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       .replace('SUBTOTAL / UKUPNO:', `${t.SUBTOTAL}:`)
       .replace('Provided Services / Pružene usluge:', `${t.PROVIDED_SERVICES}:`)
       .replace('<th>Service / Servis</th>', `<th>${t.SERVICE}</th>`)
-      .replace('TOTAL AMOUNT / SVEUKUPNI IZNOS:', `${t.TOTAL_AMOUNT}:`);
+      .replace('TOTAL AMOUNT / SVEUKUPNI IZNOS:', `${t.TOTAL_AMOUNT}:`)
+      .replace('BANK DETAILS / BANKOVNI DETALJI:', `${t.BANK_DETAILS}:`)
+      // Bank labels in offer/invoice
+      .replace('Beneficiary / Korisnik:', `${t.BENEFICIARY}:`)
+      .replace('Beneficiary Bank / Banka primatelj:', `${t.BENEFICIARY_BANK}:`)
+      .replace('Bank address / Adresa banke:', `${t.BANK_ADDRESS}:`)
+      .replace('SWIFT / BRZ:', `${t.SWIFT}:`)
+      .replace('Beneficiary Bank:', `${t.BENEFICIARY_BANK}:`)
+      .replace('Bank address:', `${t.BANK_ADDRESS}:`)
+      // Invoice translations
+      .replace('INVOICE', `${t.INVOICE}`)
+      .replace('Place and date of issue:', `${t.PLACE_AND_DATE}:`)
+      .replace('GLAVNO SKLADIŠTE', `${t.WAREHOUSE}`)
+      .replace('Remark:', `${t.REMARK}:`)
+      .replace('Method of payment:', `${t.METHOD_OF_PAYMENT}:`)
+      .replace('Order:', `${t.ORDER}:`)
+      .replace('Address:', `${t.ADDRESS}:`)
+      .replace('Name:', `${t.NAME}:`)
+      .replace('Model:', `${t.MODEL}:`)
+      .replace('Location:', `${t.LOCATION_LABEL}:`)
+      .replace('<h2>Products</h2>', `<h2>${t.PRODUCTS}</h2>`) 
+      .replace('<span>ID</span>', `<span>${t.ID}</span>`) 
+      .replace('<span>Products</span>', `<span>${t.PRODUCTS}</span>`) 
+      .replace('<span>Quantity</span>', `<span>${t.QUANTITY}</span>`) 
+      .replace('<span>Price per unit EUR</span>', `<span>${t.PRICE_PER_UNIT_EUR}</span>`) 
+      .replace('<span>Price EUR</span>', `<span>${t.PRICE_EUR}</span>`) 
+      .replace('<h2 class="work-title">Work</h2>', `<h2 class="work-title">${t.WORK}</h2>`) 
+      .replace('<div>Inventory costs</div>', `<div>${t.INVENTORY_COSTS}</div>`) 
+      .replace('<div>Without tax</div>', `<div>${t.WITHOUT_TAX}</div>`) 
+      .replace('<div>VAT</div>', `<div>${t.VAT}</div>`) 
+      .replace('<div>Total amount</div>', `<div>${t.TOTAL_AMOUNT_TITLE}</div>`) 
+      .replace('Osnovica 25 %', `${t.TAX_BASE_25}`)
+      .replace('Osnovica PDV', `${t.TAX_BASE_VAT}`)
+      .replace('PDV', `${t.VAT}`)
+      .replace('<h1>SLOVIMA:(ŠESTOSEDAMDESETSEDAM EURA I PEDESET CENTI)</h1>', `<h1>${t.IN_WORDS}</h1>`) 
+      .replace('<span>DVO:</span>', `<span>${t.ISSUE_DATE_ABBR}</span>`) 
+      .replace('<span>Payment due:</span>', `<span>${t.PAYMENT_DUE}</span>`) 
+      .replace('<span>Reference number:</span>', `<span>${t.REFERENCE_NUMBER}</span>`) 
+      .replace('Payment must be made to a bank account', `${t.PAYMENT_TO_BANK_ACCOUNT}`)
+      .replace('Oznaka plaćanja: Transakcijski račun', `${t.PAYMENT_MARK}`)
+      .replace('Datum i vrijeme izdavanja:', `${t.ISSUE_DATETIME}:`)
+      .replace('Dokument Izdao:', `${t.DOCUMENT_ISSUED_BY}:`)
+      .replace('Društvo je upisano kod Trgovačkog suda u Pazinu MBS 130134955', `${t.COMPANY_REG_1}`)
+      .replace('Temeljni kapital iznosi 2.654,46 EUR i uplaćen je u cijelosti.', `${t.COMPANY_REG_2}`)
+      .replace('Članovi uprave: Viktor Cherednichenko', `${t.COMPANY_REG_3}`);
 
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox']
