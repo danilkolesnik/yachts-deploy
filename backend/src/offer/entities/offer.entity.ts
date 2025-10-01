@@ -23,8 +23,8 @@ export class offer {
   @Column({default: ''})
   countryCode: string;
 
-  @Column('json', { default: {} })
-  services: { serviceName: string; priceInEuroWithoutVAT: number };
+  @Column('json', { default: [] })
+  services: { serviceName: string; priceInEuroWithoutVAT: number }[];
 
   @Column('json', { default: [] })
   parts: { partName: string; quantity: number }[];

@@ -73,6 +73,8 @@ export class OfferService {
       // }
 
   
+      const normalizedServices = Array.isArray(data.services) ? data.services : [data.services];
+
       const result = await this.offerRepository.save(
         this.offerRepository.create({
           id: generateId,
@@ -82,7 +84,7 @@ export class OfferService {
           yachtModel: data.yachtModel,
           comment: data.comment || '',
           countryCode: data.countryCode,
-          services: data.services,
+          services: normalizedServices,
           parts: data.parts,
           status: data.status,
           language: data.language || 'en',
@@ -144,7 +146,12 @@ export class OfferService {
         }
       }
 
-      const updatedOffer = Object.assign(offer, data);
+      const updatedOffer = Object.assign(offer, {
+        ...data,
+        services: Array.isArray(data.services)
+          ? data.services
+          : (data.services ? [data.services] : offer.services),
+      });
       updatedOffer.versions.push(offerCopy);
 
       if (Object.keys(changedFields).length > 0) {
