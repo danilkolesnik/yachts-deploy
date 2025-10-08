@@ -67,7 +67,7 @@ function NavList({ isOpen, setIsOpen }) {
 
   return (
     <List className={`flex items-center ${isMobile ? 'flex-col' : 'flex-row'} w-full p-0`}>
-      <Link href="/offers" onClick={handleClick} className=" font-bold">
+      <Link href="/offers" onClick={handleClick} className=" font-bold text-red-600">
         <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-red-600`}>
           <DocumentTextIcon className="h-5 w-5 mr-2" />
           <span>Offers</span>
