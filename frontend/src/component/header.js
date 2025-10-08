@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Navbar,
   List,
-  ListItem,
   IconButton,
   Collapse,
 } from "@material-tailwind/react";
@@ -71,61 +70,66 @@ function NavList({ isOpen, setIsOpen }) {
     return pathname.startsWith(path);
   };
 
+  const linkClass = (path) => 
+    `flex items-center gap-2 py-2 pr-4 font-medium cursor-pointer hover:bg-gray-100 rounded ${
+      isActivePath(path) ? 'text-red-600' : 'text-black'
+    }`;
+
   return (
-    <List className={`flex items-center ${isMobile ? 'flex-col' : 'flex-row'} w-full p-0`}>
-      <Link href="/offers" onClick={handleClick} className="font-bold">
-        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/offers') ? 'text-red-600' : 'text-black'}`}>
+    <div className={`flex items-center ${isMobile ? 'flex-col' : 'flex-row'} w-full p-0`}>
+      <Link href="/offers" onClick={handleClick} className="font-bold w-full">
+        <div className={linkClass('/offers')}>
           <DocumentTextIcon className="h-5 w-5 mr-2" />
           <span>Offers</span>
-        </ListItem>
+        </div>
       </Link>
-      <Link href="/orders" onClick={handleClick} className="font-bold">
-        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/orders') ? 'text-red-600' : 'text-black'}`}>
+      <Link href="/orders" onClick={handleClick} className="font-bold w-full">
+        <div className={linkClass('/orders')}>
           <ArchiveBoxIcon className="h-5 w-5 mr-2" />
           <span>Orders</span>
-        </ListItem>
+        </div>
       </Link>
       {(role === 'admin' || role === 'manager') && (
         <>
-          <Link href="/yachts" onClick={handleClick} className="font-bold">
-            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/yachts') ? 'text-red-600' : 'text-black'}`}>
-              <Image src={yacht} alt="yacht" width={38} height={38} className="mr-2" />
+          <Link href="/yachts" onClick={handleClick} className="font-bold w-full">
+            <div className={linkClass('/yachts')}>
+              <Image src={yacht} alt="yacht" width={20} height={20} className="mr-2" />
               <span>Yachts</span>
-            </ListItem>
+            </div>
           </Link>
-          <Link href="/warehouse" onClick={handleClick} className="font-bold">
-            <ListItem className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : 'pr-4'} font-medium ${isActivePath('/warehouse') ? 'text-red-600' : 'text-black'}`}>
+          <Link href="/warehouse" onClick={handleClick} className="font-bold w-full">
+            <div className={linkClass('/warehouse')}>
               <ArchiveBoxIcon className="h-5 w-5 mr-2" />
               <span>Warehouse</span>
-            </ListItem>
+            </div>
           </Link>
-          <Link href="/warehouseUnofficially" onClick={handleClick} className="font-bold"> 
-            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/warehouseUnofficially') ? 'text-red-600' : 'text-black'}`}>
+          <Link href="/warehouseUnofficially" onClick={handleClick} className="font-bold w-full"> 
+            <div className={linkClass('/warehouseUnofficially')}>
               <ArchiveBoxIcon className="h-5 w-5 mr-2" />
               <span>Internal warehouse</span>
-            </ListItem>
+            </div>
           </Link>
-          <Link href="/priceList" onClick={handleClick} className="font-bold">
-            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/priceList') ? 'text-red-600' : 'text-black'}`}>
+          <Link href="/priceList" onClick={handleClick} className="font-bold w-full">
+            <div className={linkClass('/priceList')}>
               <CurrencyDollarIcon className="h-5 w-5 mr-2" />
               <span>Price List</span>
-            </ListItem>
+            </div>
           </Link>
-          <Link href="/users" onClick={handleClick} className="font-bold">
-            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/users') ? 'text-red-600' : 'text-black'}`}>
+          <Link href="/users" onClick={handleClick} className="font-bold w-full">
+            <div className={linkClass('/users')}>
               <UserIcon className="h-5 w-5 mr-2" />
               <span>Users</span>
-            </ListItem>
+            </div>
           </Link>
         </>
       )}
-      <Link href="/auth/login" onClick={() => { clearLocalStorage(); handleClick(); }} className="font-bold">
-        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/auth/login') ? 'text-red-600' : 'text-black'}`}>
+      <Link href="/auth/login" onClick={() => { clearLocalStorage(); handleClick(); }} className="font-bold w-full">
+        <div className={linkClass('/auth/login')}>
           <LockClosedIcon className="h-5 w-5 mr-2" />
           <span>Logout</span>
-        </ListItem>
+        </div>
       </Link>
-    </List>
+    </div>
   );
 }
 
