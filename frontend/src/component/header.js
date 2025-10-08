@@ -67,6 +67,8 @@ function NavList({ isOpen, setIsOpen }) {
     return null;
   }
 
+  console.log(pathname.startsWith('/offers'));
+
   return (
     <List className={`flex items-center ${isMobile ? 'flex-col' : 'flex-row'} w-full p-0`}>
       <Link href="/offers" onClick={handleClick} className=" font-bold">
