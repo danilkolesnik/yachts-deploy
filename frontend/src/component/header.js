@@ -71,55 +71,67 @@ function NavList({ isOpen, setIsOpen }) {
     <List className={`flex items-center ${isMobile ? 'flex-col' : 'flex-row'} w-full p-0`}>
       <Link href="/offers" onClick={handleClick} className="font-bold">
         <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium`}>
-            <DocumentTextIcon className="h-5 w-5 mr-2 text-black" />
-          <span className={pathname === '/offers' ? 'text-[#dd3333]' : 'text-black'}
+            <DocumentTextIcon className={`h-5 w-5 mr-2 ${pathname === '/offers' ? 'text-[#dd3333]' : 'text-black'}`} />
+          <span
           style={{ color: pathname === '/offers' ? '#dd3333' : 'black' }}
           >Offers</span>
         </ListItem>
       </Link>
       <Link href="/orders" onClick={handleClick} className=" font-bold">
         <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
-          <ArchiveBoxIcon className="h-5 w-5 mr-2 text-black" />
-          <span className={pathname === '/orders' ? 'text-red-600' : 'text-black'}>Orders</span>
+          <ArchiveBoxIcon className={`h-5 w-5 mr-2 ${pathname === '/orders' ? 'text-[#dd3333]' : 'text-black'}`} />
+          <span
+          style={{ color: pathname === '/orders' ? '#dd3333' : 'black' }}
+          >Orders</span>
         </ListItem>
       </Link>
       {(role === 'admin' || role === 'manager') && (
         <>
           <Link href="/yachts" onClick={handleClick} className=" font-bold">
             <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
-              <Image src={yacht} alt="yacht" width={38} height={38} className="mr-2" />
-              <span>Yachts</span>
+              <Image src={yacht} alt="yacht" width={38} height={38} className={`mr-2 ${pathname === '/yachts' ? 'text-[#dd3333]' : 'text-black'}`} />
+              <span
+              style={{ color: pathname === '/yachts' ? '#dd3333' : 'black' }}
+              >Yachts</span>
             </ListItem>
           </Link>
           <Link href="/warehouse" onClick={handleClick} className=" font-bold">
             <ListItem className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : 'pr-4'} font-medium text-black`}>
-              <ArchiveBoxIcon className="h-5 w-5 mr-2" />
-              <span>Warehouse</span>
+              <ArchiveBoxIcon className={`h-5 w-5 mr-2 ${pathname === '/warehouse' ? 'text-[#dd3333]' : 'text-black'}`} />
+              <span
+              style={{ color: pathname === '/warehouse' ? '#dd3333' : 'black' }}
+              >Warehouse</span>
             </ListItem>
           </Link>
           <Link href="/warehouseUnofficially" onClick={handleClick} className=" font-bold"> 
             <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
-              <ArchiveBoxIcon className="h-5 w-5 mr-2" />
-              <span>Internal warehouse</span>
+              <ArchiveBoxIcon className={`h-5 w-5 mr-2 ${pathname === '/warehouseUnofficially' ? 'text-[#dd3333]' : 'text-black'}`} />
+              <span
+              style={{ color: pathname === '/warehouseUnofficially' ? '#dd3333' : 'black' }}
+              >Internal warehouse</span>
             </ListItem>
           </Link>
           <Link href="/priceList" onClick={handleClick} className=" font-bold">
             <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
-              <CurrencyDollarIcon className="h-5 w-5 mr-2 text-black" />
-              <span>Price List</span>
+              <CurrencyDollarIcon className={`h-5 w-5 mr-2 ${pathname === '/priceList' ? 'text-[#dd3333]' : 'text-black'}`} />
+              <span
+              style={{ color: pathname === '/priceList' ? '#dd3333' : 'black' }}
+              >Price List</span>
             </ListItem>
           </Link>
           <Link href="/users" onClick={handleClick} className=" font-bold">
             <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
-              <UserIcon className="h-5 w-5 mr-2" />
-              <span>Users</span>
+              <UserIcon className={`h-5 w-5 mr-2 ${pathname === '/users' ? 'text-[#dd3333]' : 'text-black'}`} />
+              <span
+              style={{ color: pathname === '/users' ? '#dd3333' : 'black' }}
+              >Users</span>
             </ListItem>
           </Link>
         </>
       )}
       <Link href="/auth/login" onClick={() => { clearLocalStorage(); handleClick(); }} className=" font-bold">
         <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
-          <LockClosedIcon className="h-5 w-5 mr-2" />
+          <LockClosedIcon className={`h-5 w-5 mr-2 ${pathname === '/auth/login' ? 'text-[#dd3333]' : 'text-black'}`} />
           <span>Logout</span>
         </ListItem>
       </Link>
