@@ -109,7 +109,8 @@ const OfferPage = () => {
     const [createCustomerLoading, setCreateCustomerLoading] = useState(false);
     const [createCustomerFormData, setCreateCustomerFormData] = useState({
         email: '',
-        fullName: ''
+        fullName: '',
+        address: ''
     });
 
     const columns = [
@@ -816,7 +817,8 @@ const OfferPage = () => {
         setCreateCustomerModalIsOpen(false);
         setCreateCustomerFormData({
             email: '',
-            fullName: ''
+            fullName: '',
+            address: ''
         });
     };
 
@@ -1155,6 +1157,13 @@ const OfferPage = () => {
                             label="Full Name"
                             name="fullName"
                             value={createCustomerFormData.fullName}
+                            onChange={handleCustomerChange}
+                            required
+                        />
+                        <Input
+                            label="Address"
+                            name="address"
+                            value={createCustomerFormData.address}
                             onChange={handleCustomerChange}
                             required
                         />
