@@ -72,7 +72,7 @@ function NavList({ isOpen, setIsOpen }) {
       <Link href="/offers" onClick={handleClick} className="font-bold">
         <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-red-600`}>
             <DocumentTextIcon className="h-5 w-5 mr-2 text-black" />
-          <span className={pathname === '/offers' ? 'text-red-600' : 'text-black'}>Offers</span>
+          <span className={pathname === '/offers' ? 'text-[#dd3333]' : 'text-black'}>Offers</span>
         </ListItem>
       </Link>
       <Link href="/orders" onClick={handleClick} className=" font-bold">
