@@ -25,6 +25,7 @@ import Image from 'next/image';
 import logo from '../../public/logo/logo.svg';
 import yacht from '../../public/yacht.png';
 
+
 function NavList({ isOpen, setIsOpen }) {
   const [role, setRole] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -66,61 +67,58 @@ function NavList({ isOpen, setIsOpen }) {
     return null;
   }
 
-  // Функция для проверки активного пути
-  const isActivePath = (path) => {
-    return pathname.startsWith(path);
-  };
+  console.log(pathname.startsWith('/offers'));
 
   return (
     <List className={`flex items-center ${isMobile ? 'flex-col' : 'flex-row'} w-full p-0`}>
-      <Link href="/offers" onClick={handleClick} className="font-bold">
-        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/offers') ? 'text-red-600' : 'text-black'}`}>
+      <Link href="/offers" onClick={handleClick} className=" font-bold">
+        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium`}>
           <DocumentTextIcon className="h-5 w-5 mr-2" />
-          <span>Offers</span>
+          <span className={pathname.startsWith('/offers') ? 'text-[#dd3333]' : 'text-black'}>Offers</span>
         </ListItem>
       </Link>
-      <Link href="/orders" onClick={handleClick} className="font-bold">
-        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/orders') ? 'text-red-600' : 'text-black'}`}>
+      <Link href="/orders" onClick={handleClick} className=" font-bold">
+        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/orders') ? 'text-red-600' : 'text-black'}`}>
           <ArchiveBoxIcon className="h-5 w-5 mr-2" />
           <span>Orders</span>
         </ListItem>
       </Link>
       {(role === 'admin' || role === 'manager') && (
         <>
-          <Link href="/yachts" onClick={handleClick} className="font-bold">
-            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/yachts') ? 'text-red-600' : 'text-black'}`}>
+          <Link href="/yachts" onClick={handleClick} className=" font-bold">
+            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/yachts') ? 'text-red-600' : 'text-black'}`}>
               <Image src={yacht} alt="yacht" width={38} height={38} className="mr-2" />
               <span>Yachts</span>
             </ListItem>
           </Link>
-          <Link href="/warehouse" onClick={handleClick} className="font-bold">
-            <ListItem className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : 'pr-4'} font-medium ${isActivePath('/warehouse') ? 'text-red-600' : 'text-black'}`}>
+          <Link href="/warehouse" onClick={handleClick} className=" font-bold">
+            <ListItem className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : 'pr-4'} font-medium ${pathname.startsWith('/warehouse') ? 'text-red-600' : 'text-black'}`}>
               <ArchiveBoxIcon className="h-5 w-5 mr-2" />
               <span>Warehouse</span>
             </ListItem>
           </Link>
-          <Link href="/warehouseUnofficially" onClick={handleClick} className="font-bold"> 
-            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/warehouseUnofficially') ? 'text-red-600' : 'text-black'}`}>
+          <Link href="/warehouseUnofficially" onClick={handleClick} className=" font-bold"> 
+            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/warehouseUnofficially') ? 'text-red-600' : 'text-black'}`}>
               <ArchiveBoxIcon className="h-5 w-5 mr-2" />
               <span>Internal warehouse</span>
             </ListItem>
           </Link>
-          <Link href="/priceList" onClick={handleClick} className="font-bold">
-            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/priceList') ? 'text-red-600' : 'text-black'}`}>
+          <Link href="/priceList" onClick={handleClick} className=" font-bold">
+            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/priceList') ? 'text-red-600' : 'text-black'}`}>
               <CurrencyDollarIcon className="h-5 w-5 mr-2" />
               <span>Price List</span>
             </ListItem>
           </Link>
-          <Link href="/users" onClick={handleClick} className="font-bold">
-            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/users') ? 'text-red-600' : 'text-black'}`}>
+          <Link href="/users" onClick={handleClick} className=" font-bold">
+            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/users') ? 'text-red-600' : 'text-black'}`}>
               <UserIcon className="h-5 w-5 mr-2" />
               <span>Users</span>
             </ListItem>
           </Link>
         </>
       )}
-      <Link href="/auth/login" onClick={() => { clearLocalStorage(); handleClick(); }} className="font-bold">
-        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${isActivePath('/auth/login') ? 'text-red-600' : 'text-black'}`}>
+      <Link href="/auth/login" onClick={() => { clearLocalStorage(); handleClick(); }} className=" font-bold">
+        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/auth/login') ? 'text-red-600' : 'text-black'}`}>
           <LockClosedIcon className="h-5 w-5 mr-2" />
           <span>Logout</span>
         </ListItem>
@@ -147,9 +145,9 @@ const Header = () => {
   return (
     <Navbar className="mx-auto max-w-screen-xl px-4 py-2 rounded-none bg-white">
       <div className="flex items-center justify-between text-blue-gray-900 relative">
-        <div className="absolute left-[10px] top-[10px]">
-          <Image src={logo} alt="logo" width={120} height={80} />
-        </div>
+         <div className="absolute left-[10px] top-[10px]">
+            <Image src={logo} alt="logo" width={120} height={80} />
+          </div>
         
         <div className="flex-grow"></div>
         <div className={isMobile ? 'hidden' : 'block'}>
