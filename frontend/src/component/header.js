@@ -19,6 +19,7 @@ import {
 import { useAppDispatch } from '@/lib/hooks';
 import { setId } from '@/lib/features/todos/usersDataSlice';
 import Link from 'next/link'
+import { usePathname } from 'next/navigation';
 import Loader from '@/ui/loader';
 import Image from 'next/image';
 import logo from '../../public/logo/logo.svg';
@@ -29,6 +30,7 @@ function NavList({ isOpen, setIsOpen }) {
   const [role, setRole] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
   const dispatch = useAppDispatch();
+  const pathname = usePathname();
 
   useEffect(() => {
     const storedRole = localStorage.getItem('role');
@@ -68,13 +70,13 @@ function NavList({ isOpen, setIsOpen }) {
   return (
     <List className={`flex items-center ${isMobile ? 'flex-col' : 'flex-row'} w-full p-0`}>
       <Link href="/offers" onClick={handleClick} className=" font-bold">
-        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
+        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/offers') ? 'text-red-600' : 'text-black'}`}>
           <DocumentTextIcon className="h-5 w-5 mr-2" />
           <span>Offers</span>
         </ListItem>
       </Link>
       <Link href="/orders" onClick={handleClick} className=" font-bold">
-        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
+        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/orders') ? 'text-red-600' : 'text-black'}`}>
           <ArchiveBoxIcon className="h-5 w-5 mr-2" />
           <span>Orders</span>
         </ListItem>
@@ -82,31 +84,31 @@ function NavList({ isOpen, setIsOpen }) {
       {(role === 'admin' || role === 'manager') && (
         <>
           <Link href="/yachts" onClick={handleClick} className=" font-bold">
-            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
+            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/yachts') ? 'text-red-600' : 'text-black'}`}>
               <Image src={yacht} alt="yacht" width={38} height={38} className="mr-2" />
               <span>Yachts</span>
             </ListItem>
           </Link>
           <Link href="/warehouse" onClick={handleClick} className=" font-bold">
-            <ListItem className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : 'pr-4'} font-medium text-black`}>
+            <ListItem className={`flex items-center gap-2 ${isMobile ? 'w-full justify-center' : 'pr-4'} font-medium ${pathname.startsWith('/warehouse') ? 'text-red-600' : 'text-black'}`}>
               <ArchiveBoxIcon className="h-5 w-5 mr-2" />
               <span>Warehouse</span>
             </ListItem>
           </Link>
           <Link href="/warehouseUnofficially" onClick={handleClick} className=" font-bold"> 
-            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
+            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/warehouseUnofficially') ? 'text-red-600' : 'text-black'}`}>
               <ArchiveBoxIcon className="h-5 w-5 mr-2" />
               <span>Internal warehouse</span>
             </ListItem>
           </Link>
           <Link href="/priceList" onClick={handleClick} className=" font-bold">
-            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
+            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/priceList') ? 'text-red-600' : 'text-black'}`}>
               <CurrencyDollarIcon className="h-5 w-5 mr-2" />
               <span>Price List</span>
             </ListItem>
           </Link>
           <Link href="/users" onClick={handleClick} className=" font-bold">
-            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
+            <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/users') ? 'text-red-600' : 'text-black'}`}>
               <UserIcon className="h-5 w-5 mr-2" />
               <span>Users</span>
             </ListItem>
@@ -114,7 +116,7 @@ function NavList({ isOpen, setIsOpen }) {
         </>
       )}
       <Link href="/auth/login" onClick={() => { clearLocalStorage(); handleClick(); }} className=" font-bold">
-        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
+        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium ${pathname.startsWith('/auth/login') ? 'text-red-600' : 'text-black'}`}>
           <LockClosedIcon className="h-5 w-5 mr-2" />
           <span>Logout</span>
         </ListItem>
