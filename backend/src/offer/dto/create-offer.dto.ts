@@ -4,9 +4,10 @@ export class CreateOfferDto {
     customerId: string;
     yachtName: string;
     yachtModel: string;
+    location: string;
     comment?: string;
     countryCode: string;
-    yachts: { id: string; name: string; model: string; countryCode: string }[];
+    yachts: { id: string; name: string; model: string; countryCode: string; userId: string; userName: string }[];
     services: { serviceName: string; priceInEuroWithoutVAT: number } | { serviceName: string; priceInEuroWithoutVAT: number }[];
     parts: { partName: string; quantity: number }[];
     status: string;

@@ -29,7 +29,7 @@ export class OfferService {
   ) {}
 
   async create(data: CreateOfferDto) {
-    if (!data.customerFullName || (!data.yachts || data.yachts.length === 0) || !data.services || !data.parts || !data.status) {
+    if (!data.customerFullName || (!data.yachts || data.yachts.length === 0) || !data.services || !data.parts || !data.status || !data.location) {
       return {
         code: 400,
         message: 'Not all arguments',
@@ -88,6 +88,7 @@ export class OfferService {
           customerId: customer.id,
           yachtName: yachtName,
           yachtModel: yachtModel,
+          location: data.location || '',
           comment: data.comment || '',
           countryCode: countryCode,
           yachts: data.yachts,

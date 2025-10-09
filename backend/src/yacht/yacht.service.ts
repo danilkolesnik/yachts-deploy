@@ -13,7 +13,14 @@ export class YachtService {
 
   async create(createYachtDto: CreateYachtDto) {
     try {
-      const yacht = this.yachtRepository.create(createYachtDto);
+      // Set default values for userId and userName if not provided
+      const yachtData = {
+        ...createYachtDto,
+        userId: createYachtDto.userId || '',
+        userName: createYachtDto.userName || '',
+      };
+      
+      const yacht = this.yachtRepository.create(yachtData);
       const savedYacht = await this.yachtRepository.save(yacht);
       return {
         code: 201,

@@ -6,4 +6,6 @@ export class CreateYachtDto {
   ownerContacts?: string;
   engineHours?: number;
   description?: string;
+  userId?: string;
+  userName?: string;
 } 

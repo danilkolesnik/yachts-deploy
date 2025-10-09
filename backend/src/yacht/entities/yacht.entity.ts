@@ -31,4 +31,10 @@ export class Yacht {
 
   @Column({ type: 'text', nullable: true })
   description: string;
+
+  @Column({ default: '' })
+  userId: string;
+
+  @Column({ default: '' })
+  userName: string;
 } 
