@@ -110,7 +110,9 @@ const OfferPage = () => {
     const [createCustomerFormData, setCreateCustomerFormData] = useState({
         email: '',
         fullName: '',
-        address: ''
+        address: '',
+        yachtName: '',
+        location: ''
     });
 
     const columns = [
@@ -818,7 +820,9 @@ const OfferPage = () => {
         setCreateCustomerFormData({
             email: '',
             fullName: '',
-            address: ''
+            address: '',
+            yachtName: '',
+            location: ''
         });
     };
 
@@ -1164,6 +1168,20 @@ const OfferPage = () => {
                             label="Address"
                             name="address"
                             value={createCustomerFormData.address}
+                            onChange={handleCustomerChange}
+                            required
+                        />
+                        <Input
+                            label="Yacht Name"
+                            name="yachtName"
+                            value={createCustomerFormData.yachtName}
+                            onChange={handleCustomerChange}
+                            required
+                        />
+                        <Input
+                            label="Location"
+                            name="location"
+                            value={createCustomerFormData.location}
                             onChange={handleCustomerChange}
                             required
                         />
