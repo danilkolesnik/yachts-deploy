@@ -1154,7 +1154,7 @@ const OfferPage = () => {
                             required
                         />
                         <Input
-                            label="Full Name"
+                            label="Customer Name"
                             name="fullName"
                             value={createCustomerFormData.fullName}
                             onChange={handleCustomerChange}

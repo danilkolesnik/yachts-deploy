@@ -20,6 +20,7 @@ const UsersPage = () => {
     const [newRole, setNewRole] = useState('');
     const [userOptions, setUserOptions] = useState([]);
     const [inputValue, setInputValue] = useState('');
+    const [roleFilter, setRoleFilter] = useState('');
 
     const roles = [
         { value: 'admin', label: 'Admin' },
@@ -36,7 +37,7 @@ const UsersPage = () => {
             sortable: true,
         },
         {
-            name: 'Full Name',
+            name: 'Customer Name',
             selector: row => row.fullName,
             sortable: true,
         },
@@ -129,16 +130,18 @@ const UsersPage = () => {
 
     const handleUserChange = (selectedOption) => {
         setSelectedUser(selectedOption);
-        if (selectedOption) {
-            setUsers(users.filter(user => user.id === selectedOption.value));
-        } else {
-            fetchUsers();
-        }
     };
 
     const handleInputChange = (value) => {
         setInputValue(value);
     };
+
+    // Filter users based on search and role filter
+    const filteredUsers = users.filter(user => {
+        const matchesSearch = !selectedUser || user.id === selectedUser.value;
+        const matchesRole = !roleFilter || user.role === roleFilter;
+        return matchesSearch && matchesRole;
+    });
 
     const fetchUsers = async () => {
         try {
@@ -175,14 +178,14 @@ const UsersPage = () => {
                     </div>
                 ) : (
                     <div className="w-full space-y-6 bg-white rounded shadow-md">
-                        <div className="p-4">
+                        <div className="p-4 flex flex-col md:flex-row gap-4 items-start md:items-center">
                             <ReactSelect
                                 options={userOptions}
                                 value={selectedUser}
                                 onChange={handleUserChange}
                                 onInputChange={handleInputChange}
                                 inputValue={inputValue}
-                                placeholder="Search..."
+                                placeholder="Search by name..."
                                 isClearable
                                 isSearchable
                                 menuIsOpen={inputValue.length > 0}
@@ -203,11 +206,25 @@ const UsersPage = () => {
                                     }),
                                 }}
                             />
+                            <Select
+                                label="Filter by Role"
+                                value={roleFilter}
+                                onChange={(value) => setRoleFilter(value)}
+                                className="text-black border-gray-300 rounded-xs w-full md:w-40"
+                                labelProps={{ className: 'text-black' }}
+                                containerProps={{ className: 'min-w-[120px] w-full md:w-auto' }}
+                            >
+                                <Option className="text-black" value="">All Roles</Option>
+                                <Option className="text-black" value="admin">Admin</Option>
+                                <Option className="text-black" value="user">User</Option>
+                                <Option className="text-black" value="mechanic">Mechanic</Option>
+                                <Option className="text-black" value="electrician">Electrician</Option>
+                            </Select>
                         </div>
                         <div className="overflow-x-auto">
                             <DataTable
                                 columns={columns}
-                                data={users}
+                                data={filteredUsers}
                                 pagination
                                 highlightOnHover
                                 pointerOnHover

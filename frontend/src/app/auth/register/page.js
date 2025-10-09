@@ -80,7 +80,7 @@ const Register = () => {
                         />
                     </div>
                     <div className="form-group">
-                        <label className="block text-sm font-medium text-black">Full Name:</label>
+                        <label className="block text-sm font-medium text-black">Customer Name:</label>
                         <input
                             type="text"
                             value={fullName}
