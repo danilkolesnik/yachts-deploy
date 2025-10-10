@@ -29,6 +29,7 @@ const OfferPage = () => {
     const [users, setUsers] = useState([]);
     const [workers, setWorkers] = useState([]);
     const [yachts, setYachts] = useState([]);
+    const [filteredYachts, setFilteredYachts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [createOrderModalIsOpen, setCreateOrderModalIsOpen] = useState(false);
@@ -460,6 +461,18 @@ const OfferPage = () => {
             services: row.services,
             parts: row.parts,
         });
+        
+        // Filter yachts for the selected customer when editing
+        const selectedCustomer = users.find(user => user.fullName === row.customerFullName);
+        if (selectedCustomer) {
+            const customerYachts = yachts.filter(yacht => 
+                yacht.userId === selectedCustomer.id || yacht.userName === selectedCustomer.fullName
+            );
+            setFilteredYachts(customerYachts);
+        } else {
+            setFilteredYachts([]);
+        }
+        
         setEditFormData({
             customerFullName: row.customerFullName,
             yachtName: row.yachtName,
@@ -470,7 +483,9 @@ const OfferPage = () => {
                 id: '', 
                 name: row.yachtName, 
                 model: row.yachtModel, 
-                countryCode: row.countryCode 
+                countryCode: row.countryCode,
+                userId: '',
+                userName: ''
             }] : []),
             services: Array.isArray(row.services) ? row.services : (row.services ? [row.services] : []),
             parts: row.parts,
@@ -497,6 +512,7 @@ const OfferPage = () => {
     const openCreateModal = () => {
         setEditMode(false);
         setEditId(null);
+        setFilteredYachts([]); // Reset filtered yachts when opening modal
         setModalIsOpen(true);
     };
 
@@ -540,6 +556,20 @@ const OfferPage = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+        
+        if (name === 'customerFullName') {
+            // When customer is selected, filter yachts for that customer
+            const selectedCustomer = users.find(user => user.fullName === value);
+            if (selectedCustomer) {
+                const customerYachts = yachts.filter(yacht => 
+                    yacht.userId === selectedCustomer.id || yacht.userName === selectedCustomer.fullName
+                );
+                setFilteredYachts(customerYachts);
+            } else {
+                setFilteredYachts([]);
+            }
+        }
+        
         setFormData({ ...formData, [name]: value });
     };
 
@@ -767,7 +797,9 @@ const OfferPage = () => {
                     id: yacht.id,
                     name: yacht.name,
                     model: yacht.model,
-                    countryCode: yacht.countryCode || ''
+                    countryCode: yacht.countryCode || '',
+                    userId: yacht.userId || '',
+                    userName: yacht.userName || ''
                 }))
             });
         } else {
@@ -1041,7 +1073,7 @@ const OfferPage = () => {
                     openCreatePartModal={openCreatePartModal}
                     openCreateCustomerModal={openCreateCustomerModal}
                     loading={loadingCreateOffer}
-                    yachts={yachts}
+                    yachts={filteredYachts.length > 0 ? filteredYachts : yachts}
                     handleYachtSelect={handleYachtSelect}
                 />
                 <EditOfferModal

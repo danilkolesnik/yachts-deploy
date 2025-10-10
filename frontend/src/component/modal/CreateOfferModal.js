@@ -43,7 +43,13 @@ const CreateOfferModal = ({
                     id="customer-select"
                     options={userOptions}
                     value={userOptions.find(option => option.label === formData.customerFullName) || null}
-                    onChange={selectedOption => handleChange({ target: { name: 'customerFullName', value: selectedOption ? selectedOption.label : '' } })}
+                    onChange={selectedOption => {
+                        handleChange({ target: { name: 'customerFullName', value: selectedOption ? selectedOption.label : '' } });
+                        // Reset selected yachts when customer changes
+                        if (handleYachtSelect) {
+                            handleYachtSelect([]);
+                        }
+                    }}
                     placeholder="Select a customer..."
                     isClearable
                     isSearchable
@@ -84,7 +90,7 @@ const CreateOfferModal = ({
                         formData.yachts.some(yacht => yacht.name === option.value.name && yacht.model === option.value.model)
                     )}
                     onChange={selectedOptions => handleYachtSelect(selectedOptions?.map(option => option.value) || [])}
-                    placeholder="Select yachts..."
+                    placeholder={formData.customerFullName ? "Select yachts..." : "First select a customer..."}
                     isClearable
                     isSearchable
                     isMulti
