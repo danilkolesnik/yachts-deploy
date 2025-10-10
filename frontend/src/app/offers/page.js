@@ -108,11 +108,19 @@ const OfferPage = () => {
     const [createCustomerModalIsOpen, setCreateCustomerModalIsOpen] = useState(false);
     const [createCustomerLoading, setCreateCustomerLoading] = useState(false);
     const [createCustomerFormData, setCreateCustomerFormData] = useState({
+        // Customer fields
         email: '',
         fullName: '',
         address: '',
+        // Yacht fields
         yachtName: '',
-        location: ''
+        yachtModel: '',
+        location: '',
+        countryCode: '',
+        repairTime: '',
+        ownerContacts: '',
+        engineHours: '',
+        description: ''
     });
 
     const columns = [
@@ -818,11 +826,19 @@ const OfferPage = () => {
     const closeCreateCustomerModal = () => {
         setCreateCustomerModalIsOpen(false);
         setCreateCustomerFormData({
+            // Customer fields
             email: '',
             fullName: '',
             address: '',
+            // Yacht fields
             yachtName: '',
-            location: ''
+            yachtModel: '',
+            location: '',
+            countryCode: '',
+            repairTime: '',
+            ownerContacts: '',
+            engineHours: '',
+            description: ''
         });
     };
 
@@ -835,22 +851,55 @@ const OfferPage = () => {
         e.preventDefault();
         setCreateCustomerLoading(true);
         try {
-            await axios.post(`${URL}/auth/register/client`, createCustomerFormData);
+            // First, create the customer
+            const customerData = {
+                email: createCustomerFormData.email,
+                fullName: createCustomerFormData.fullName
+            };
             
-            // Refresh users list after creating customer
-            const updatedUsers = await getUsers();
-            setUsers(updatedUsers || []);
+            const customerResponse = await axios.post(`${URL}/auth/register/client`, customerData);
             
-            // Update user options
-            if (updatedUsers && updatedUsers.length > 0) {
-                const options = updatedUsers.map(user => ({ value: user.id, label: user.fullName }));
-                setUserOptions(options);
+            if (customerResponse.data.code === 201) {
+                const customer = customerResponse.data.data;
+                
+                // Then, create the yacht with customer info
+                const yachtData = {
+                    name: createCustomerFormData.yachtName,
+                    model: createCustomerFormData.yachtModel,
+                    countryCode: createCustomerFormData.countryCode,
+                    repairTime: createCustomerFormData.repairTime || '',
+                    ownerContacts: createCustomerFormData.ownerContacts || '',
+                    engineHours: createCustomerFormData.engineHours ? parseInt(createCustomerFormData.engineHours) : null,
+                    description: createCustomerFormData.description || '',
+                    userId: customer.id,
+                    userName: customer.fullName
+                };
+                
+                await axios.post(`${URL}/yachts`, yachtData);
+                
+                // Refresh users and yachts lists
+                const [updatedUsers, updatedYachts] = await Promise.all([
+                    getUsers(),
+                    getYachts()
+                ]);
+                
+                setUsers(updatedUsers || []);
+                setYachts(updatedYachts || []);
+                
+                // Update user options
+                if (updatedUsers && updatedUsers.length > 0) {
+                    const options = updatedUsers.map(user => ({ value: user.id, label: user.fullName }));
+                    setUserOptions(options);
+                }
+                
+                closeCreateCustomerModal();
+                toast.success("Customer and yacht created successfully!");
+            } else {
+                throw new Error(customerResponse.data.message || 'Failed to create customer');
             }
-            
-            closeCreateCustomerModal();
         } catch (error) {
-            console.error('Error creating customer:', error);
-            alert('Error creating customer. Please try again.');
+            console.error('Error creating customer and yacht:', error);
+            toast.error("Error creating customer and yacht. Please try again.");
         } finally {
             setCreateCustomerLoading(false);
         }
@@ -1148,8 +1197,11 @@ const OfferPage = () => {
                         </div>
                     </div>
                 </Modal>
-                <Modal isOpen={createCustomerModalIsOpen} onClose={closeCreateCustomerModal} title="Create Customer">
-                    <form onSubmit={createCustomer} className="space-y-4">
+                <Modal isOpen={createCustomerModalIsOpen} onClose={closeCreateCustomerModal} title="Create Customer & Yacht">
+                    <form onSubmit={createCustomer} className="space-y-4 overflow-y-auto h-full" style={{ height: '500px', overflowY: 'auto' }}>
+                        <div className="border-b pb-2 mb-4">
+                            <h3 className="text-lg font-semibold text-gray-700">Customer Information</h3>
+                        </div>
                         <Input
                             label="Email"
                             name="email"
@@ -1164,7 +1216,16 @@ const OfferPage = () => {
                             onChange={handleCustomerChange}
                             required
                         />
-
+                        <Input
+                            label="Address"
+                            name="address"
+                            value={createCustomerFormData.address}
+                            onChange={handleCustomerChange}
+                        />
+                        
+                        <div className="border-b pb-2 mb-4 mt-6">
+                            <h3 className="text-lg font-semibold text-gray-700">Yacht Information</h3>
+                        </div>
                         <Input
                             label="Yacht Name"
                             name="yachtName"
@@ -1173,25 +1234,56 @@ const OfferPage = () => {
                             required
                         />
                         <Input
-                            label="Location"
-                            name="location"
-                            value={createCustomerFormData.location}
+                            label="Yacht Model"
+                            name="yachtModel"
+                            value={createCustomerFormData.yachtModel}
                             onChange={handleCustomerChange}
                             required
                         />
                         <Input
-                            label="Address"
-                            name="address"
-                            value={createCustomerFormData.address}
+                            label="Boat Registration"
+                            name="countryCode"
+                            value={createCustomerFormData.countryCode}
                             onChange={handleCustomerChange}
                             required
+                        />
+                        <Input
+                            label="Location"
+                            name="location"
+                            value={createCustomerFormData.location}
+                            onChange={handleCustomerChange}
+                        />
+                        <Input
+                            label="Repair Time"
+                            name="repairTime"
+                            value={createCustomerFormData.repairTime}
+                            onChange={handleCustomerChange}
+                        />
+                        <Input
+                            label="Owner Contacts"
+                            name="ownerContacts"
+                            value={createCustomerFormData.ownerContacts}
+                            onChange={handleCustomerChange}
+                        />
+                        <Input
+                            label="Engine Hours"
+                            name="engineHours"
+                            type="number"
+                            value={createCustomerFormData.engineHours}
+                            onChange={handleCustomerChange}
+                        />
+                        <Input
+                            label="Description"
+                            name="description"
+                            value={createCustomerFormData.description}
+                            onChange={handleCustomerChange}
                         />
                         <div className="flex justify-end">
                             <Button variant="text" color="red" onClick={closeCreateCustomerModal} className="mr-1">
                                 <span>Cancel</span>
                             </Button>
-                            <Button color="green" type="submit">
-                                <span>Create</span>
+                            <Button color="green" type="submit" disabled={createCustomerLoading}>
+                                {createCustomerLoading ? 'Creating...' : 'Create Customer & Yacht'}
                             </Button>
                         </div>
                     </form>
