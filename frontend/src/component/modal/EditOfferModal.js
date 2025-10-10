@@ -24,13 +24,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                 <ReactSelect
                     id="customer-select"
                     options={userOptions}
-                    value={userOptions.find(option => option.label === formData.customerFullName)}
+                    value={userOptions.find(option => option.label === formData.customerFullName) || null}
                     onChange={selectedOption => {
                         handleChange({ target: { name: 'customerFullName', value: selectedOption ? selectedOption.label : '' } });
-                        // Reset selected yachts when customer changes
-                        if (handleYachtSelect) {
-                            handleYachtSelect([]);
-                        }
+                       
                     }}
                     placeholder="Select a customer..."
                     isClearable

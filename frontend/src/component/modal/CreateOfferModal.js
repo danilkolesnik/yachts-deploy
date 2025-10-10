@@ -29,7 +29,7 @@ const CreateOfferModal = ({
 
     const combinedParts = partOptions.map(part => ({
         ...part,
-        color: part.value.unofficially ? 'green' : 'red'
+        color: part.unofficially ? 'green' : 'red'
     }));
 
     return(
@@ -46,9 +46,6 @@ const CreateOfferModal = ({
                     onChange={selectedOption => {
                         handleChange({ target: { name: 'customerFullName', value: selectedOption ? selectedOption.label : '' } });
                         // Reset selected yachts when customer changes
-                        if (handleYachtSelect) {
-                            handleYachtSelect([]);
-                        }
                     }}
                     placeholder="Select a customer..."
                     isClearable
