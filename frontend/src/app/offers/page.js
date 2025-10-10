@@ -1164,6 +1164,28 @@ const OfferPage = () => {
                             onChange={handleCustomerChange}
                             required
                         />
+
+                        <Input
+                            label="Yacht Name"
+                            name="yachtName"
+                            value={createCustomerFormData.yachtName}
+                            onChange={handleCustomerChange}
+                            required
+                        />
+                        <Input
+                            label="Location"
+                            name="location"
+                            value={createCustomerFormData.location}
+                            onChange={handleCustomerChange}
+                            required
+                        />
+                        <Input
+                            label="Address"
+                            name="address"
+                            value={createCustomerFormData.address}
+                            onChange={handleCustomerChange}
+                            required
+                        />
                         <div className="flex justify-end">
                             <Button variant="text" color="red" onClick={closeCreateCustomerModal} className="mr-1">
                                 <span>Cancel</span>
