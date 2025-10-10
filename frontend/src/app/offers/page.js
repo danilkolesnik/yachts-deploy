@@ -518,6 +518,7 @@ const OfferPage = () => {
 
     const closeCreateModal = () => {
         setModalIsOpen(false);
+        setFilteredYachts([]); // Reset filtered yachts when closing modal
     };
 
     const openCreateOrderModal = (row) => {
@@ -712,6 +713,7 @@ const OfferPage = () => {
 
     const closeEditModal = () => {
         setEditModalIsOpen(false);
+        setFilteredYachts([]); // Reset filtered yachts when closing edit modal
     };
 
     const handleEditSubmit = async (e) => {
@@ -734,6 +736,20 @@ const OfferPage = () => {
 
     const handleEditChange = (e) => {
         const { name, value } = e.target;
+        
+        if (name === 'customerFullName') {
+            // When customer is selected in edit mode, filter yachts for that customer
+            const selectedCustomer = users.find(user => user.fullName === value);
+            if (selectedCustomer) {
+                const customerYachts = yachts.filter(yacht => 
+                    yacht.userId === selectedCustomer.id || yacht.userName === selectedCustomer.fullName
+                );
+                setFilteredYachts(customerYachts);
+            } else {
+                setFilteredYachts([]);
+            }
+        }
+        
         if (name in editFormData) {
             setEditFormData({ ...editFormData, [name]: value });
         }
@@ -1073,7 +1089,7 @@ const OfferPage = () => {
                     openCreatePartModal={openCreatePartModal}
                     openCreateCustomerModal={openCreateCustomerModal}
                     loading={loadingCreateOffer}
-                    yachts={filteredYachts.length > 0 ? filteredYachts : yachts}
+                    yachts={formData.customerFullName ? filteredYachts : []}
                     handleYachtSelect={handleYachtSelect}
                 />
                 <EditOfferModal
@@ -1089,7 +1105,7 @@ const OfferPage = () => {
                     openCreateServiceModal={openCreateServiceModal}
                     openCreatePartModal={openCreatePartModal}
                     openCreateCustomerModal={openCreateCustomerModal}
-                    yachts={yachts}
+                    yachts={editFormData.customerFullName ? filteredYachts : []}
                     handleYachtSelect={handleYachtSelect}
                 />
                 <Modal isOpen={createOrderModalIsOpen} onClose={closeCreateOrderModal} title="Create Order">
