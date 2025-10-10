@@ -108,7 +108,7 @@ const CreateOfferModal = ({
                 onChange={handleChange}
                 required
             />
-            <Input
+            {/* <Input
                 label="Yacht Name"
                 name="yachtName"
                 value={formData.yachtName}
@@ -121,7 +121,7 @@ const CreateOfferModal = ({
                 value={formData.location}
                 onChange={handleChange}
                 required
-            />
+            /> */}
             <Select
                 label="Language"
                 value={formData.language}
