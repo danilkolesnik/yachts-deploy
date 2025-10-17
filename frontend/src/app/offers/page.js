@@ -384,9 +384,9 @@ const OfferPage = () => {
             case !Array.isArray(formData.yachts) || formData.yachts.length === 0:
                 toast.error("Error: At least one yacht is required");
                 return;
-            case formData.comment.trim() === '':
-                toast.error("Error: Comment is required");
-                return;
+            // case formData.comment.trim() === '':
+            //     toast.error("Error: Comment is required");
+            //     return;
             case !Array.isArray(formData.services) || formData.services.length === 0:
                 toast.error("Error: At least one service is required");
                 return;
