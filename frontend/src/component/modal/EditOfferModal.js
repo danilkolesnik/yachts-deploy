@@ -60,7 +60,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
             </div>
             <div className="mb-4">
                 <label htmlFor="yacht-select" className="block text-sm font-medium text-gray-700">
-                    Select Yachts
+                    Select Yacht(s)
                 </label>
                 <ReactSelect
                     id="yacht-select"

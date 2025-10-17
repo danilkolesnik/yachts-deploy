@@ -1301,25 +1301,25 @@ const OfferPage = () => {
                             value={createCustomerFormData.location}
                             onChange={handleCustomerChange}
                         />
-                        <Input
+                        {/* <Input
                             label="Repair Time"
                             name="repairTime"
                             value={createCustomerFormData.repairTime}
                             onChange={handleCustomerChange}
-                        />
+                        /> */}
                         <Input
                             label="Owner Contacts"
                             name="ownerContacts"
                             value={createCustomerFormData.ownerContacts}
                             onChange={handleCustomerChange}
                         />
-                        <Input
+                        {/* <Input
                             label="Engine Hours"
                             name="engineHours"
                             type="number"
                             value={createCustomerFormData.engineHours}
                             onChange={handleCustomerChange}
-                        />
+                        /> */}
                         <Input
                             label="Description"
                             name="description"
