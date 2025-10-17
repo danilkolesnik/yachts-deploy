@@ -184,7 +184,7 @@ const OfferPage = () => {
                     return row.services.map(service => `${service.serviceName}, ${service.priceInEuroWithoutVAT}€`).join('; ');
                 } else if (row.services && Object.keys(row.services).length > 0) {
                     // Backward compatibility for single service object
-                    return `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€`;
+                    return `${row.label}`;
                 }
                 return 'N/A';
             },
