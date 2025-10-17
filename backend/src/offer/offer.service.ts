@@ -29,12 +29,12 @@ export class OfferService {
   ) {}
 
   async create(data: CreateOfferDto) {
-    if (!data.customerFullName || (!data.yachts || data.yachts.length === 0) || !data.services || !data.parts || !data.status || !data.location) {
-      return {
-        code: 400,
-        message: 'Not all arguments',
-      };
-    }
+    // if (!data.customerFullName || (!data.yachts || data.yachts.length === 0) || !data.services || !data.parts || !data.status || !data.location) {
+    //   return {
+    //     code: 400,
+    //     message: 'Not all arguments',
+    //   };
+    // }
 
     // Validate services - should be array or object
     if (!Array.isArray(data.services) && (!data.services || typeof data.services !== 'object')) {
