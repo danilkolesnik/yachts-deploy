@@ -81,7 +81,15 @@ const ConfirmedOffersPage = () => {
         },
         {
             name: 'Service Category',
-            selector: row => row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A',
+            selector: row => {
+                if (Array.isArray(row.services) && row.services.length > 0) {
+                    return row.services.map(service => service.label ?? service.serviceName ?? '').filter(Boolean).join('; ');
+                } else if (row.services && Object.keys(row.services).length > 0) {
+                    // Backward compatibility for single service object
+                    return row.services.label ?? row.services.serviceName ?? 'N/A';
+                }
+                return 'N/A';
+            },
             sortable: true,
         },
         {
