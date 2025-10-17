@@ -82,6 +82,9 @@ export class OrderService {
         })
       );
 
+      // After creating an order, mark the related offer as confirmed
+      await this.offerRepository.update(data.offerId, { status: 'confirmed' });
+
       return {
         code: 201,
         data: newOrder,
