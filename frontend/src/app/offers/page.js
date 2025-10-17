@@ -181,10 +181,10 @@ const OfferPage = () => {
             name: 'Service Category',
             selector: row => {
                 if (Array.isArray(row.services) && row.services.length > 0) {
-                    return row.services.map(service => `${service.serviceName}, ${service.priceInEuroWithoutVAT}€`).join('; ');
+                    return row.services.map(service => service.label ?? service.serviceName ?? '').filter(Boolean).join('; ');
                 } else if (row.services && Object.keys(row.services).length > 0) {
                     // Backward compatibility for single service object
-                    return `${row.label}`;
+                    return row.services.label ?? row.services.serviceName ?? 'N/A';
                 }
                 return 'N/A';
             },
