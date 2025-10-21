@@ -255,7 +255,7 @@ const OrderPage = () => {
                                         label="Search by"
                                         value={filters.searchCriteria}
                                         onChange={(value) => handleFilterChange(value, 'searchCriteria')}
-                                        className="text-black border-gray-300 rounded-xs w-full md:w-36"
+                                        className="text-black border-gray-300 rounded-xs w-full"
                                         labelProps={{ className: 'text-black' }}
                                         containerProps={{ className: 'min-w-[120px] w-full md:w-auto' }}
                                     >
