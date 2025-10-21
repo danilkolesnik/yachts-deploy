@@ -13,6 +13,8 @@ services:
     depends_on:
       - backend
     restart: always
+    networks:
+      - yachts-network
 
   backend:
     build:
@@ -33,10 +35,13 @@ services:
       - ZOHO_APP_PASSWORD=fV3U2ZA#u4:6$Gg
       - ZOHO_EMAIL=kirill.hetman@zohomail.eu
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: always
     volumes:
       - uploads_data:/app/uploads
+    networks:
+      - yachts-network
     command: >
       sh -c "mkdir -p /app/uploads/image /app/uploads/video /app/uploads/logo &&
              chmod -R 777 /app/uploads &&
@@ -64,6 +69,18 @@ services:
         reservations:
           memory: 512M
     command: docker-entrypoint.sh postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d yachts"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - yachts-network
+
+networks:
+  yachts-network:
+    driver: bridge
 
 volumes:
   postgres_data:
