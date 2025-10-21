@@ -971,7 +971,7 @@ const OfferPage = () => {
                                             label="Search by"
                                             value={filters.searchCriteria}
                                             onChange={(value) => setFilters({ ...filters, searchCriteria: value })}
-                                            className="text-gray-700 border-gray-300 rounded-md w-full sm:w-40"
+                                            className="text-gray-700 border-gray-300 rounded-md w-full"
                                             labelProps={{ className: 'text-gray-700 text-sm font-medium' }}
                                             containerProps={{ className: 'min-w-[140px] w-full sm:w-auto' }}
                                         >
@@ -1006,7 +1006,7 @@ const OfferPage = () => {
                                 </Button>
                                 <Button 
                                     onClick={handleHistoryClick} 
-                                    className="w-full sm:w-auto border-2 border-[#dd3333] text-[#dd3333] hover:bg-[#dd3333] hover:text-white font-medium px-4 py-2 rounded-md transition-colors duration-200"
+                                    className="w-full sm:w-auto border-2 border-[#dd3333] text-[#000] font-medium px-4 py-2 rounded-md transition-colors duration-200"
                                 >
                                     History
                                 </Button>
