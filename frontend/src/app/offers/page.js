@@ -1006,7 +1006,7 @@ const OfferPage = () => {
                                 </Button>
                                 <Button 
                                     onClick={handleHistoryClick} 
-                                    className="w-full sm:w-auto border-2 border-[#dd3333] text-[#000] font-medium px-4 py-2 rounded-md transition-colors duration-200"
+                                    className="bg-[white] w-full sm:w-auto border-2 border-[#dd3333] text-[#000] font-medium px-4 py-2 rounded-md transition-colors duration-200"
                                 >
                                     History
                                 </Button>
