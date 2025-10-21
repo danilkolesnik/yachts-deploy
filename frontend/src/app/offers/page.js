@@ -963,51 +963,65 @@ const OfferPage = () => {
                     </div>
                 ) : (
                     <div className="w-full space-y-6 bg-white rounded shadow-md">
-                        <div className="relative flex flex-col md:flex-row justify-between gap-4 mb-4 p-4">
-                            <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-8">
-                                <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-0 w-full md:w-auto">
-                                    <Select
-                                        label="Search by"
-                                        value={filters.searchCriteria}
-                                        onChange={(value) => setFilters({ ...filters, searchCriteria: value })}
-                                        className="text-black border-gray-300 rounded-xs w-full md:w-36"
-                                        labelProps={{ className: 'text-black' }}
-                                        containerProps={{ className: 'min-w-[120px] w-full md:w-auto' }}
-                                    >
-                                        <Option className="text-black" value="id">Yacht Name</Option>
-                                        <Option className="text-black" value="customer">Customer</Option>
-                                    </Select>
+                        <div className="relative flex flex-col lg:flex-row justify-between gap-4 mb-4 p-4">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                                    <div className="w-full sm:w-auto">
+                                        <Select
+                                            label="Search by"
+                                            value={filters.searchCriteria}
+                                            onChange={(value) => setFilters({ ...filters, searchCriteria: value })}
+                                            className="text-gray-700 border-gray-300 rounded-md w-full sm:w-40"
+                                            labelProps={{ className: 'text-gray-700 text-sm font-medium' }}
+                                            containerProps={{ className: 'min-w-[140px] w-full sm:w-auto' }}
+                                        >
+                                            <Option className="text-gray-700" value="id">Yacht Name</Option>
+                                            <Option className="text-gray-700" value="customer">Customer</Option>
+                                        </Select>
+                                    </div>
                                     <input
                                         type="text"
                                         placeholder="Search..."
                                         value={filters.searchValue}
                                         onChange={(e) => setFilters({ ...filters, searchValue: e.target.value })}
-                                        className="border p-2 text-black rounded w-full md:w-48 h-10"
+                                        className="border border-gray-300 px-3 py-2 text-gray-700 rounded-md w-full sm:w-56 h-10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     />
                                 </div>
                                 <input
                                     type="date"
                                     value={filters.date}
                                     onChange={(e) => setFilters({ ...filters, date: e.target.value })}
-                                    className="border p-2 text-black rounded h-10 w-full md:w-auto"
+                                    className="border border-gray-300 px-3 py-2 text-gray-700 rounded-md h-10 w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     lang="en"
                                 />
                             </div>
-                            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto justify-end">
+                            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 w-full lg:w-auto justify-end">
                                 {role !== 'user' && (
                                 <>
-                                <Button onClick={openCreateModal} className="w-full sm:w-auto bg-[#dd3333] text-white">
+                                <Button 
+                                    onClick={openCreateModal} 
+                                    className="w-full sm:w-auto bg-[#dd3333] hover:bg-[#c42d2d] text-white font-medium px-4 py-2 rounded-md transition-colors duration-200"
+                                >
                                     Create
                                 </Button>
-                                <Button onClick={handleHistoryClick} color="white" className="w-full md:w-auto border-[2px] border-[#D33] text-[#000]">
-                                History
-                            </Button>
-                            <Button onClick={handleConfirmedOffersClick} className="w-full sm:w-auto bg-[#3e4a66] text-white" >
-                                Confirmed Offers
-                            </Button>
-                            <Button className="w-full sm:w-auto bg-[#282828] text-white" onClick={exportToExcel}>
-                                Export to Excel
-                            </Button>
+                                <Button 
+                                    onClick={handleHistoryClick} 
+                                    className="w-full sm:w-auto border-2 border-[#dd3333] text-[#dd3333] hover:bg-[#dd3333] hover:text-white font-medium px-4 py-2 rounded-md transition-colors duration-200"
+                                >
+                                    History
+                                </Button>
+                                <Button 
+                                    onClick={handleConfirmedOffersClick} 
+                                    className="w-full sm:w-auto bg-[#3e4a66] hover:bg-[#2d3748] text-white font-medium px-4 py-2 rounded-md transition-colors duration-200"
+                                >
+                                    Confirmed Offers
+                                </Button>
+                                <Button 
+                                    className="w-full sm:w-auto bg-[#282828] hover:bg-[#1a1a1a] text-white font-medium px-4 py-2 rounded-md transition-colors duration-200" 
+                                    onClick={exportToExcel}
+                                >
+                                    Export to Excel
+                                </Button>
                                 </>
                                 )}
                                 

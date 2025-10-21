@@ -217,9 +217,6 @@ export class OfferService {
         });
       } else {
         offers = await this.offerRepository.find({
-          where: {
-            status: 'created'
-          },
           order: { 
             createdAt: 'DESC'
           },
