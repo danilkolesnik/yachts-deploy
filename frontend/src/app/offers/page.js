@@ -793,13 +793,15 @@ const OfferPage = () => {
     // --- SheetJS Export Function ---
     // Exports the entire filtered and sorted list of offers to Excel
     const exportToExcel = () => {
-        if (filteredData.length === 0) {
+        const dataToExport = filteredData || [];
+        
+        if (!dataToExport || dataToExport.length === 0) {
             toast.warning('No offers to export');
             return;
         }
 
         try {
-            const exportData = filteredData.map(row => ({
+            const exportData = dataToExport.map(row => ({
                 ID: row.id,
                 Date: new Date(row.createdAt).toLocaleString(),
                 Customer: row.customerFullName || '',
@@ -816,6 +818,11 @@ const OfferPage = () => {
                 Parts: Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : 'N/A'
             }));
             
+            if (!exportData || exportData.length === 0) {
+                toast.warning('No data to export');
+                return;
+            }
+            
             const worksheet = XLSX.utils.json_to_sheet(exportData);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Offers');
@@ -824,13 +831,22 @@ const OfferPage = () => {
             const date = new Date().toISOString().split('T')[0];
             const filename = `offers_export_${date}.xlsx`;
             
-            // Use writeFile with explicit bookType to ensure proper format
-            XLSX.writeFile(workbook, filename);
+            // Write file using Blob approach for better browser compatibility
+            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
             
-            toast.success(`Successfully exported ${filteredData.length} offer(s) to Excel file`);
+            toast.success(`Successfully exported ${dataToExport.length} offer(s) to Excel file`);
         } catch (error) {
             console.error('Error exporting to Excel:', error);
-            toast.error('Failed to export offers to Excel');
+            toast.error('Failed to export offers to Excel: ' + (error.message || 'Unknown error'));
         }
     };
 
