@@ -783,30 +783,55 @@ const OfferPage = () => {
             (filters.searchValue ? matchesSearch() : true) &&
             (filterDate ? offerDate.toDateString() === filterDate.toDateString() : true)
         );
+    }).sort((a, b) => {
+        // Sort confirmed offers to the top
+        if (a.status === 'confirmed' && b.status !== 'confirmed') return -1;
+        if (a.status !== 'confirmed' && b.status === 'confirmed') return 1;
+        return 0;
     });
 
     // --- SheetJS Export Function ---
+    // Exports the entire filtered and sorted list of offers to Excel
     const exportToExcel = () => {
-        const exportData = filteredData.map(row => ({
-            ID: row.id,
-            Date: new Date(row.createdAt).toLocaleString(),
-            Customer: row.customerFullName || '',
-            'Yachts': Array.isArray(row.yachts) && row.yachts.length > 0 
-                ? row.yachts.map(yacht => `${yacht.name} - ${yacht.model}`).join(', ')
-                : (row.yachtName ? `${row.yachtName} - ${row.yachtModel}` : 'N/A'),
-            'Boat Registration': Array.isArray(row.yachts) && row.yachts.length > 0 
-                ? row.yachts.map(yacht => yacht.countryCode).join(', ')
-                : (row.countryCode || 'N/A'),
-            Status: row.status,
-            'Service Category': Array.isArray(row.services) && row.services.length > 0 
-                ? row.services.map(service => `${service.serviceName}, ${service.priceInEuroWithoutVAT}€`).join('; ')
-                : (row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A'),
-            Parts: Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : 'N/A'
-        }));
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Offers');
-        XLSX.writeFile(workbook, 'offers_export.xlsx');
+        if (filteredData.length === 0) {
+            toast.warning('No offers to export');
+            return;
+        }
+
+        try {
+            const exportData = filteredData.map(row => ({
+                ID: row.id,
+                Date: new Date(row.createdAt).toLocaleString(),
+                Customer: row.customerFullName || '',
+                'Yachts': Array.isArray(row.yachts) && row.yachts.length > 0 
+                    ? row.yachts.map(yacht => `${yacht.name} - ${yacht.model}`).join(', ')
+                    : (row.yachtName ? `${row.yachtName} - ${row.yachtModel}` : 'N/A'),
+                'Boat Registration': Array.isArray(row.yachts) && row.yachts.length > 0 
+                    ? row.yachts.map(yacht => yacht.countryCode).join(', ')
+                    : (row.countryCode || 'N/A'),
+                Status: row.status,
+                'Service Category': Array.isArray(row.services) && row.services.length > 0 
+                    ? row.services.map(service => `${service.serviceName}, ${service.priceInEuroWithoutVAT}€`).join('; ')
+                    : (row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A'),
+                Parts: Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : 'N/A'
+            }));
+            
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Offers');
+            
+            // Generate filename with current date
+            const date = new Date().toISOString().split('T')[0];
+            const filename = `offers_export_${date}.xlsx`;
+            
+            // Use writeFile with explicit bookType to ensure proper format
+            XLSX.writeFile(workbook, filename);
+            
+            toast.success(`Successfully exported ${filteredData.length} offer(s) to Excel file`);
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            toast.error('Failed to export offers to Excel');
+        }
     };
 
     const handleYachtSelect = (selectedYachts) => {
@@ -1023,8 +1048,9 @@ const OfferPage = () => {
                                 <Button 
                                     className="w-full sm:w-auto bg-[#282828] hover:bg-[#1a1a1a] text-white font-medium px-4 py-2 rounded-md transition-colors duration-200" 
                                     onClick={exportToExcel}
+                                    title={`Export all ${filteredData.length} filtered offer(s) to Excel`}
                                 >
-                                    Export to Excel
+                                    Export All to Excel ({filteredData.length})
                                 </Button>
                                 </>
                                 )}

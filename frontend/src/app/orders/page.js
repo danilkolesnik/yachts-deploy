@@ -15,6 +15,7 @@ import WorkTimer from '@/component/workTimer/workTimer';
 import { statusStyles } from '@/utils/statusStyles';
 import { useRouter } from 'next/navigation';
 import * as XLSX from 'xlsx';
+import { toast } from 'react-toastify';
 
 const OrderPage = () => {
 
@@ -223,19 +224,39 @@ const OrderPage = () => {
     }, [id]);
 
     // --- SheetJS Export Function ---
+    // Exports the entire filtered and sorted list of orders to Excel
     const exportToExcel = () => {
-        const exportData = sortedOrders.map(row => ({
-            'Order Number': row.id,
-            'Creation Date': new Date(row.createdAt).toLocaleString(),
-            'Customer': row.offer?.customerFullName || 'N/A',
-            'Yacht': row.offer?.yachtName || '',
-            'Responsible': Array.isArray(row.assignedWorkers) ? row.assignedWorkers.map(worker => worker.fullName).join(', ') : 'N/A',
-            'Status': row.status
-        }));
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
-        XLSX.writeFile(workbook, 'orders_export.xlsx');
+        if (sortedOrders.length === 0) {
+            toast.warning('No orders to export');
+            return;
+        }
+
+        try {
+            const exportData = sortedOrders.map(row => ({
+                'Order Number': row.id,
+                'Creation Date': new Date(row.createdAt).toLocaleString(),
+                'Customer': row.offer?.customerFullName || 'N/A',
+                'Yacht': row.offer?.yachtName || '',
+                'Responsible': Array.isArray(row.assignedWorkers) ? row.assignedWorkers.map(worker => worker.fullName).join(', ') : 'N/A',
+                'Status': row.status
+            }));
+            
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+            
+            // Generate filename with current date
+            const date = new Date().toISOString().split('T')[0];
+            const filename = `orders_export_${date}.xlsx`;
+            
+            // Use writeFile with explicit bookType to ensure proper format
+            XLSX.writeFile(workbook, filename);
+            
+            toast.success(`Successfully exported ${sortedOrders.length} order(s) to Excel file`);
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            toast.error('Failed to export orders to Excel');
+        }
     };
 
     return (
@@ -302,8 +323,12 @@ const OrderPage = () => {
                             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto justify-end">
                                 {role !== 'user' && (
                                     <>
-                                    <Button className="w-full sm:w-auto bg-[#282828] text-white" onClick={exportToExcel}>
-                                        Export to Excel
+                                    <Button 
+                                        className="w-full sm:w-auto bg-[#282828] text-white" 
+                                        onClick={exportToExcel}
+                                        title={`Export all ${sortedOrders.length} filtered order(s) to Excel`}
+                                    >
+                                        Export All to Excel ({sortedOrders.length})
                                     </Button>
                                 <Button  onClick={() => router.push('/orders/history')} color="white" className="w-full md:w-auto border-[2px] border-[#D33] text-[#000]">
                                     <span>History</span>
