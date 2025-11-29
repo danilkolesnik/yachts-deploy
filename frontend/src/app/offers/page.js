@@ -834,14 +834,21 @@ const OfferPage = () => {
             // Write file as Excel XML format (SpreadsheetML)
             const xmlString = XLSX.write(workbook, { bookType: 'xml', type: 'string' });
             const blob = new Blob([xmlString], { type: 'application/xml' });
-            const url = window.URL.createObjectURL(blob);
+            
+            // Create download link
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
+            link.style.display = 'none';
             link.href = url;
             link.download = filename;
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+            
+            // Clean up after a short delay to ensure download starts
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 100);
             
             toast.success(`Successfully exported ${dataToExport.length} offer(s) to XML file`);
         } catch (error) {
