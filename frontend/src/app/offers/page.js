@@ -1089,6 +1089,7 @@ const OfferPage = () => {
                                 pointerOnHover
                                 className="min-w-full border-collapse"
                                 responsive
+                                onRowClicked={(row) => router.push(`/offers/${row.id}`)}
                             />
                         </div>
                     </div>
