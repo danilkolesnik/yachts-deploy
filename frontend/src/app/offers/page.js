@@ -829,11 +829,11 @@ const OfferPage = () => {
             
             // Generate filename with current date
             const date = new Date().toISOString().split('T')[0];
-            const filename = `offers_export_${date}.xlsx`;
+            const filename = `offers_export_${date}.xml`;
             
-            // Write file using Blob approach for better browser compatibility
-            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            // Write file as Excel XML format (SpreadsheetML)
+            const xmlString = XLSX.write(workbook, { bookType: 'xml', type: 'string' });
+            const blob = new Blob([xmlString], { type: 'application/xml' });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -843,10 +843,10 @@ const OfferPage = () => {
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
             
-            toast.success(`Successfully exported ${dataToExport.length} offer(s) to Excel file`);
+            toast.success(`Successfully exported ${dataToExport.length} offer(s) to XML file`);
         } catch (error) {
             console.error('Error exporting to Excel:', error);
-            toast.error('Failed to export offers to Excel: ' + (error.message || 'Unknown error'));
+            toast.error('Failed to export offers to XML: ' + (error.message || 'Unknown error'));
         }
     };
 
@@ -1064,9 +1064,9 @@ const OfferPage = () => {
                                 <Button 
                                     className="w-full sm:w-auto bg-[#282828] hover:bg-[#1a1a1a] text-white font-medium px-4 py-2 rounded-md transition-colors duration-200" 
                                     onClick={exportToExcel}
-                                    title={`Export all ${filteredData.length} filtered offer(s) to Excel`}
+                                    title={`Export all ${filteredData.length} filtered offer(s) to XML`}
                                 >
-                                    Export All to Excel ({filteredData.length})
+                                    Export All to XML ({filteredData.length})
                                 </Button>
                                 </>
                                 )}

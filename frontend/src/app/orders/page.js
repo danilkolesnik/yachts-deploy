@@ -247,11 +247,11 @@ const OrderPage = () => {
             
             // Generate filename with current date
             const date = new Date().toISOString().split('T')[0];
-            const filename = `orders_export_${date}.xlsx`;
+            const filename = `orders_export_${date}.xml`;
             
-            // Write file using Blob approach for better browser compatibility
-            const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-            const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            // Write file as Excel XML format (SpreadsheetML)
+            const xmlString = XLSX.write(workbook, { bookType: 'xml', type: 'string' });
+            const blob = new Blob([xmlString], { type: 'application/xml' });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -261,10 +261,10 @@ const OrderPage = () => {
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
             
-            toast.success(`Successfully exported ${sortedOrders.length} order(s) to Excel file`);
+            toast.success(`Successfully exported ${sortedOrders.length} order(s) to XML file`);
         } catch (error) {
             console.error('Error exporting to Excel:', error);
-            toast.error('Failed to export orders to Excel');
+            toast.error('Failed to export orders to XML');
         }
     };
 
@@ -335,9 +335,9 @@ const OrderPage = () => {
                                     <Button 
                                         className="w-full sm:w-auto bg-[#282828] text-white" 
                                         onClick={exportToExcel}
-                                        title={`Export all ${sortedOrders.length} filtered order(s) to Excel`}
+                                        title={`Export all ${sortedOrders.length} filtered order(s) to XML`}
                                     >
-                                        Export All to Excel ({sortedOrders.length})
+                                        Export All to XML ({sortedOrders.length})
                                     </Button>
                                 <Button  onClick={() => router.push('/orders/history')} color="white" className="w-full md:w-auto border-[2px] border-[#D33] text-[#000]">
                                     <span>History</span>
