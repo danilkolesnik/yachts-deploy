@@ -831,24 +831,8 @@ const OfferPage = () => {
             const date = new Date().toISOString().split('T')[0];
             const filename = `offers_export_${date}.xml`;
             
-            // Write file as Excel XML format (SpreadsheetML)
-            const xmlString = XLSX.write(workbook, { bookType: 'xml', type: 'string' });
-            const blob = new Blob([xmlString], { type: 'application/xml' });
-            
-            // Create download link (blob URL warning on HTTP is normal and doesn't affect functionality)
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.style.display = 'none';
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            
-            // Clean up after a short delay to ensure download starts
-            setTimeout(() => {
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-            }, 100);
+            // Write file as Excel XML format (SpreadsheetML) - using XLSX.writeFile directly like in other parts of the project
+            XLSX.writeFile(workbook, filename, { bookType: 'xml' });
             
             toast.success(`Successfully exported ${dataToExport.length} offer(s) to XML file`);
         } catch (error) {
