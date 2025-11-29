@@ -835,7 +835,7 @@ const OfferPage = () => {
             const xmlString = XLSX.write(workbook, { bookType: 'xml', type: 'string' });
             const blob = new Blob([xmlString], { type: 'application/xml' });
             
-            // Create download link
+            // Create download link (blob URL warning on HTTP is normal and doesn't affect functionality)
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.style.display = 'none';
