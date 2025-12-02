@@ -351,6 +351,7 @@ const OrderPage = () => {
                                 pagination
                                 highlightOnHover
                                 pointerOnHover
+                                onRowClicked={(row) => router.push(`/orders/${row.id}`)}
                                 onSort={handleSortChange}
                                 className="min-w-full border-collapse"
                                 responsive

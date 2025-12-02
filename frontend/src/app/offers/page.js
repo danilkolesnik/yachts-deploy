@@ -1087,6 +1087,7 @@ const OfferPage = () => {
                                 pagination
                                 highlightOnHover
                                 pointerOnHover
+                                onRowClicked={(row) => router.push(`/offers/${row.id}`)}
                                 className="min-w-full border-collapse"
                                 responsive
                             />
