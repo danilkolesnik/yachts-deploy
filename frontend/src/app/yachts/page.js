@@ -27,8 +27,18 @@ const YachtsPage = () => {
         model: '',
         repairTime: '',
         countryCode:'',
-        ownerContacts:'',
-        engineHours:'',
+        owner: '',
+        ownerEmail: '',
+        ownerPhone: '',
+        ownerAddress: '',
+        engineCount: '',
+        engines: [],
+        hasGenerators: '',
+        generatorCount: '',
+        generators: [],
+        hasAirConditioners: '',
+        airConditionerCount: '',
+        airConditioners: [],
         description:''
     });
 
@@ -60,12 +70,28 @@ const YachtsPage = () => {
         // },
         {
             name: 'Owner Contacts',
-            selector: row => row.ownerContacts,
+            selector: row => {
+                // Support both old and new format
+                if (row.ownerContacts) return row.ownerContacts;
+                const owner = row.owner || '';
+                const contacts = [];
+                if (row.ownerEmail) contacts.push(`Email: ${row.ownerEmail}`);
+                if (row.ownerPhone) contacts.push(`Phone: ${row.ownerPhone}`);
+                if (row.ownerAddress) contacts.push(`Address: ${row.ownerAddress}`);
+                return owner + (contacts.length > 0 ? ` (${contacts.join(', ')})` : '');
+            },
             sortable: false,
         },
         {
             name: 'Engine Hours',
-            selector: row => row.engineHours,
+            selector: row => {
+                // Support both old and new format
+                if (row.engineHours) return row.engineHours;
+                if (row.engines && row.engines.length > 0) {
+                    return row.engines.map((e, i) => `Motor ${i + 1}: ${e.hours || 0}h`).join(', ');
+                }
+                return '-';
+            },
             sortable: true,
         },
         {
@@ -127,14 +153,26 @@ const YachtsPage = () => {
                 toast.error("Error: Country code is required");
                 return;
             }
-            if(formData.engineHours && isNaN(Number(formData.engineHours))){
-                toast.error("Error: Engine hours must be a number");
-                return;
-            }
             const response = await axios.post(`${URL}/yachts`, formData);
             if (response.data.code === 201) {
                 setFormData({ 
-                    name: '', model: '', repairTime: '', countryCode:'', ownerContacts:'', engineHours:'', description:''
+                    name: '', 
+                    model: '', 
+                    repairTime: '', 
+                    countryCode:'', 
+                    owner: '',
+                    ownerEmail: '',
+                    ownerPhone: '',
+                    ownerAddress: '',
+                    engineCount: '',
+                    engines: [],
+                    hasGenerators: '',
+                    generatorCount: '',
+                    generators: [],
+                    hasAirConditioners: '',
+                    airConditionerCount: '',
+                    airConditioners: [],
+                    description:''
                 });
                 setModalIsOpen(false);
                 fetchYachts();
@@ -153,7 +191,23 @@ const YachtsPage = () => {
     };
 
     const handleEdit = (yacht) => {
-        setEditingYacht(yacht);
+        // Initialize with default values if missing
+        const initializedYacht = {
+            ...yacht,
+            owner: yacht.owner || '',
+            ownerEmail: yacht.ownerEmail || '',
+            ownerPhone: yacht.ownerPhone || '',
+            ownerAddress: yacht.ownerAddress || '',
+            engineCount: yacht.engineCount || (yacht.engines?.length ? String(yacht.engines.length) : ''),
+            engines: yacht.engines || [],
+            hasGenerators: yacht.hasGenerators || '',
+            generatorCount: yacht.generatorCount || (yacht.generators?.length ? String(yacht.generators.length) : ''),
+            generators: yacht.generators || [],
+            hasAirConditioners: yacht.hasAirConditioners || '',
+            airConditionerCount: yacht.airConditionerCount || (yacht.airConditioners?.length ? String(yacht.airConditioners.length) : ''),
+            airConditioners: yacht.airConditioners || [],
+        };
+        setEditingYacht(initializedYacht);
         setEditModalIsOpen(true);
     };
 
@@ -200,6 +254,91 @@ const YachtsPage = () => {
     const handleEditChange = (e) => {
         const { name, value } = e.target;
         setEditingYacht({ ...editingYacht, [name]: value });
+    };
+
+    const handleEngineCountChange = (count) => {
+        const numCount = parseInt(count) || 0;
+        const engines = Array.from({ length: numCount }, (_, i) => 
+            formData.engines[i] || { model: '', hours: '' }
+        );
+        setFormData({ ...formData, engineCount: count, engines });
+    };
+
+    const handleEngineChange = (index, field, value) => {
+        const engines = [...formData.engines];
+        engines[index] = { ...engines[index], [field]: value };
+        setFormData({ ...formData, engines });
+    };
+
+    const handleGeneratorCountChange = (count) => {
+        const numCount = parseInt(count) || 0;
+        const generators = Array.from({ length: numCount }, (_, i) => 
+            formData.generators[i] || { model: '', hours: '' }
+        );
+        setFormData({ ...formData, generatorCount: count, generators });
+    };
+
+    const handleGeneratorChange = (index, field, value) => {
+        const generators = [...formData.generators];
+        generators[index] = { ...generators[index], [field]: value };
+        setFormData({ ...formData, generators });
+    };
+
+    const handleAirConditionerCountChange = (count) => {
+        const numCount = parseInt(count) || 0;
+        const airConditioners = Array.from({ length: numCount }, (_, i) => 
+            formData.airConditioners[i] || { model: '', hours: '' }
+        );
+        setFormData({ ...formData, airConditionerCount: count, airConditioners });
+    };
+
+    const handleAirConditionerChange = (index, field, value) => {
+        const airConditioners = [...formData.airConditioners];
+        airConditioners[index] = { ...airConditioners[index], [field]: value };
+        setFormData({ ...formData, airConditioners });
+    };
+
+    // Edit handlers
+    const handleEditEngineCountChange = (count) => {
+        const numCount = parseInt(count) || 0;
+        const engines = Array.from({ length: numCount }, (_, i) => 
+            editingYacht?.engines?.[i] || { model: '', hours: '' }
+        );
+        setEditingYacht({ ...editingYacht, engineCount: count, engines });
+    };
+
+    const handleEditEngineChange = (index, field, value) => {
+        const engines = [...(editingYacht?.engines || [])];
+        engines[index] = { ...engines[index], [field]: value };
+        setEditingYacht({ ...editingYacht, engines });
+    };
+
+    const handleEditGeneratorCountChange = (count) => {
+        const numCount = parseInt(count) || 0;
+        const generators = Array.from({ length: numCount }, (_, i) => 
+            editingYacht?.generators?.[i] || { model: '', hours: '' }
+        );
+        setEditingYacht({ ...editingYacht, generatorCount: count, generators });
+    };
+
+    const handleEditGeneratorChange = (index, field, value) => {
+        const generators = [...(editingYacht?.generators || [])];
+        generators[index] = { ...generators[index], [field]: value };
+        setEditingYacht({ ...editingYacht, generators });
+    };
+
+    const handleEditAirConditionerCountChange = (count) => {
+        const numCount = parseInt(count) || 0;
+        const airConditioners = Array.from({ length: numCount }, (_, i) => 
+            editingYacht?.airConditioners?.[i] || { model: '', hours: '' }
+        );
+        setEditingYacht({ ...editingYacht, airConditionerCount: count, airConditioners });
+    };
+
+    const handleEditAirConditionerChange = (index, field, value) => {
+        const airConditioners = [...(editingYacht?.airConditioners || [])];
+        airConditioners[index] = { ...airConditioners[index], [field]: value };
+        setEditingYacht({ ...editingYacht, airConditioners });
     };
 
     const filteredData = yachts.filter(yacht => {
@@ -268,10 +407,31 @@ const YachtsPage = () => {
                 )}
 
                 {/* Create Modal */}
-                <Modal isOpen={modalIsOpen} onClose={() => setModalIsOpen(false)} title="Add New Yacht">
+                <Modal isOpen={modalIsOpen} onClose={() => {
+                    setModalIsOpen(false);
+                    setFormData({ 
+                        name: '', 
+                        model: '', 
+                        repairTime: '', 
+                        countryCode:'', 
+                        owner: '',
+                        ownerEmail: '',
+                        ownerPhone: '',
+                        ownerAddress: '',
+                        engineCount: '',
+                        engines: [],
+                        hasGenerators: '',
+                        generatorCount: '',
+                        generators: [],
+                        hasAirConditioners: '',
+                        airConditionerCount: '',
+                        airConditioners: [],
+                        description:''
+                    });
+                }} title="Add New Yacht">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <Input
-                            label="Name"
+                            label="Yacht Name"
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
@@ -283,30 +443,208 @@ const YachtsPage = () => {
                             onChange={handleChange}
                         />
                         <Input
-                        label="Boat Registration"
-                        name="countryCode"
-                        value={formData.countryCode}
-                        onChange={handleChange}
-                        required
-                    />
-                        <Input
-                            label="Owner Contacts"
-                            name="ownerContacts"
-                            value={formData.ownerContacts}
+                            label="Boat Registration"
+                            name="countryCode"
+                            value={formData.countryCode}
                             onChange={handleChange}
+                            required
                         />
-                        <Input
-                            label="Engine Hours"
-                            name="engineHours"
-                            value={formData.engineHours}
-                            onChange={handleChange}
-                        />
-                        {/* <Input
-                            label="Repair Time"
-                            name="repairTime"
-                            value={formData.repairTime}
-                            onChange={handleChange}
-                        /> */}
+                        
+                        {/* Owner Contacts Section */}
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="text-lg font-semibold">Owner Contacts</h3>
+                            <Input
+                                label="Owner"
+                                name="owner"
+                                value={formData.owner}
+                                onChange={handleChange}
+                            />
+                            <div className="space-y-2">
+                                <h4 className="text-md font-medium">Contact(s) details</h4>
+                                <Input
+                                    label="Email"
+                                    name="ownerEmail"
+                                    type="email"
+                                    value={formData.ownerEmail}
+                                    onChange={handleChange}
+                                />
+                                <Input
+                                    label="Phone"
+                                    name="ownerPhone"
+                                    type="tel"
+                                    value={formData.ownerPhone}
+                                    onChange={handleChange}
+                                />
+                                <Input
+                                    label="Address"
+                                    name="ownerAddress"
+                                    value={formData.ownerAddress}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Engine Hours Section */}
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="text-lg font-semibold">Engine Hours (Motors)</h3>
+                            <Select
+                                label="Number of Motors"
+                                value={formData.engineCount}
+                                onChange={handleEngineCountChange}
+                                className="text-black border-gray-300 rounded-xs"
+                                labelProps={{ className: 'text-black' }}
+                            >
+                                <Option className="text-black" value="">Select...</Option>
+                                <Option className="text-black" value="1">1</Option>
+                                <Option className="text-black" value="2">2</Option>
+                                <Option className="text-black" value="3">3</Option>
+                                <Option className="text-black" value="4">4</Option>
+                                <Option className="text-black" value="5">5</Option>
+                            </Select>
+                            {formData.engineCount && parseInt(formData.engineCount) > 0 && (
+                                <div className="space-y-4 pl-4 border-l-2">
+                                    {formData.engines.map((engine, index) => (
+                                        <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
+                                            <h4 className="font-medium">Motor {index + 1}</h4>
+                                            <Input
+                                                label="Engine Model"
+                                                value={engine.model || ''}
+                                                onChange={(e) => handleEngineChange(index, 'model', e.target.value)}
+                                            />
+                                            <Input
+                                                label="Hours / Run time / Mileage (Hours)"
+                                                type="number"
+                                                value={engine.hours || ''}
+                                                onChange={(e) => handleEngineChange(index, 'hours', e.target.value)}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Generators Section */}
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="text-lg font-semibold">Generators</h3>
+                            <Select
+                                label="Generator(s)"
+                                value={formData.hasGenerators}
+                                onChange={(value) => {
+                                    setFormData({ 
+                                        ...formData, 
+                                        hasGenerators: value,
+                                        generatorCount: value === 'Yes' ? formData.generatorCount : '',
+                                        generators: value === 'Yes' ? formData.generators : []
+                                    });
+                                }}
+                                className="text-black border-gray-300 rounded-xs"
+                                labelProps={{ className: 'text-black' }}
+                            >
+                                <Option className="text-black" value="">Select...</Option>
+                                <Option className="text-black" value="Yes">Yes</Option>
+                                <Option className="text-black" value="No">No</Option>
+                            </Select>
+                            {formData.hasGenerators === 'Yes' && (
+                                <>
+                                    <Select
+                                        label="Number of Generators"
+                                        value={formData.generatorCount}
+                                        onChange={handleGeneratorCountChange}
+                                        className="text-black border-gray-300 rounded-xs"
+                                        labelProps={{ className: 'text-black' }}
+                                    >
+                                        <Option className="text-black" value="">Select...</Option>
+                                        <Option className="text-black" value="1">1</Option>
+                                        <Option className="text-black" value="2">2</Option>
+                                        <Option className="text-black" value="3">3</Option>
+                                        <Option className="text-black" value="4">4</Option>
+                                        <Option className="text-black" value="5">5</Option>
+                                    </Select>
+                                    {formData.generatorCount && parseInt(formData.generatorCount) > 0 && (
+                                        <div className="space-y-4 pl-4 border-l-2">
+                                            {formData.generators.map((generator, index) => (
+                                                <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
+                                                    <h4 className="font-medium">Generator {index + 1}</h4>
+                                                    <Input
+                                                        label="Generator Model"
+                                                        value={generator.model || ''}
+                                                        onChange={(e) => handleGeneratorChange(index, 'model', e.target.value)}
+                                                    />
+                                                    <Input
+                                                        label="Hours / Run time / Mileage (Hours)"
+                                                        type="number"
+                                                        value={generator.hours || ''}
+                                                        onChange={(e) => handleGeneratorChange(index, 'hours', e.target.value)}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {/* Air Conditioners Section */}
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="text-lg font-semibold">Air Conditioners</h3>
+                            <Select
+                                label="Air Conditioner(s)"
+                                value={formData.hasAirConditioners}
+                                onChange={(value) => {
+                                    setFormData({ 
+                                        ...formData, 
+                                        hasAirConditioners: value,
+                                        airConditionerCount: value === 'Yes' ? formData.airConditionerCount : '',
+                                        airConditioners: value === 'Yes' ? formData.airConditioners : []
+                                    });
+                                }}
+                                className="text-black border-gray-300 rounded-xs"
+                                labelProps={{ className: 'text-black' }}
+                            >
+                                <Option className="text-black" value="">Select...</Option>
+                                <Option className="text-black" value="Yes">Yes</Option>
+                                <Option className="text-black" value="No">No</Option>
+                            </Select>
+                            {formData.hasAirConditioners === 'Yes' && (
+                                <>
+                                    <Select
+                                        label="Number of Air Conditioners"
+                                        value={formData.airConditionerCount}
+                                        onChange={handleAirConditionerCountChange}
+                                        className="text-black border-gray-300 rounded-xs"
+                                        labelProps={{ className: 'text-black' }}
+                                    >
+                                        <Option className="text-black" value="">Select...</Option>
+                                        <Option className="text-black" value="1">1</Option>
+                                        <Option className="text-black" value="2">2</Option>
+                                        <Option className="text-black" value="3">3</Option>
+                                        <Option className="text-black" value="4">4</Option>
+                                        <Option className="text-black" value="5">5</Option>
+                                    </Select>
+                                    {formData.airConditionerCount && parseInt(formData.airConditionerCount) > 0 && (
+                                        <div className="space-y-4 pl-4 border-l-2">
+                                            {formData.airConditioners.map((ac, index) => (
+                                                <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
+                                                    <h4 className="font-medium">Air Conditioner {index + 1}</h4>
+                                                    <Input
+                                                        label="Air Conditioner Model"
+                                                        value={ac.model || ''}
+                                                        onChange={(e) => handleAirConditionerChange(index, 'model', e.target.value)}
+                                                    />
+                                                    <Input
+                                                        label="Hours / Run time / Mileage (Hours)"
+                                                        type="number"
+                                                        value={ac.hours || ''}
+                                                        onChange={(e) => handleAirConditionerChange(index, 'hours', e.target.value)}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
                         <Input
                             label="Description"
                             name="description"
@@ -328,7 +666,7 @@ const YachtsPage = () => {
                 <Modal isOpen={editModalIsOpen} onClose={() => setEditModalIsOpen(false)} title="Edit Yacht">
                     <form onSubmit={handleEditSubmit} className="space-y-4">
                         <Input
-                            label="Name"
+                            label="Yacht Name"
                             name="name"
                             value={editingYacht?.name || ''}
                             onChange={handleEditChange}
@@ -339,31 +677,209 @@ const YachtsPage = () => {
                             value={editingYacht?.model || ''}
                             onChange={handleEditChange}
                         />
-                         <Input
-                        label="Boat Registration"
-                        name="countryCode"
-                        value={editingYacht?.countryCode || ''}
-                        onChange={handleEditChange}
-                        required
-                    />
                         <Input
-                            label="Owner Contacts"
-                            name="ownerContacts"
-                            value={editingYacht?.ownerContacts || ''}
+                            label="Boat Registration"
+                            name="countryCode"
+                            value={editingYacht?.countryCode || ''}
                             onChange={handleEditChange}
+                            required
                         />
-                        <Input
-                            label="Engine Hours"
-                            name="engineHours"
-                            value={editingYacht?.engineHours || ''}
-                            onChange={handleEditChange}
-                        />
-                        {/* <Input
-                            label="Repair Time"
-                            name="repairTime"
-                            value={editingYacht?.repairTime || ''}
-                            onChange={handleEditChange}
-                        /> */}
+                        
+                        {/* Owner Contacts Section */}
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="text-lg font-semibold">Owner Contacts</h3>
+                            <Input
+                                label="Owner"
+                                name="owner"
+                                value={editingYacht?.owner || ''}
+                                onChange={handleEditChange}
+                            />
+                            <div className="space-y-2">
+                                <h4 className="text-md font-medium">Contact(s) details</h4>
+                                <Input
+                                    label="Email"
+                                    name="ownerEmail"
+                                    type="email"
+                                    value={editingYacht?.ownerEmail || ''}
+                                    onChange={handleEditChange}
+                                />
+                                <Input
+                                    label="Phone"
+                                    name="ownerPhone"
+                                    type="tel"
+                                    value={editingYacht?.ownerPhone || ''}
+                                    onChange={handleEditChange}
+                                />
+                                <Input
+                                    label="Address"
+                                    name="ownerAddress"
+                                    value={editingYacht?.ownerAddress || ''}
+                                    onChange={handleEditChange}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Engine Hours Section */}
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="text-lg font-semibold">Engine Hours (Motors)</h3>
+                            <Select
+                                label="Number of Motors"
+                                value={editingYacht?.engineCount || ''}
+                                onChange={handleEditEngineCountChange}
+                                className="text-black border-gray-300 rounded-xs"
+                                labelProps={{ className: 'text-black' }}
+                            >
+                                <Option className="text-black" value="">Select...</Option>
+                                <Option className="text-black" value="1">1</Option>
+                                <Option className="text-black" value="2">2</Option>
+                                <Option className="text-black" value="3">3</Option>
+                                <Option className="text-black" value="4">4</Option>
+                                <Option className="text-black" value="5">5</Option>
+                            </Select>
+                            {editingYacht?.engineCount && parseInt(editingYacht.engineCount) > 0 && (
+                                <div className="space-y-4 pl-4 border-l-2">
+                                    {(editingYacht.engines || []).map((engine, index) => (
+                                        <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
+                                            <h4 className="font-medium">Motor {index + 1}</h4>
+                                            <Input
+                                                label="Engine Model"
+                                                value={engine.model || ''}
+                                                onChange={(e) => handleEditEngineChange(index, 'model', e.target.value)}
+                                            />
+                                            <Input
+                                                label="Hours / Run time / Mileage (Hours)"
+                                                type="number"
+                                                value={engine.hours || ''}
+                                                onChange={(e) => handleEditEngineChange(index, 'hours', e.target.value)}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Generators Section */}
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="text-lg font-semibold">Generators</h3>
+                            <Select
+                                label="Generator(s)"
+                                value={editingYacht?.hasGenerators || ''}
+                                onChange={(value) => {
+                                    setEditingYacht({ 
+                                        ...editingYacht, 
+                                        hasGenerators: value,
+                                        generatorCount: value === 'Yes' ? (editingYacht?.generatorCount || '') : '',
+                                        generators: value === 'Yes' ? (editingYacht?.generators || []) : []
+                                    });
+                                }}
+                                className="text-black border-gray-300 rounded-xs"
+                                labelProps={{ className: 'text-black' }}
+                            >
+                                <Option className="text-black" value="">Select...</Option>
+                                <Option className="text-black" value="Yes">Yes</Option>
+                                <Option className="text-black" value="No">No</Option>
+                            </Select>
+                            {editingYacht?.hasGenerators === 'Yes' && (
+                                <>
+                                    <Select
+                                        label="Number of Generators"
+                                        value={editingYacht?.generatorCount || ''}
+                                        onChange={handleEditGeneratorCountChange}
+                                        className="text-black border-gray-300 rounded-xs"
+                                        labelProps={{ className: 'text-black' }}
+                                    >
+                                        <Option className="text-black" value="">Select...</Option>
+                                        <Option className="text-black" value="1">1</Option>
+                                        <Option className="text-black" value="2">2</Option>
+                                        <Option className="text-black" value="3">3</Option>
+                                        <Option className="text-black" value="4">4</Option>
+                                        <Option className="text-black" value="5">5</Option>
+                                    </Select>
+                                    {editingYacht?.generatorCount && parseInt(editingYacht.generatorCount) > 0 && (
+                                        <div className="space-y-4 pl-4 border-l-2">
+                                            {(editingYacht.generators || []).map((generator, index) => (
+                                                <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
+                                                    <h4 className="font-medium">Generator {index + 1}</h4>
+                                                    <Input
+                                                        label="Generator Model"
+                                                        value={generator.model || ''}
+                                                        onChange={(e) => handleEditGeneratorChange(index, 'model', e.target.value)}
+                                                    />
+                                                    <Input
+                                                        label="Hours / Run time / Mileage (Hours)"
+                                                        type="number"
+                                                        value={generator.hours || ''}
+                                                        onChange={(e) => handleEditGeneratorChange(index, 'hours', e.target.value)}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {/* Air Conditioners Section */}
+                        <div className="space-y-4 border-t pt-4">
+                            <h3 className="text-lg font-semibold">Air Conditioners</h3>
+                            <Select
+                                label="Air Conditioner(s)"
+                                value={editingYacht?.hasAirConditioners || ''}
+                                onChange={(value) => {
+                                    setEditingYacht({ 
+                                        ...editingYacht, 
+                                        hasAirConditioners: value,
+                                        airConditionerCount: value === 'Yes' ? (editingYacht?.airConditionerCount || '') : '',
+                                        airConditioners: value === 'Yes' ? (editingYacht?.airConditioners || []) : []
+                                    });
+                                }}
+                                className="text-black border-gray-300 rounded-xs"
+                                labelProps={{ className: 'text-black' }}
+                            >
+                                <Option className="text-black" value="">Select...</Option>
+                                <Option className="text-black" value="Yes">Yes</Option>
+                                <Option className="text-black" value="No">No</Option>
+                            </Select>
+                            {editingYacht?.hasAirConditioners === 'Yes' && (
+                                <>
+                                    <Select
+                                        label="Number of Air Conditioners"
+                                        value={editingYacht?.airConditionerCount || ''}
+                                        onChange={handleEditAirConditionerCountChange}
+                                        className="text-black border-gray-300 rounded-xs"
+                                        labelProps={{ className: 'text-black' }}
+                                    >
+                                        <Option className="text-black" value="">Select...</Option>
+                                        <Option className="text-black" value="1">1</Option>
+                                        <Option className="text-black" value="2">2</Option>
+                                        <Option className="text-black" value="3">3</Option>
+                                        <Option className="text-black" value="4">4</Option>
+                                        <Option className="text-black" value="5">5</Option>
+                                    </Select>
+                                    {editingYacht?.airConditionerCount && parseInt(editingYacht.airConditionerCount) > 0 && (
+                                        <div className="space-y-4 pl-4 border-l-2">
+                                            {(editingYacht.airConditioners || []).map((ac, index) => (
+                                                <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
+                                                    <h4 className="font-medium">Air Conditioner {index + 1}</h4>
+                                                    <Input
+                                                        label="Air Conditioner Model"
+                                                        value={ac.model || ''}
+                                                        onChange={(e) => handleEditAirConditionerChange(index, 'model', e.target.value)}
+                                                    />
+                                                    <Input
+                                                        label="Hours / Run time / Mileage (Hours)"
+                                                        type="number"
+                                                        value={ac.hours || ''}
+                                                        onChange={(e) => handleEditAirConditionerChange(index, 'hours', e.target.value)}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
                         <Input
                             label="Description"
                             name="description"
