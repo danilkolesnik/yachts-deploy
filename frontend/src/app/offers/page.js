@@ -119,8 +119,18 @@ const OfferPage = () => {
         location: '',
         countryCode: '',
         repairTime: '',
-        ownerContacts: '',
-        engineHours: '',
+        owner: '',
+        ownerEmail: '',
+        ownerPhone: '',
+        ownerAddress: '',
+        engineCount: '',
+        engines: [],
+        hasGenerators: '',
+        generatorCount: '',
+        generators: [],
+        hasAirConditioners: '',
+        airConditionerCount: '',
+        airConditioners: [],
         description: ''
     });
 
@@ -888,8 +898,18 @@ const OfferPage = () => {
             location: '',
             countryCode: '',
             repairTime: '',
-            ownerContacts: '',
-            engineHours: '',
+            owner: '',
+            ownerEmail: '',
+            ownerPhone: '',
+            ownerAddress: '',
+            engineCount: '',
+            engines: [],
+            hasGenerators: '',
+            generatorCount: '',
+            generators: [],
+            hasAirConditioners: '',
+            airConditionerCount: '',
+            airConditioners: [],
             description: ''
         });
     };
@@ -897,6 +917,48 @@ const OfferPage = () => {
     const handleCustomerChange = (e) => {
         const { name, value } = e.target;
         setCreateCustomerFormData({ ...createCustomerFormData, [name]: value });
+    };
+
+    const handleCustomerEngineCountChange = (count) => {
+        const numCount = parseInt(count) || 0;
+        const engines = Array.from({ length: numCount }, (_, i) => 
+            createCustomerFormData.engines[i] || { model: '', hours: '' }
+        );
+        setCreateCustomerFormData({ ...createCustomerFormData, engineCount: count, engines });
+    };
+
+    const handleCustomerEngineChange = (index, field, value) => {
+        const engines = [...createCustomerFormData.engines];
+        engines[index] = { ...engines[index], [field]: value };
+        setCreateCustomerFormData({ ...createCustomerFormData, engines });
+    };
+
+    const handleCustomerGeneratorCountChange = (count) => {
+        const numCount = parseInt(count) || 0;
+        const generators = Array.from({ length: numCount }, (_, i) => 
+            createCustomerFormData.generators[i] || { model: '', hours: '' }
+        );
+        setCreateCustomerFormData({ ...createCustomerFormData, generatorCount: count, generators });
+    };
+
+    const handleCustomerGeneratorChange = (index, field, value) => {
+        const generators = [...createCustomerFormData.generators];
+        generators[index] = { ...generators[index], [field]: value };
+        setCreateCustomerFormData({ ...createCustomerFormData, generators });
+    };
+
+    const handleCustomerAirConditionerCountChange = (count) => {
+        const numCount = parseInt(count) || 0;
+        const airConditioners = Array.from({ length: numCount }, (_, i) => 
+            createCustomerFormData.airConditioners[i] || { model: '', hours: '' }
+        );
+        setCreateCustomerFormData({ ...createCustomerFormData, airConditionerCount: count, airConditioners });
+    };
+
+    const handleCustomerAirConditionerChange = (index, field, value) => {
+        const airConditioners = [...createCustomerFormData.airConditioners];
+        airConditioners[index] = { ...airConditioners[index], [field]: value };
+        setCreateCustomerFormData({ ...createCustomerFormData, airConditioners });
     };
 
     const createCustomer = async (e) => {
@@ -920,8 +982,18 @@ const OfferPage = () => {
                     model: createCustomerFormData.yachtModel,
                     countryCode: createCustomerFormData.countryCode,
                     repairTime: createCustomerFormData.repairTime || '',
-                    ownerContacts: createCustomerFormData.ownerContacts || '',
-                    engineHours: createCustomerFormData.engineHours ? parseInt(createCustomerFormData.engineHours) : null,
+                    owner: createCustomerFormData.owner || '',
+                    ownerEmail: createCustomerFormData.ownerEmail || '',
+                    ownerPhone: createCustomerFormData.ownerPhone || '',
+                    ownerAddress: createCustomerFormData.ownerAddress || '',
+                    engineCount: createCustomerFormData.engineCount || '',
+                    engines: createCustomerFormData.engines || [],
+                    hasGenerators: createCustomerFormData.hasGenerators || '',
+                    generatorCount: createCustomerFormData.generatorCount || '',
+                    generators: createCustomerFormData.generators || [],
+                    hasAirConditioners: createCustomerFormData.hasAirConditioners || '',
+                    airConditionerCount: createCustomerFormData.airConditionerCount || '',
+                    airConditioners: createCustomerFormData.airConditioners || [],
                     description: createCustomerFormData.description || '',
                     userId: customer.id,
                     userName: customer.fullName
@@ -1265,95 +1337,269 @@ const OfferPage = () => {
                     </div>
                 </Modal>
                 <Modal isOpen={createCustomerModalIsOpen} onClose={closeCreateCustomerModal} title="Create Customer & Yacht">
-                    <form onSubmit={createCustomer} className="space-y-4 overflow-y-auto h-full" style={{ height: '500px', overflowY: 'auto' }}>
-                        <div className="border-b pb-2 mb-4">
-                            <h3 className="text-lg font-semibold text-gray-700">Customer Information</h3>
-                        </div>
-                        <Input
-                            label="Email"
-                            name="email"
-                            value={createCustomerFormData.email}
-                            onChange={handleCustomerChange}
-                            required
-                        />
-                        <Input
-                            label="Customer Name"
-                            name="fullName"
-                            value={createCustomerFormData.fullName}
-                            onChange={handleCustomerChange}
-                            required
-                        />
-                        <Input
-                            label="Address"
-                            name="address"
-                            value={createCustomerFormData.address}
-                            onChange={handleCustomerChange}
-                        />
-                        
-                        <div className="border-b pb-2 mb-4 mt-6">
-                            <h3 className="text-lg font-semibold text-gray-700">Yacht Information</h3>
-                        </div>
-                        <Input
-                            label="Yacht Name"
-                            name="yachtName"
-                            value={createCustomerFormData.yachtName}
-                            onChange={handleCustomerChange}
-                            required
-                        />
-                        <Input
-                            label="Yacht Model"
-                            name="yachtModel"
-                            value={createCustomerFormData.yachtModel}
-                            onChange={handleCustomerChange}
-                            required
-                        />
-                        <Input
-                            label="Boat Registration"
-                            name="countryCode"
-                            value={createCustomerFormData.countryCode}
-                            onChange={handleCustomerChange}
-                            required
-                        />
-                        <Input
-                            label="Location"
-                            name="location"
-                            value={createCustomerFormData.location}
-                            onChange={handleCustomerChange}
-                        />
-                        {/* <Input
-                            label="Repair Time"
-                            name="repairTime"
-                            value={createCustomerFormData.repairTime}
-                            onChange={handleCustomerChange}
-                        /> */}
-                        <Input
-                            label="Owner Contacts"
-                            name="ownerContacts"
-                            value={createCustomerFormData.ownerContacts}
-                            onChange={handleCustomerChange}
-                        />
-                        {/* <Input
-                            label="Engine Hours"
-                            name="engineHours"
-                            type="number"
-                            value={createCustomerFormData.engineHours}
-                            onChange={handleCustomerChange}
-                        /> */}
-                        <Input
-                            label="Description"
-                            name="description"
-                            value={createCustomerFormData.description}
-                            onChange={handleCustomerChange}
-                        />
-                        <div className="flex justify-end">
-                            <Button variant="text" color="red" onClick={closeCreateCustomerModal} className="mr-1">
-                                <span>Cancel</span>
-                            </Button>
-                            <Button color="green" type="submit" disabled={createCustomerLoading}>
-                                {createCustomerLoading ? 'Creating...' : 'Create Customer & Yacht'}
-                            </Button>
-                        </div>
-                    </form>
+                    <div className="max-h-[70vh] overflow-y-auto pr-2 text-black">
+                        <form onSubmit={createCustomer} className="space-y-4">
+                            <div className="border-b pb-2 mb-4">
+                                <h3 className="text-lg font-semibold text-black">Customer Information</h3>
+                            </div>
+                            <Input
+                                label="Email"
+                                name="email"
+                                type="email"
+                                value={createCustomerFormData.email}
+                                onChange={handleCustomerChange}
+                                required
+                            />
+                            <Input
+                                label="Customer Name"
+                                name="fullName"
+                                value={createCustomerFormData.fullName}
+                                onChange={handleCustomerChange}
+                                required
+                            />
+                            <Input
+                                label="Address"
+                                name="address"
+                                value={createCustomerFormData.address}
+                                onChange={handleCustomerChange}
+                            />
+                            
+                            <div className="border-b pb-2 mb-4 mt-6">
+                                <h3 className="text-lg font-semibold text-black">Yacht Information</h3>
+                            </div>
+                            <Input
+                                label="Yacht Name"
+                                name="yachtName"
+                                value={createCustomerFormData.yachtName}
+                                onChange={handleCustomerChange}
+                                required
+                            />
+                            <Input
+                                label="Model"
+                                name="yachtModel"
+                                value={createCustomerFormData.yachtModel}
+                                onChange={handleCustomerChange}
+                                required
+                            />
+                            <Input
+                                label="Boat Registration"
+                                name="countryCode"
+                                value={createCustomerFormData.countryCode}
+                                onChange={handleCustomerChange}
+                                required
+                            />
+                            
+                            {/* Owner Contacts Section */}
+                            <div className="space-y-4 border-t pt-4">
+                                <h3 className="text-lg font-semibold text-black">Owner Contacts</h3>
+                                <Input
+                                    label="Owner"
+                                    name="owner"
+                                    value={createCustomerFormData.owner}
+                                    onChange={handleCustomerChange}
+                                />
+                                <div className="space-y-2">
+                                    <h4 className="text-md font-medium text-black">Contact(s) details</h4>
+                                    <Input
+                                        label="Email"
+                                        name="ownerEmail"
+                                        type="email"
+                                        value={createCustomerFormData.ownerEmail}
+                                        onChange={handleCustomerChange}
+                                    />
+                                    <Input
+                                        label="Phone"
+                                        name="ownerPhone"
+                                        type="tel"
+                                        value={createCustomerFormData.ownerPhone}
+                                        onChange={handleCustomerChange}
+                                    />
+                                    <Input
+                                        label="Address"
+                                        name="ownerAddress"
+                                        value={createCustomerFormData.ownerAddress}
+                                        onChange={handleCustomerChange}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Engine Hours Section */}
+                            <div className="space-y-4 border-t pt-4">
+                                <h3 className="text-lg font-semibold text-black">Engine Hours (Motors)</h3>
+                                <Select
+                                    label="Number of Motors"
+                                    value={createCustomerFormData.engineCount}
+                                    onChange={handleCustomerEngineCountChange}
+                                    className="text-black border-gray-300 rounded-xs [&>div]:text-black"
+                                    labelProps={{ className: 'text-black' }}
+                                >
+                                    <Option className="text-black" value="">Select...</Option>
+                                    <Option className="text-black" value="1">1</Option>
+                                    <Option className="text-black" value="2">2</Option>
+                                    <Option className="text-black" value="3">3</Option>
+                                    <Option className="text-black" value="4">4</Option>
+                                    <Option className="text-black" value="5">5</Option>
+                                </Select>
+                                {createCustomerFormData.engineCount && parseInt(createCustomerFormData.engineCount) > 0 && (
+                                    <div className="space-y-4 pl-4 border-l-2">
+                                        {createCustomerFormData.engines.map((engine, index) => (
+                                            <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
+                                                <h4 className="font-medium text-black">Motor {index + 1}</h4>
+                                                <Input
+                                                    label="Engine Model"
+                                                    value={engine.model || ''}
+                                                    onChange={(e) => handleCustomerEngineChange(index, 'model', e.target.value)}
+                                                />
+                                                <Input
+                                                    label="Hours / Run time / Mileage (Hours)"
+                                                    type="number"
+                                                    value={engine.hours || ''}
+                                                    onChange={(e) => handleCustomerEngineChange(index, 'hours', e.target.value)}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Generators Section */}
+                            <div className="space-y-4 border-t pt-4">
+                                <h3 className="text-lg font-semibold text-black">Generators</h3>
+                                <Select
+                                    label="Generator(s)"
+                                    value={createCustomerFormData.hasGenerators}
+                                    onChange={(value) => {
+                                        setCreateCustomerFormData({ 
+                                            ...createCustomerFormData, 
+                                            hasGenerators: value,
+                                            generatorCount: value === 'Yes' ? createCustomerFormData.generatorCount : '',
+                                            generators: value === 'Yes' ? createCustomerFormData.generators : []
+                                        });
+                                    }}
+                                    className="text-black border-gray-300 rounded-xs [&>div]:text-black"
+                                    labelProps={{ className: 'text-black' }}
+                                >
+                                    <Option className="text-black" value="">Select...</Option>
+                                    <Option className="text-black" value="Yes">Yes</Option>
+                                    <Option className="text-black" value="No">No</Option>
+                                </Select>
+                                {createCustomerFormData.hasGenerators === 'Yes' && (
+                                    <>
+                                        <Select
+                                            label="Number of Generators"
+                                            value={createCustomerFormData.generatorCount}
+                                            onChange={handleCustomerGeneratorCountChange}
+                                            className="text-black border-gray-300 rounded-xs [&>div]:text-black"
+                                            labelProps={{ className: 'text-black' }}
+                                        >
+                                            <Option className="text-black" value="">Select...</Option>
+                                            <Option className="text-black" value="1">1</Option>
+                                            <Option className="text-black" value="2">2</Option>
+                                            <Option className="text-black" value="3">3</Option>
+                                            <Option className="text-black" value="4">4</Option>
+                                            <Option className="text-black" value="5">5</Option>
+                                        </Select>
+                                        {createCustomerFormData.generatorCount && parseInt(createCustomerFormData.generatorCount) > 0 && (
+                                            <div className="space-y-4 pl-4 border-l-2">
+                                                {createCustomerFormData.generators.map((generator, index) => (
+                                                    <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
+                                                        <h4 className="font-medium text-black">Generator {index + 1}</h4>
+                                                        <Input
+                                                            label="Generator Model"
+                                                            value={generator.model || ''}
+                                                            onChange={(e) => handleCustomerGeneratorChange(index, 'model', e.target.value)}
+                                                        />
+                                                        <Input
+                                                            label="Hours / Run time / Mileage (Hours)"
+                                                            type="number"
+                                                            value={generator.hours || ''}
+                                                            onChange={(e) => handleCustomerGeneratorChange(index, 'hours', e.target.value)}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Air Conditioners Section */}
+                            <div className="space-y-4 border-t pt-4">
+                                <h3 className="text-lg font-semibold text-black">Air Conditioners</h3>
+                                <Select
+                                    label="Air Conditioner(s)"
+                                    value={createCustomerFormData.hasAirConditioners}
+                                    onChange={(value) => {
+                                        setCreateCustomerFormData({ 
+                                            ...createCustomerFormData, 
+                                            hasAirConditioners: value,
+                                            airConditionerCount: value === 'Yes' ? createCustomerFormData.airConditionerCount : '',
+                                            airConditioners: value === 'Yes' ? createCustomerFormData.airConditioners : []
+                                        });
+                                    }}
+                                    className="text-black border-gray-300 rounded-xs [&>div]:text-black"
+                                    labelProps={{ className: 'text-black' }}
+                                >
+                                    <Option className="text-black" value="">Select...</Option>
+                                    <Option className="text-black" value="Yes">Yes</Option>
+                                    <Option className="text-black" value="No">No</Option>
+                                </Select>
+                                {createCustomerFormData.hasAirConditioners === 'Yes' && (
+                                    <>
+                                        <Select
+                                            label="Number of Air Conditioners"
+                                            value={createCustomerFormData.airConditionerCount}
+                                            onChange={handleCustomerAirConditionerCountChange}
+                                            className="text-black border-gray-300 rounded-xs [&>div]:text-black"
+                                            labelProps={{ className: 'text-black' }}
+                                        >
+                                            <Option className="text-black" value="">Select...</Option>
+                                            <Option className="text-black" value="1">1</Option>
+                                            <Option className="text-black" value="2">2</Option>
+                                            <Option className="text-black" value="3">3</Option>
+                                            <Option className="text-black" value="4">4</Option>
+                                            <Option className="text-black" value="5">5</Option>
+                                        </Select>
+                                        {createCustomerFormData.airConditionerCount && parseInt(createCustomerFormData.airConditionerCount) > 0 && (
+                                            <div className="space-y-4 pl-4 border-l-2">
+                                                {createCustomerFormData.airConditioners.map((ac, index) => (
+                                                    <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
+                                                        <h4 className="font-medium text-black">Air Conditioner {index + 1}</h4>
+                                                        <Input
+                                                            label="Air Conditioner Model"
+                                                            value={ac.model || ''}
+                                                            onChange={(e) => handleCustomerAirConditionerChange(index, 'model', e.target.value)}
+                                                        />
+                                                        <Input
+                                                            label="Hours / Run time / Mileage (Hours)"
+                                                            type="number"
+                                                            value={ac.hours || ''}
+                                                            onChange={(e) => handleCustomerAirConditionerChange(index, 'hours', e.target.value)}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            <Input
+                                label="Description"
+                                name="description"
+                                value={createCustomerFormData.description}
+                                onChange={handleCustomerChange}
+                            />
+                            <div className="flex justify-end">
+                                <Button variant="text" color="red" onClick={closeCreateCustomerModal} className="mr-1">
+                                    <span>Cancel</span>
+                                </Button>
+                                <Button color="green" type="submit" disabled={createCustomerLoading}>
+                                    {createCustomerLoading ? 'Creating...' : 'Create Customer & Yacht'}
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
                 </Modal>
             </div>
         </>
