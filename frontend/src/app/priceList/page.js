@@ -5,7 +5,7 @@ import DataTable from 'react-data-table-component';
 import Loader from '@/ui/loader';
 import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
-import { Button } from "@material-tailwind/react";
+import { Button, Select, Option } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-toastify';
@@ -22,13 +22,14 @@ const PriceListPage = () => {
         serviceName: '',
         priceInEuroWithoutVAT: '',
         unitsOfMeasurement: '',
-        description: '',
+        subServices: [],
     });
     const [filteredData, setFilteredData] = useState([]);
     const [editMode, setEditMode] = useState(false);
     const [editId, setEditId] = useState(null);
     const [selectedService, setSelectedService] = useState(null);
     const [inputValue, setInputValue] = useState('');
+    const [priceInputValue, setPriceInputValue] = useState('');
 
     const columns = [
         {
@@ -37,9 +38,14 @@ const PriceListPage = () => {
             sortable: true,
         },
         {
-            name: 'Description',
-            selector: row => row.description,
-            sortable: true,
+            name: 'Sub-services',
+            selector: row => {
+                if (row.subServices && Array.isArray(row.subServices) && row.subServices.length > 0) {
+                    return row.subServices.map(sub => `${sub.name} (${sub.size})`).join(', ');
+                }
+                return 'N/A';
+            },
+            sortable: false,
         },
         {
             name: 'Price in EURO without VAT',
@@ -99,9 +105,6 @@ const PriceListPage = () => {
                 case formData.unitsOfMeasurement.trim() === '':
                     toast.error("Error: Units of measurement is required");
                     return;
-                case formData.description.trim() === '':
-                    toast.error("Error: Description is required");
-                    return;
             }
             if (editMode) {
                 const res = await axios.put(`${URL}/pricelist/${editId}`, formData);
@@ -131,10 +134,17 @@ const PriceListPage = () => {
     const handleEdit = (row) => {
         setFormData({
             serviceName: row.serviceName,
-            priceInEuroWithoutVAT: row.priceInEuroWithoutVAT,
-            unitsOfMeasurement: row.unitsOfMeasurement,
-            description: row.description,
+            priceInEuroWithoutVAT: row.priceInEuroWithoutVAT || '',
+            unitsOfMeasurement: row.unitsOfMeasurement || '',
+            subServices: row.subServices || [],
         });
+        // Set price input value for display
+        if (row.priceInEuroWithoutVAT) {
+            const num = parseFloat(row.priceInEuroWithoutVAT) || 0;
+            setPriceInputValue(num.toFixed(2).replace('.', ','));
+        } else {
+            setPriceInputValue('');
+        }
         setEditMode(true);
         setEditId(row.id);
         setModalIsOpen(true);
@@ -157,13 +167,13 @@ const PriceListPage = () => {
 
     const serviceOptions = data.map(service => ({
         value: service.id,
-        label: service.description,
+        label: service.serviceName,
     }));
 
     const handleServiceChange = (selectedOption) => {
         setSelectedService(selectedOption);
         if (selectedOption) {
-            setFilteredData(data.filter(service => service.description === selectedOption.label));
+            setFilteredData(data.filter(service => service.serviceName === selectedOption.label));
         } else {
             setFilteredData(data);
         }
@@ -178,8 +188,9 @@ const PriceListPage = () => {
             serviceName: '',
             priceInEuroWithoutVAT: '',
             unitsOfMeasurement: '',
-            description: '',
+            subServices: [],
         });
+        setPriceInputValue('');
         setEditMode(false);
         setEditId(null);
         setModalIsOpen(true);
@@ -196,11 +207,81 @@ const PriceListPage = () => {
         setFormData({ ...formData, [name]: value });
     };
 
+    // Format price input
+
+    const handlePriceChange = (e) => {
+        let value = e.target.value;
+        // Remove all non-digit characters
+        const digits = value.replace(/\D/g, '');
+        
+        if (!digits) {
+            setPriceInputValue('');
+            setFormData({ ...formData, priceInEuroWithoutVAT: '' });
+            return;
+        }
+        
+        // Format as 00113,45 while typing
+        const formatted = digits.padStart(7, '0');
+        const displayValue = formatted.slice(0, -2) + ',' + formatted.slice(-2);
+        setPriceInputValue(displayValue);
+        
+        // Store actual value (divide by 100)
+        const actualValue = (parseInt(digits, 10) / 100).toFixed(2);
+        setFormData({ ...formData, priceInEuroWithoutVAT: actualValue });
+    };
+
+    const handlePriceFocus = (e) => {
+        const value = formData.priceInEuroWithoutVAT;
+        if (!value || value === '0.00' || value === '') {
+            setPriceInputValue('00000,00');
+        } else {
+            // Convert to 00113,45 format
+            const num = parseFloat(value) || 0;
+            const cents = Math.round(num * 100);
+            const formatted = String(cents).padStart(7, '0');
+            setPriceInputValue(formatted.slice(0, -2) + ',' + formatted.slice(-2));
+        }
+    };
+
+    const handlePriceBlur = (e) => {
+        const value = formData.priceInEuroWithoutVAT;
+        if (value) {
+            // Format as 113,45 (remove leading zeros)
+            const num = parseFloat(value) || 0;
+            const formatted = num.toFixed(2).replace('.', ',');
+            setPriceInputValue(formatted);
+            setFormData({ ...formData, priceInEuroWithoutVAT: num.toFixed(2) });
+        } else {
+            setPriceInputValue('');
+        }
+    };
+
+    // Sub-services handlers
+    const handleAddSubService = () => {
+        setFormData({
+            ...formData,
+            subServices: [...formData.subServices, { name: '', size: '', price: '' }]
+        });
+    };
+
+    const handleRemoveSubService = (index) => {
+        const newSubServices = formData.subServices.filter((_, i) => i !== index);
+        setFormData({ ...formData, subServices: newSubServices });
+    };
+
+    const handleSubServiceChange = (index, field, value) => {
+        const newSubServices = [...formData.subServices];
+        newSubServices[index] = { ...newSubServices[index], [field]: value };
+        setFormData({ ...formData, subServices: newSubServices });
+    };
+
     // --- SheetJS Export Function ---
     const exportToExcel = () => {
         const exportData = filteredData.map(row => ({
             'Service Name': row.serviceName || '',
-            Description: row.description || '',
+            'Sub-services': row.subServices && Array.isArray(row.subServices) && row.subServices.length > 0
+                ? row.subServices.map(sub => `${sub.name} (${sub.size})`).join(', ')
+                : 'N/A',
             'Price in EURO without VAT': `${row.priceInEuroWithoutVAT || ''}€`,
             'Units of Measurement': row.unitsOfMeasurement || ''
         }));
@@ -228,7 +309,7 @@ const PriceListPage = () => {
                                     onChange={handleServiceChange}
                                     onInputChange={handleInputChange}
                                     inputValue={inputValue}
-                                    placeholder="Search for a description..."
+                                    placeholder="Search for a service..."
                                     isClearable
                                     isSearchable
                                     menuIsOpen={inputValue.length > 0}
@@ -264,7 +345,7 @@ const PriceListPage = () => {
                                 <thead>
                                     <tr>
                                         <th>Service Name</th>
-                                        <th>Description</th>
+                                        <th>Sub-services</th>
                                         <th>Price in EURO without VAT</th>
                                         <th>Units of Measurement</th>
                                     </tr>
@@ -273,7 +354,12 @@ const PriceListPage = () => {
                                     {filteredData.map((row) => (
                                         <tr key={row.id}>
                                             <td>{row.serviceName || ''}</td>
-                                            <td>{row.description || ''}</td>
+                                            <td>
+                                                {row.subServices && Array.isArray(row.subServices) && row.subServices.length > 0
+                                                    ? row.subServices.map(sub => `${sub.name} (${sub.size})`).join(', ')
+                                                    : 'N/A'
+                                                }
+                                            </td>
                                             <td>{`${row.priceInEuroWithoutVAT || ''}€`}</td>
                                             <td>{row.unitsOfMeasurement || ''}</td>
                                         </tr>
@@ -293,40 +379,106 @@ const PriceListPage = () => {
                     </div>
                 )}
                 <Modal isOpen={modalIsOpen} onClose={closeModal} title={editMode ? "Edit" : "Create"}>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <Input
-                            label="Service Name"
-                            name="serviceName"
-                            value={formData.serviceName}
-                            onChange={handleChange}
-                        />
-                        <Input
-                            label="Price in Euro Without VAT"
-                            name="priceInEuroWithoutVAT"
-                            value={formData.priceInEuroWithoutVAT}
-                            onChange={handleChange}
-                        />
-                        <Input
-                            label="Units of Measurement"
-                            name="unitsOfMeasurement"
-                            value={formData.unitsOfMeasurement}
-                            onChange={handleChange}
-                        />
-                        <Input
-                            label="Description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                        />
-                        <div className="flex justify-end gap-2">
-                            <Button variant="text" color="red" onClick={closeModal} className="w-full md:w-auto">
-                                <span>Cancel</span>
-                            </Button>
-                            <Button color="green" type="submit" className="w-full md:w-auto">
-                                <span>{editMode ? 'Update' : 'Add'}</span>
-                            </Button>
-                        </div>
-                    </form>
+                    <div className="max-h-[70vh] overflow-y-auto pr-2 text-black">
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <Input
+                                label="Service Name"
+                                name="serviceName"
+                                value={formData.serviceName}
+                                onChange={handleChange}
+                                required
+                            />
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-black mb-1">
+                                    Price in Euro excl. VAT
+                                </label>
+                                <input
+                                    type="text"
+                                    name="priceInEuroWithoutVAT"
+                                    value={priceInputValue || (formData.priceInEuroWithoutVAT ? parseFloat(formData.priceInEuroWithoutVAT).toFixed(2).replace('.', ',') : '')}
+                                    onChange={handlePriceChange}
+                                    onFocus={handlePriceFocus}
+                                    onBlur={handlePriceBlur}
+                                    placeholder="00000,00€"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring text-black placeholder-gray-400"
+                                    required
+                                />
+                            </div>
+
+                            <Select
+                                label="Units of Measurement"
+                                value={formData.unitsOfMeasurement}
+                                onChange={(value) => setFormData({ ...formData, unitsOfMeasurement: value })}
+                                className="text-black border-gray-300 rounded-xs [&>div]:text-black"
+                                labelProps={{ className: 'text-black' }}
+                                required
+                            >
+                                <Option className="text-black" value="">Select...</Option>
+                                <Option className="text-black" value="pcs.">pcs.</Option>
+                                <Option className="text-black" value="hrs.">hrs.</Option>
+                            </Select>
+
+                            {/* Sub-services Section */}
+                            <div className="space-y-4 border-t pt-4">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-lg font-semibold text-black">Sub-services</h3>
+                                    <Button
+                                        type="button"
+                                        onClick={handleAddSubService}
+                                        size="sm"
+                                        className="bg-blue-500 text-white"
+                                    >
+                                        Add Sub-service
+                                    </Button>
+                                </div>
+                                {formData.subServices && formData.subServices.length > 0 && (
+                                    <div className="space-y-3">
+                                        {formData.subServices.map((subService, index) => (
+                                            <div key={index} className="bg-gray-50 p-3 rounded space-y-2">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <h4 className="font-medium text-black">Sub-service {index + 1}</h4>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={() => handleRemoveSubService(index)}
+                                                        size="sm"
+                                                        className="bg-red-500 text-white"
+                                                    >
+                                                        Remove
+                                                    </Button>
+                                                </div>
+                                                <Input
+                                                    label="Sub-service Name"
+                                                    value={subService.name || ''}
+                                                    onChange={(e) => handleSubServiceChange(index, 'name', e.target.value)}
+                                                />
+                                                <Input
+                                                    label="Size (e.g., yacht size)"
+                                                    value={subService.size || ''}
+                                                    onChange={(e) => handleSubServiceChange(index, 'size', e.target.value)}
+                                                />
+                                                <Input
+                                                    label="Price"
+                                                    type="text"
+                                                    value={subService.price || ''}
+                                                    onChange={(e) => handleSubServiceChange(index, 'price', e.target.value)}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex justify-end gap-2">
+                                <Button variant="text" color="red" onClick={closeModal} className="w-full md:w-auto">
+                                    <span>Cancel</span>
+                                </Button>
+                                <Button color="green" type="submit" className="w-full md:w-auto">
+                                    <span>{editMode ? 'Update' : 'Add'}</span>
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
                 </Modal>
             </div>
         </>
