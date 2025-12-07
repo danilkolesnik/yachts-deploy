@@ -429,7 +429,8 @@ const YachtsPage = () => {
                         description:''
                     });
                 }} title="Add New Yacht">
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="max-h-[70vh] overflow-y-auto pr-2 text-black">
+                        <form onSubmit={handleSubmit} className="space-y-4">
                         <Input
                             label="Yacht Name"
                             name="name"
@@ -460,7 +461,7 @@ const YachtsPage = () => {
                                 onChange={handleChange}
                             />
                             <div className="space-y-2">
-                                <h4 className="text-md font-medium">Contact(s) details</h4>
+                                <h4 className="text-md font-medium text-black">Contact(s) details</h4>
                                 <Input
                                     label="Email"
                                     name="ownerEmail"
@@ -486,12 +487,12 @@ const YachtsPage = () => {
 
                         {/* Engine Hours Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold">Engine Hours (Motors)</h3>
+                            <h3 className="text-lg font-semibold text-black">Engine Hours (Motors)</h3>
                             <Select
                                 label="Number of Motors"
                                 value={formData.engineCount}
                                 onChange={handleEngineCountChange}
-                                className="text-black border-gray-300 rounded-xs"
+                                className="text-black border-gray-300 rounded-xs [&>div]:text-black"
                                 labelProps={{ className: 'text-black' }}
                             >
                                 <Option className="text-black" value="">Select...</Option>
@@ -505,7 +506,7 @@ const YachtsPage = () => {
                                 <div className="space-y-4 pl-4 border-l-2">
                                     {formData.engines.map((engine, index) => (
                                         <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
-                                            <h4 className="font-medium">Motor {index + 1}</h4>
+                                            <h4 className="font-medium text-black">Motor {index + 1}</h4>
                                             <Input
                                                 label="Engine Model"
                                                 value={engine.model || ''}
@@ -525,7 +526,7 @@ const YachtsPage = () => {
 
                         {/* Generators Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold">Generators</h3>
+                            <h3 className="text-lg font-semibold text-black">Generators</h3>
                             <Select
                                 label="Generator(s)"
                                 value={formData.hasGenerators}
@@ -537,7 +538,7 @@ const YachtsPage = () => {
                                         generators: value === 'Yes' ? formData.generators : []
                                     });
                                 }}
-                                className="text-black border-gray-300 rounded-xs"
+                                className="text-black border-gray-300 rounded-xs [&>div]:text-black"
                                 labelProps={{ className: 'text-black' }}
                             >
                                 <Option className="text-black" value="">Select...</Option>
@@ -550,7 +551,7 @@ const YachtsPage = () => {
                                         label="Number of Generators"
                                         value={formData.generatorCount}
                                         onChange={handleGeneratorCountChange}
-                                        className="text-black border-gray-300 rounded-xs"
+                                        className="text-black border-gray-300 rounded-xs [&>div]:text-black"
                                         labelProps={{ className: 'text-black' }}
                                     >
                                         <Option className="text-black" value="">Select...</Option>
@@ -564,7 +565,7 @@ const YachtsPage = () => {
                                         <div className="space-y-4 pl-4 border-l-2">
                                             {formData.generators.map((generator, index) => (
                                                 <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
-                                                    <h4 className="font-medium">Generator {index + 1}</h4>
+                                                    <h4 className="font-medium text-black">Generator {index + 1}</h4>
                                                     <Input
                                                         label="Generator Model"
                                                         value={generator.model || ''}
@@ -586,7 +587,7 @@ const YachtsPage = () => {
 
                         {/* Air Conditioners Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold">Air Conditioners</h3>
+                            <h3 className="text-lg font-semibold text-black">Air Conditioners</h3>
                             <Select
                                 label="Air Conditioner(s)"
                                 value={formData.hasAirConditioners}
@@ -598,7 +599,7 @@ const YachtsPage = () => {
                                         airConditioners: value === 'Yes' ? formData.airConditioners : []
                                     });
                                 }}
-                                className="text-black border-gray-300 rounded-xs"
+                                className="text-black border-gray-300 rounded-xs [&>div]:text-black"
                                 labelProps={{ className: 'text-black' }}
                             >
                                 <Option className="text-black" value="">Select...</Option>
@@ -611,7 +612,7 @@ const YachtsPage = () => {
                                         label="Number of Air Conditioners"
                                         value={formData.airConditionerCount}
                                         onChange={handleAirConditionerCountChange}
-                                        className="text-black border-gray-300 rounded-xs"
+                                        className="text-black border-gray-300 rounded-xs [&>div]:text-black"
                                         labelProps={{ className: 'text-black' }}
                                     >
                                         <Option className="text-black" value="">Select...</Option>
@@ -625,7 +626,7 @@ const YachtsPage = () => {
                                         <div className="space-y-4 pl-4 border-l-2">
                                             {formData.airConditioners.map((ac, index) => (
                                                 <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
-                                                    <h4 className="font-medium">Air Conditioner {index + 1}</h4>
+                                                    <h4 className="font-medium text-black">Air Conditioner {index + 1}</h4>
                                                     <Input
                                                         label="Air Conditioner Model"
                                                         value={ac.model || ''}
@@ -660,11 +661,13 @@ const YachtsPage = () => {
                             </Button>
                         </div>
                     </form>
+                    </div>
                 </Modal>
 
                 {/* Edit Modal */}
                 <Modal isOpen={editModalIsOpen} onClose={() => setEditModalIsOpen(false)} title="Edit Yacht">
-                    <form onSubmit={handleEditSubmit} className="space-y-4">
+                    <div className="max-h-[70vh] overflow-y-auto pr-2 text-black">
+                        <form onSubmit={handleEditSubmit} className="space-y-4">
                         <Input
                             label="Yacht Name"
                             name="name"
@@ -687,7 +690,7 @@ const YachtsPage = () => {
                         
                         {/* Owner Contacts Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold">Owner Contacts</h3>
+                            <h3 className="text-lg font-semibold text-black">Owner Contacts</h3>
                             <Input
                                 label="Owner"
                                 name="owner"
@@ -695,7 +698,7 @@ const YachtsPage = () => {
                                 onChange={handleEditChange}
                             />
                             <div className="space-y-2">
-                                <h4 className="text-md font-medium">Contact(s) details</h4>
+                                <h4 className="text-md font-medium text-black">Contact(s) details</h4>
                                 <Input
                                     label="Email"
                                     name="ownerEmail"
@@ -721,7 +724,7 @@ const YachtsPage = () => {
 
                         {/* Engine Hours Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold">Engine Hours (Motors)</h3>
+                            <h3 className="text-lg font-semibold text-black">Engine Hours (Motors)</h3>
                             <Select
                                 label="Number of Motors"
                                 value={editingYacht?.engineCount || ''}
@@ -740,7 +743,7 @@ const YachtsPage = () => {
                                 <div className="space-y-4 pl-4 border-l-2">
                                     {(editingYacht.engines || []).map((engine, index) => (
                                         <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
-                                            <h4 className="font-medium">Motor {index + 1}</h4>
+                                            <h4 className="font-medium text-black">Motor {index + 1}</h4>
                                             <Input
                                                 label="Engine Model"
                                                 value={engine.model || ''}
@@ -760,7 +763,7 @@ const YachtsPage = () => {
 
                         {/* Generators Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold">Generators</h3>
+                            <h3 className="text-lg font-semibold text-black">Generators</h3>
                             <Select
                                 label="Generator(s)"
                                 value={editingYacht?.hasGenerators || ''}
@@ -799,7 +802,7 @@ const YachtsPage = () => {
                                         <div className="space-y-4 pl-4 border-l-2">
                                             {(editingYacht.generators || []).map((generator, index) => (
                                                 <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
-                                                    <h4 className="font-medium">Generator {index + 1}</h4>
+                                                    <h4 className="font-medium text-black">Generator {index + 1}</h4>
                                                     <Input
                                                         label="Generator Model"
                                                         value={generator.model || ''}
@@ -821,7 +824,7 @@ const YachtsPage = () => {
 
                         {/* Air Conditioners Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold">Air Conditioners</h3>
+                            <h3 className="text-lg font-semibold text-black">Air Conditioners</h3>
                             <Select
                                 label="Air Conditioner(s)"
                                 value={editingYacht?.hasAirConditioners || ''}
@@ -860,7 +863,7 @@ const YachtsPage = () => {
                                         <div className="space-y-4 pl-4 border-l-2">
                                             {(editingYacht.airConditioners || []).map((ac, index) => (
                                                 <div key={index} className="space-y-2 bg-gray-50 p-3 rounded">
-                                                    <h4 className="font-medium">Air Conditioner {index + 1}</h4>
+                                                    <h4 className="font-medium text-black">Air Conditioner {index + 1}</h4>
                                                     <Input
                                                         label="Air Conditioner Model"
                                                         value={ac.model || ''}
@@ -895,6 +898,7 @@ const YachtsPage = () => {
                             </Button>
                         </div>
                     </form>
+                    </div>
                 </Modal>
             </div>
         </>
