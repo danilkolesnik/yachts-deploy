@@ -19,7 +19,6 @@ import CreateOfferModal from '@/component/modal/CreateOfferModal';
 import EditOfferModal from '@/component/modal/EditOfferModal';
 import * as XLSX from 'xlsx';
 
-
 const OfferPage = () => {
     const router = useRouter();
     const [data, setData] = useState([]);
@@ -42,8 +41,13 @@ const OfferPage = () => {
     const [emailAddress, setEmailAddress] = useState('');
     const [selectedOfferId, setSelectedOfferId] = useState(null);
     const [emailSendingLoading, setEmailSendingLoading] = useState({});
-
     const [loadingCreateOffer, setLoadingCreateOffer] = useState(false);
+    
+    // Новые состояния для создания запчасти
+    const [createPartForOffer, setCreatePartForOffer] = useState(false); // Создаем для офера или просто на склад
+    const [partForOfferQuantity, setPartForOfferQuantity] = useState(1); // Количество для офера
+    const [partWarehouseQuantity, setPartWarehouseQuantity] = useState(0); // Количество на склад
+    const [isCreatingPartForCurrentOffer, setIsCreatingPartForCurrentOffer] = useState(false); // Флаг создания для текущего офера
 
     const [formData, setFormData] = useState({
         customerFullName: '',
@@ -67,11 +71,10 @@ const OfferPage = () => {
     const [createPartFormData, setCreatePartFormData] = useState({
         name: '',
         quantity: '',
-        inventory: '',
+        warehouse: 'official', // Добавляем поле для выбора склада
         comment: '',
         countryCode: '',
         pricePerUnit: '',
-        serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' }
     });
 
     const id = useAppSelector(state => state.userData?.id);
@@ -368,25 +371,72 @@ const OfferPage = () => {
     const createPart = async (e) => {
         e.preventDefault();
         try {
-            await axios.post(`${URL}/warehouse/create`, createPartFormData);
+            // Обновляем количество в зависимости от типа создания
+            let totalQuantity = 0;
+            if (createPartForOffer) {
+                totalQuantity = parseInt(partWarehouseQuantity || 0) + parseInt(partForOfferQuantity || 1);
+            } else {
+                totalQuantity = parseInt(createPartFormData.quantity || 0);
+            }
 
-            getWareHouse()
-                .then((res) => setParts(res));
+            const partData = {
+                name: createPartFormData.name,
+                quantity: totalQuantity,
+                warehouse: createPartFormData.warehouse,
+                comment: createPartFormData.comment,
+                countryCode: createPartFormData.countryCode || '',
+                pricePerUnit: createPartFormData.pricePerUnit
+            };
 
+            // Создаем запчасть на складе
+            const response = await axios.post(`${URL}/warehouse/create`, partData);
+            const createdPart = response.data.data;
+
+            // Если создаем для текущего офера, автоматически добавляем в офер
+            if (createPartForOffer && isCreatingPartForCurrentOffer) {
+                const partForOffer = {
+                    value: createdPart.id,
+                    label: createdPart.name,
+                    pricePerUnit: createdPart.pricePerUnit,
+                    quantity: partForOfferQuantity || 1,
+                    unofficially: createPartFormData.warehouse === 'unofficial'
+                };
+
+                // Добавляем в текущий офер
+                setFormData(prev => ({
+                    ...prev,
+                    parts: [...prev.parts, partForOffer]
+                }));
+                
+                toast.success(`Part created and ${partForOfferQuantity} unit(s) added to offer`);
+            } else {
+                toast.success("Part added to warehouse");
+            }
+
+            // Обновляем список запчастей
+            const warehouseResponse = await getWareHouse();
+            const warehouseUnofficialResponse = await getWareHouseUnofficially();
+            setParts(warehouseResponse || []);
+            setPartsUnofficially(warehouseUnofficialResponse || []);
+
+            // Сбрасываем форму
             setCreatePartFormData({
                 name: '',
                 quantity: '',
-                inventory: '',
+                warehouse: 'official',
                 comment: '',
                 countryCode: '',
-                serviceCategory: [{ serviceName: '', priceInEuroWithoutVAT: '' }],
                 pricePerUnit: ''
             });
-            
-            setCreatePartModalIsOpen(false); 
+            setPartWarehouseQuantity(0);
+            setPartForOfferQuantity(1);
+            setCreatePartForOffer(false);
+            setIsCreatingPartForCurrentOffer(false);
+            setCreatePartModalIsOpen(false);
 
         } catch (error) {
-            console.error(error);
+            console.error('Error creating part:', error);
+            toast.error("Error creating part");
         }
     };
     
@@ -398,9 +448,6 @@ const OfferPage = () => {
             case !Array.isArray(formData.yachts) || formData.yachts.length === 0:
                 toast.error("Error: At least one yacht is required");
                 return;
-            // case formData.comment.trim() === '':
-            //     toast.error("Error: Comment is required");
-            //     return;
             case !Array.isArray(formData.services) || formData.services.length === 0:
                 toast.error("Error: At least one service is required");
                 return;
@@ -553,7 +600,10 @@ const OfferPage = () => {
         setCreateServiceModalIsOpen(false);
     };
 
-    const openCreatePartModal = () => {
+    // Обновленная функция открытия модального окна создания запчасти
+    const openCreatePartModal = (forOffer = false) => {
+        setIsCreatingPartForCurrentOffer(forOffer);
+        setCreatePartForOffer(forOffer);
         setCreatePartModalIsOpen(true);
     };
 
@@ -562,11 +612,15 @@ const OfferPage = () => {
         setCreatePartFormData({
             name: '',
             quantity: '',
-            inventory: '',
+            warehouse: 'official',
             comment: '',
             countryCode: '',
-            serviceCategory: [{ serviceName: '', priceInEuroWithoutVAT: '' }]
+            pricePerUnit: ''
         });
+        setPartWarehouseQuantity(0);
+        setPartForOfferQuantity(1);
+        setCreatePartForOffer(false);
+        setIsCreatingPartForCurrentOffer(false);
     };
 
     const handleChange = (e) => {
@@ -599,11 +653,7 @@ const OfferPage = () => {
     };
 
     const handleSelectChangePart = (value, name) => {
-        if(name === 'unitsOfMeasurement' && !value){
-            setCreatePartFormData({ ...createPartFormData, [name]: '1' });
-        } else {
-            setCreatePartFormData({ ...createPartFormData, [name]: value });
-        }
+        setCreatePartFormData({ ...createPartFormData, [name]: value });
     };
 
     const createOrder = async () => {
@@ -722,7 +772,7 @@ const OfferPage = () => {
         label: part.name,
         pricePerUnit: part.pricePerUnit,
         quantity: '1',
-        unofficially: part.unofficially
+        unofficially: part.unofficially || false
     }));
 
     const closeEditModal = () => {
@@ -1177,7 +1227,7 @@ const OfferPage = () => {
                     catagoryData={catagoryData}
                     partOptions={combinedParts}
                     openCreateServiceModal={openCreateServiceModal}
-                    openCreatePartModal={openCreatePartModal}
+                    openCreatePartModal={() => openCreatePartModal(true)} // Передаем true для создания для офера
                     openCreateCustomerModal={openCreateCustomerModal}
                     loading={loadingCreateOffer}
                     yachts={formData.customerFullName ? filteredYachts : []}
@@ -1256,63 +1306,99 @@ const OfferPage = () => {
                         </div>
                     </form>
                 </Modal>
-                <Modal isOpen={createPartModalIsOpen} onClose={closeCreatePartModal} title="Create Part">  
-                    <form onSubmit={createPart} className="space-y-4 overflow-y-auto h-full" style={{ height: '400px', overflowY: 'auto' }}>
+                {/* Обновленное модальное окно создания запчасти */}
+                <Modal 
+                    isOpen={createPartModalIsOpen} 
+                    onClose={closeCreatePartModal} 
+                    title={createPartForOffer ? "Create Part for Offer" : "Add Part to Warehouse"}
+                >  
+                    <form onSubmit={createPart} className="space-y-4 overflow-y-auto" style={{ maxHeight: '500px' }}>
                         <Input
-                            label="Name"
+                            label="Part Name"
                             name="name"
                             value={createPartFormData.name}
                             onChange={handlePartChange}
                             required
                         />
-                        <Input
-                            label="Quantity"
-                            name="quantity"
-                            value={createPartFormData.quantity}
-                            onChange={handlePartChange}
+                        
+                        <Select
+                            label="Warehouse"
+                            name="warehouse"
+                            value={createPartFormData.warehouse}
+                            onChange={(value) => handleSelectChangePart(value, 'warehouse')}
                             required
-                        />  
+                            className="text-black border-gray-300 rounded-xs [&>div]:text-black"
+                            labelProps={{ className: 'text-black' }}
+                        >
+                            <Option value="official">Official Warehouse</Option>
+                            <Option value="unofficial">Unofficial Warehouse</Option>
+                        </Select>
+                        
+                        {/* Если создаем для офера */}
+                        {createPartForOffer && (
+                            <>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Input
+                                        label="Quantity for Warehouse"
+                                        name="warehouseQuantity"
+                                        type="number"
+                                        min="1"
+                                        value={partWarehouseQuantity}
+                                        onChange={(e) => setPartWarehouseQuantity(e.target.value)}
+                                        required
+                                    />
+                                    <Input
+                                        label="Quantity for This Offer"
+                                        name="offerQuantity"
+                                        type="number"
+                                        min="1"
+                                        value={partForOfferQuantity}
+                                        onChange={(e) => setPartForOfferQuantity(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                    Total created: {parseInt(partWarehouseQuantity || 0) + parseInt(partForOfferQuantity || 1)} units
+                                </p>
+                            </>
+                        )}
+                        
+                        {/* Если просто добавляем на склад */}
+                        {!createPartForOffer && (
+                            <Input
+                                label="Quantity for Warehouse"
+                                name="quantity"
+                                type="number"
+                                min="1"
+                                value={createPartFormData.quantity}
+                                onChange={handlePartChange}
+                                required
+                            />
+                        )}
+                        
                         <Input
-                            label="Price Per Unit"
+                            label="Price Per Unit (€)"
                             name="pricePerUnit"
+                            type="number"
+                            step="0.01"
                             value={createPartFormData.pricePerUnit}
                             onChange={handlePartChange}
                             required
-                        /> 
+                        />
+                        
                         <Input
                             label="Comment"
                             name="comment"
                             value={createPartFormData.comment}
                             onChange={handlePartChange}
-                            required
-                        /> 
-                        <Input
-                            label="Boat Registration"
-                            name="countryCode"
-                            value={createPartFormData.countryCode}
-                            onChange={handlePartChange}
-                            required
                         />
-                        <Select
-                            label="Service Category"
-                            value={createPartFormData.serviceCategory}
-                            onChange={(value) => handleSelectChangePart(value, 'serviceCategory')}
-                            required
-                            className="text-black" 
-                            labelProps={{ className: "text-black" }}
-                        >
-                            {catagoryData.map((category) => (
-                                <Option key={category.id} value={category} className="text-black">
-                                    {`${category.serviceName} - ${category.priceInEuroWithoutVAT}€`}
-                                </Option>
-                            ))}
-                        </Select>
+                        
                         <div className="flex justify-end">
                             <Button variant="text" color="red" onClick={closeCreatePartModal} className="mr-1">
                                 <span>Cancel</span>
                             </Button>
                             <Button color="green" type="submit">
-                                <span>Create</span>
+                                {createPartForOffer ? "Create & Add to Offer" : "Add to Warehouse"}
                             </Button>
                         </div>
                     </form>
