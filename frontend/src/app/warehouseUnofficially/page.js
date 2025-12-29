@@ -7,7 +7,7 @@ import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import { Button, Select, Option } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { PencilIcon, TrashIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/solid';
 import Header from '@/component/header';
 import SearchInput from '@/component/search';
 import { useRouter } from 'next/navigation';
@@ -32,15 +32,184 @@ const WarehouseUnofficiallyPage = () => {
     const [search, setSearch] = useState('');
     const [editMode, setEditMode] = useState(false);
     const [editId, setEditId] = useState(null);
+    const [helpModalOpen, setHelpModalOpen] = useState(false);
+    const [activeHelpSection, setActiveHelpSection] = useState('overview');
     const router = useRouter();
     const tableRef = useRef(null);
 
+    // Manual/Help content in English
+    const helpSections = {
+        overview: {
+            title: "Official Warehouse Management System - User Manual",
+            content: [
+                "Welcome to the Official Warehouse Management System! This system manages inventory of parts with full documentation and warranty.",
+                "Track official parts that come with proper documentation, warranty certificates, and meet all regulatory requirements.",
+                "Use the 'Help' button for quick access to this manual at any time."
+            ]
+        },
+        navigation: {
+            title: "Understanding the Official Warehouse Table",
+            content: [
+                "**Name** - Official part name with manufacturer specifications",
+                "**Quantity** - Current stock of certified parts",
+                "**Comment** - Technical specifications or special notes",
+                "**Price** - Official price per unit including documentation",
+                "**Service Category** - Service category this certified part belongs to",
+                "**Actions** - Edit or delete official warehouse records",
+                "",
+                "**Important:** This is the official warehouse - all parts here have full documentation and warranty"
+            ]
+        },
+        officialVsUnofficial: {
+            title: "Official vs Unofficial Warehouse - Key Differences",
+            content: [
+                "**Official Warehouse (This System):**",
+                "• Full manufacturer documentation",
+                "• Valid warranty certificates",
+                "• New parts with original packaging",
+                "• Meets all regulatory requirements",
+                "• Higher price reflecting certification",
+                "",
+                "**Unofficial Warehouse:**",
+                "• No formal documentation",
+                "• No warranty coverage",
+                "• Used or refurbished parts",
+                "• Lower cost, higher risk",
+                "",
+                "**When to use Official Warehouse:**",
+                "• For warranty-required repairs",
+                "• When documentation is legally required",
+                "• For critical system components",
+                "• When customer requests certified parts"
+            ]
+        },
+        creatingParts: {
+            title: "Adding Parts to Official Warehouse",
+            content: [
+                "**Required Fields:**",
+                "• Name - Official manufacturer part name",
+                "• Quantity - Number of certified units in stock",
+                "• Price - Official price including documentation",
+                "• Service Category - Must select a category",
+                "",
+                "**Documentation Requirements:**",
+                "• Warranty certificates must be filed separately",
+                "• Manufacturer documentation should be scanned",
+                "• Certification numbers should be recorded",
+                "",
+                "**Step-by-Step Creation:**",
+                "1. Click 'Create' button",
+                "2. Fill in all required fields",
+                "3. Select appropriate service category",
+                "4. Click 'Add' to save certified part",
+                "",
+                "**Verification:** Always verify part numbers match manufacturer specifications"
+            ]
+        },
+        qualityAssurance: {
+            title: "Quality Assurance for Official Parts",
+            content: [
+                "**Documentation Verification:**",
+                "• Verify all certificates are valid",
+                "• Check expiration dates on warranties",
+                "• Ensure documentation matches part numbers",
+                "",
+                "**Storage Requirements:**",
+                "• Store in appropriate conditions",
+                "• Maintain original packaging when possible",
+                "• Implement first-in-first-out (FIFO) system",
+                "",
+                "**Tracking Systems:**",
+                "• Record batch numbers",
+                "• Track warranty start dates",
+                "• Document supplier information",
+                "",
+                "**Inspection Procedures:**",
+                "• Regular quality checks",
+                "• Verify against manufacturer specs",
+                "• Document any quality issues"
+            ]
+        },
+        inventoryManagement: {
+            title: "Inventory Management for Official Parts",
+            content: [
+                "**Stock Control:**",
+                "• Maintain minimum stock levels for critical parts",
+                "• Set reorder points based on lead times",
+                "• Regular physical inventory verification",
+                "",
+                "**Pricing Strategy:**",
+                "• Include documentation costs in pricing",
+                "• Factor in warranty administration",
+                "• Consider market position and value",
+                "",
+                "**Service Category Assignment:**",
+                "• Assign to correct service categories",
+                "• Ensures parts appear in appropriate offers",
+                "• Multiple parts can share same category",
+                "",
+                "**Comment Usage:**",
+                "• Document certification details",
+                "• Note warranty terms",
+                "• Record supplier quality ratings"
+            ]
+        },
+        searchExport: {
+            title: "Searching and Exporting Official Inventory",
+            content: [
+                "**Search Function:**",
+                "• Search by part name, service category, or comments",
+                "• Real-time filtering as you type",
+                "• Select from dropdown for precise matching",
+                "",
+                "**Export to Excel:**",
+                "• Click 'Export to Excel' button",
+                "• Downloads current filtered view",
+                "• Includes all visible columns",
+                "• Essential for:",
+                "   - Audits and compliance reporting",
+                "   - Insurance documentation",
+                "   - Financial reporting",
+                "   - Supplier management",
+                "",
+                "**View History:**",
+                "• Track certification changes",
+                "• View warranty expiration dates",
+                "• Monitor quality assurance history"
+            ]
+        },
+        bestPractices: {
+            title: "Best Practices for Official Warehouse",
+            content: [
+                "**Compliance Management:**",
+                "• Maintain up-to-date certification records",
+                "• Regularly audit documentation",
+                "• Ensure regulatory compliance",
+                "",
+                "**Quality Control:**",
+                "• Implement regular quality inspections",
+                "• Document all quality issues",
+                "• Maintain supplier quality ratings",
+                "",
+                "**Financial Management:**",
+                "• Track certification costs separately",
+                "• Document warranty administration expenses",
+                "• Regular financial reporting for certified inventory",
+                "",
+                "**Customer Service:**",
+                "• Provide full documentation to customers",
+                "• Explain warranty terms clearly",
+                "• Document customer receipt of certified parts",
+                "",
+                "**Risk Management:**",
+                "• Insure high-value certified inventory",
+                "• Maintain backup documentation",
+                "• Implement security measures for valuable parts"
+            ]
+        }
+    };
+
     const columns = [
-        // {
-        //     name: 'Boat Registration',
-        //     selector: row => row.countryCode,
-        //     sortable: true,
-        // },
         {
             name: 'Name',
             selector: row => row.name,
@@ -58,12 +227,12 @@ const WarehouseUnofficiallyPage = () => {
         },
         {
             name: 'Price',
-            selector: row => row.pricePerUnit,
+            selector: row => `${row.pricePerUnit || ''}€`,
             sortable: true,
         },
         {
             name: 'Service Category',
-            selector: row => row.serviceCategory.serviceName,
+            selector: row => row.serviceCategory?.serviceName || 'N/A',
             sortable: true,
         },
         {
@@ -73,12 +242,14 @@ const WarehouseUnofficiallyPage = () => {
                     <button
                         onClick={() => handleEdit(row)}
                         className="text-blue-500 hover:text-blue-700"
+                        title="Edit official part"
                     >
                         <PencilIcon className="w-5 h-5" />
                     </button>
                     <button
                         onClick={() => handleDelete(row.id)}
                         className="text-red-500 hover:text-red-700"
+                        title="Delete official part"
                     >
                         <TrashIcon className="w-5 h-5" />
                     </button>
@@ -114,7 +285,7 @@ const WarehouseUnofficiallyPage = () => {
         try {
             if (editMode) {
                 await axios.put(`${URL}/warehouse/${editId}`, formData);
-                toast.success("Warehouse updated successfully");
+                toast.success("Official warehouse updated successfully");
             } else {
                 switch (true) {
                     case formData.serviceCategory.serviceName === '':
@@ -134,7 +305,7 @@ const WarehouseUnofficiallyPage = () => {
                     ...formData,
                     unofficially: false
                 });
-                toast.success("Warehouse created successfully");
+                toast.success("Official part added to warehouse successfully");
             }
             getData().then((res) => {
                 setData(res);
@@ -145,7 +316,7 @@ const WarehouseUnofficiallyPage = () => {
             setEditId(null);
         } catch (error) {
             console.log(error);
-            toast.error("Error updating warehouse");
+            toast.error("Error updating official warehouse");
         }
     };
 
@@ -165,16 +336,18 @@ const WarehouseUnofficiallyPage = () => {
     };
 
     const handleDelete = async (id) => {
-        try {
-            await axios.post(`${URL}/warehouse/delete/${id}`);
-            getData().then((res) => {
-                setData(res);
-                setFilteredData(res);
-            })
-            toast.success("Warehouse deleted successfully");
-        } catch (error) {
-            console.log(error);
-            toast.error("Error deleting warehouse");
+        if (window.confirm("Are you sure you want to delete this official part? This will also remove associated documentation records.")) {
+            try {
+                await axios.post(`${URL}/warehouse/delete/${id}`);
+                getData().then((res) => {
+                    setData(res);
+                    setFilteredData(res);
+                })
+                toast.success("Official part deleted successfully");
+            } catch (error) {
+                console.log(error);
+                toast.error("Error deleting official part");
+            }
         }
     };
 
@@ -217,20 +390,18 @@ const WarehouseUnofficiallyPage = () => {
         router.push('/warehouseHistory');
     };
 
-    // --- SheetJS Export Function ---
     const exportToExcel = () => {
         const exportData = filteredData.map(row => ({
-            'Boat Registration': row.countryCode || '',
-            Name: row.name || '',
-            Quantity: row.quantity || '',
-            Comment: row.comment || '',
-            Price: `${row.pricePerUnit || ''}€`,
+            'Name': row.name || '',
+            'Quantity': row.quantity || '',
+            'Comment': row.comment || '',
+            'Price': `${row.pricePerUnit || ''}€`,
             'Service Category': row.serviceCategory?.serviceName || ''
         }));
         const worksheet = XLSX.utils.json_to_sheet(exportData);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Warehouse');
-        XLSX.writeFile(workbook, 'warehouse_export.xlsx');
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Official Warehouse');
+        XLSX.writeFile(workbook, 'official_warehouse_export.xlsx');
     };
 
     useEffect(() => {
@@ -266,8 +437,17 @@ const WarehouseUnofficiallyPage = () => {
                             <SearchInput search={search} setSearch={setSearch} filteredData={filteredData} onSearchSelect={handleSearchSelect} />
                         </div>
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                            {/* Help Button */}
+                            <Button 
+                                onClick={() => setHelpModalOpen(true)}
+                                className="w-full sm:w-auto bg-blue-500 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-md transition-colors duration-200 flex items-center gap-2"
+                            >
+                                <QuestionMarkCircleIcon className="w-5 h-5" />
+                                <span>Help</span>
+                            </Button>
+                            
                             <Button onClick={openModal} className="w-full md:w-auto bg-[#dd3333] text-white">
-                                Create
+                                Add Official Part
                             </Button>
                             <Button className="w-full md:w-auto bg-[#282828] text-white" onClick={exportToExcel}>
                                 Export to Excel
@@ -281,7 +461,6 @@ const WarehouseUnofficiallyPage = () => {
                         <table ref={tableRef} style={{ display: 'none' }}>
                             <thead>
                                 <tr>
-                                    <th>Boat Registration</th>
                                     <th>Name</th>
                                     <th>Quantity</th>
                                     <th>Comment</th>
@@ -292,7 +471,6 @@ const WarehouseUnofficiallyPage = () => {
                             <tbody>
                                 {filteredData.map((row) => (
                                     <tr key={row.id}>
-                                        {/* <td>{row.countryCode || ''}</td> */}
                                         <td>{row.name || ''}</td>
                                         <td>{row.quantity || ''}</td>
                                         <td>{row.comment || ''}</td>
@@ -314,63 +492,310 @@ const WarehouseUnofficiallyPage = () => {
                     </div>
                 </div>
             )}
-            <Modal isOpen={modalIsOpen} onClose={closeModal} title={editMode ? "Edit" : "Create"}>
+
+            {/* Help/Manual Modal */}
+            <Modal 
+                isOpen={helpModalOpen} 
+                onClose={() => setHelpModalOpen(false)} 
+                title="Official Warehouse Management Help & User Manual"
+                size="xl"
+            >
+                <div className="max-h-[70vh] overflow-hidden flex flex-col">
+                    {/* Navigation Sidebar */}
+                    <div className="border-b pb-4 mb-4">
+                        <div className="flex space-x-2 overflow-x-auto pb-2">
+                            {Object.keys(helpSections).map(section => (
+                                <button
+                                    key={section}
+                                    onClick={() => setActiveHelpSection(section)}
+                                    className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${
+                                        activeHelpSection === section
+                                            ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    {helpSections[section].title.split(' ').slice(0, 3).join(' ')}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    {/* Content Area */}
+                    <div className="flex-1 overflow-y-auto pr-2">
+                        <div className="space-y-4">
+                            <h2 className="text-xl font-bold text-gray-800">
+                                {helpSections[activeHelpSection].title}
+                            </h2>
+                            
+                            <div className="space-y-3 text-gray-600">
+                                {helpSections[activeHelpSection].content.map((item, index) => {
+                                    if (item.includes('**')) {
+                                        const parts = item.split(/(\*\*.*?\*\*)/g);
+                                        return (
+                                            <p key={index} className="text-sm leading-relaxed">
+                                                {parts.map((part, i) => {
+                                                    if (part.startsWith('**') && part.endsWith('**')) {
+                                                        return (
+                                                            <span key={i} className="font-semibold text-gray-800">
+                                                                {part.slice(2, -2)}
+                                                            </span>
+                                                        );
+                                                    }
+                                                    return part;
+                                                })}
+                                            </p>
+                                        );
+                                    }
+                                    
+                                    if (item.startsWith('•')) {
+                                        return (
+                                            <div key={index} className="flex items-start">
+                                                <span className="mr-2 text-gray-400">•</span>
+                                                <span className="text-sm leading-relaxed">{item.substring(1)}</span>
+                                            </div>
+                                        );
+                                    }
+                                    
+                                    if (item === '') {
+                                        return <div key={index} className="h-3"></div>;
+                                    }
+                                    
+                                    return (
+                                        <p key={index} className="text-sm leading-relaxed">
+                                            {item}
+                                        </p>
+                                    );
+                                })}
+                            </div>
+                            
+                            {/* Quick Tips for Overview Section */}
+                            {activeHelpSection === 'overview' && (
+                                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                    <h3 className="font-semibold text-blue-700 mb-2">Quick Start Guide</h3>
+                                    <ul className="space-y-2 text-sm text-blue-600">
+                                        <li className="flex items-center gap-2">
+                                            <span className="text-blue-500">•</span>
+                                            <span>Use <strong>Search</strong> to find certified parts</span>
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <span className="text-blue-500">•</span>
+                                            <span>Click <strong>Add Official Part</strong> for certified inventory</span>
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <span className="text-blue-500">•</span>
+                                            <span>Maintain <strong>documentation</strong> separately</span>
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <span className="text-blue-500">•</span>
+                                            <span>Export for <strong>audit and compliance</strong></span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            )}
+                            
+                            {/* Certification Requirements */}
+                            {activeHelpSection === 'officialVsUnofficial' && (
+                                <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
+                                    <h4 className="font-semibold text-green-700 mb-2">✓ Certification Requirements</h4>
+                                    <ul className="text-sm text-green-600 space-y-1">
+                                        <li>• Manufacturer documentation must be on file</li>
+                                        <li>• Warranty certificates must be valid</li>
+                                        <li>• Certification numbers must be recorded</li>
+                                        <li>• Quality inspection records must be maintained</li>
+                                    </ul>
+                                </div>
+                            )}
+                            
+                            {/* Documentation Tip */}
+                            {activeHelpSection === 'creatingParts' && (
+                                <div className="mt-4 p-3 bg-purple-50 rounded border border-purple-200">
+                                    <p className="text-sm text-purple-700">
+                                        <span className="font-semibold">Important:</span> Always scan and file warranty certificates separately in the physical documentation system.
+                                    </p>
+                                </div>
+                            )}
+                            
+                            {/* Export Tip */}
+                            {activeHelpSection === 'searchExport' && (
+                                <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
+                                    <p className="text-sm text-yellow-700">
+                                        <span className="font-semibold">Audit Tip:</span> Export your official warehouse inventory quarterly for compliance audits and insurance reporting.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    
+                    <div className="mt-6 pt-4 border-t flex justify-between items-center">
+                        <div className="text-sm text-gray-500">
+                            For compliance questions, contact the quality assurance department
+                        </div>
+                        <div className="flex space-x-2">
+                            <Button
+                                variant="text"
+                                color="gray"
+                                onClick={() => setHelpModalOpen(false)}
+                                className="text-sm"
+                            >
+                                Close
+                            </Button>
+                            <Button
+                                color="blue"
+                                onClick={() => {
+                                    const printContent = `
+                                        <html>
+                                            <head>
+                                                <title>Official Warehouse Manual - ${helpSections[activeHelpSection].title}</title>
+                                                <style>
+                                                    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+                                                    h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+                                                    h2 { color: #555; margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                                                    h3 { color: #666; margin-top: 15px; }
+                                                    h4 { color: #777; margin-top: 10px; }
+                                                    p { line-height: 1.6; margin: 10px 0; }
+                                                    ul { margin-left: 20px; }
+                                                    li { margin-bottom: 5px; line-height: 1.5; }
+                                                    .tip { background: #f0f8ff; padding: 10px; border-left: 4px solid #007bff; margin: 15px 0; }
+                                                    .certification { background: #d1e7dd; padding: 10px; border-left: 4px solid #0f5132; margin: 15px 0; }
+                                                    .highlight { background-color: #f8f9fa; padding: 2px 4px; border-radius: 3px; font-weight: bold; }
+                                                    .important { background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; margin: 15px 0; }
+                                                </style>
+                                            </head>
+                                            <body>
+                                                <h1>${helpSections[activeHelpSection].title}</h1>
+                                                ${helpSections[activeHelpSection].content.map(item => {
+                                                    if (item.includes('**')) {
+                                                        const htmlItem = item.replace(/\*\*(.*?)\*\*/g, '<span class="highlight">$1</span>');
+                                                        return item.startsWith('•') ? `<p>${htmlItem}</p>` : `<p>${htmlItem}</p>`;
+                                                    }
+                                                    return item.startsWith('•') ? `<p>${item}</p>` : `<p>${item}</p>`;
+                                                }).join('')}
+                                                ${activeHelpSection === 'overview' ? `
+                                                    <div class="tip">
+                                                        <h3>Quick Start Guide</h3>
+                                                        <ul>
+                                                            <li>Use <span class="highlight">Search</span> to find certified parts</li>
+                                                            <li>Click <span class="highlight">Add Official Part</span> for certified inventory</li>
+                                                            <li>Maintain <span class="highlight">documentation</span> separately</li>
+                                                            <li>Export for <span class="highlight">audit and compliance</span></li>
+                                                        </ul>
+                                                    </div>
+                                                ` : ''}
+                                                ${activeHelpSection === 'officialVsUnofficial' ? `
+                                                    <div class="certification">
+                                                        <h4>✓ Certification Requirements</h4>
+                                                        <ul>
+                                                            <li>• Manufacturer documentation must be on file</li>
+                                                            <li>• Warranty certificates must be valid</li>
+                                                            <li>• Certification numbers must be recorded</li>
+                                                            <li>• Quality inspection records must be maintained</li>
+                                                        </ul>
+                                                    </div>
+                                                ` : ''}
+                                                ${activeHelpSection === 'creatingParts' ? `
+                                                    <div class="important">
+                                                        <p><strong>Important:</strong> Always scan and file warranty certificates separately in the physical documentation system.</p>
+                                                    </div>
+                                                ` : ''}
+                                                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">
+                                                    <p>Printed from Official Warehouse Management System on ${new Date().toLocaleDateString()}</p>
+                                                    <p>© ${new Date().getFullYear()} Official Warehouse Management System. All rights reserved.</p>
+                                                </div>
+                                            </body>
+                                        </html>
+                                    `;
+                                    
+                                    const printWindow = window.open('', '_blank');
+                                    printWindow.document.write(printContent);
+                                    printWindow.document.close();
+                                    printWindow.print();
+                                }}
+                                className="text-sm"
+                            >
+                                Print This Section
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Create/Edit Modal */}
+            <Modal isOpen={modalIsOpen} onClose={closeModal} title={editMode ? "Edit Official Part" : "Add New Part to Official Warehouse"}>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="mb-2 p-2 bg-green-50 rounded border border-green-200">
+                        <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="text-sm text-green-700">
+                                <span className="font-semibold">Official Warehouse:</span> Parts must have full documentation and warranty.
+                            </p>
+                        </div>
+                    </div>
+                    
                     <Input
-                        label="Name"
+                        label="Official Part Name *"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
                         required
+                        placeholder="Official manufacturer part name"
                     />
                     <Input
-                        label="Quantity"
+                        label="Certified Quantity *"
                         name="quantity"
+                        type="number"
                         value={formData.quantity}
                         onChange={handleChange}
                         required
+                        placeholder="Number of certified units"
                     />
                     <Input
-                        label="Comment"
-                        name="comment"
-                        value={formData.comment}
-                        onChange={handleChange}
-                        required
-                    />
-                    {/* <Input
-                        label="Boat Registration"
-                        name="countryCode"
-                        value={formData.countryCode}
-                        onChange={handleChange}
-                        required
-                    /> */}
-                    <Input
-                        label="Price"
+                        label="Official Price per Unit (€) *"
                         name="pricePerUnit"
+                        type="text"
                         value={formData.pricePerUnit}
                         onChange={handleChange}
                         required
+                        placeholder="Including documentation and warranty"
+                    />
+                    <Input
+                        label="Technical Specifications"
+                        name="comment"
+                        value={formData.comment}
+                        onChange={handleChange}
+                        placeholder="Certification numbers, specifications"
                     />
                     <Select
-                        label="Service Category"
+                        label="Service Category *"
                         value={formData.serviceCategory}
                         onChange={handleSelectChange}
                         required
                         className="text-black"
                         labelProps={{ className: "text-black" }}
                     >
+                        <Option value={{ serviceName: '', priceInEuroWithoutVAT: '' }} className="text-black">
+                            Select a certified service category...
+                        </Option>
                         {catagoryData.map((category) => (
                             <Option key={category.id} value={category} className="text-black">
-                                {category.serviceName}
+                                {category.serviceName} - Certified
                             </Option>
                         ))}
                     </Select>
+                    
+                    <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                        <p className="text-sm text-blue-700">
+                            <span className="font-semibold">Documentation Checklist:</span> Ensure all warranty certificates and manufacturer documentation are filed in the physical documentation system.
+                        </p>
+                    </div>
+                    
                     <div className="flex justify-end gap-2">
                         <Button variant="text" color="red" onClick={closeModal} className="w-full md:w-auto">
                             <span>Cancel</span>
                         </Button>
-                        <Button color="green" type="submit" className="w-full md:w-auto">
-                            <span>{editMode ? 'Update' : 'Add'}</span>
+                        <Button color="green" type="submit" className="w-full md:w-auto bg-green-600 hover:bg-green-700">
+                            <span>{editMode ? 'Update Certified Part' : 'Add to Official Warehouse'}</span>
                         </Button>
                     </div>
                 </form>

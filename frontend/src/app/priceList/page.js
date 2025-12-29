@@ -7,7 +7,7 @@ import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import { Button, Select, Option } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { PencilIcon, TrashIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-toastify';
 import Header from '@/component/header';
 import ReactSelect from 'react-select';
@@ -30,6 +30,162 @@ const PriceListPage = () => {
     const [selectedService, setSelectedService] = useState(null);
     const [inputValue, setInputValue] = useState('');
     const [priceInputValue, setPriceInputValue] = useState('');
+    const [helpModalOpen, setHelpModalOpen] = useState(false);
+    const [activeHelpSection, setActiveHelpSection] = useState('overview');
+
+    // Manual/Help content in English
+    const helpSections = {
+        overview: {
+            title: "Price List Management System - User Manual",
+            content: [
+                "Welcome to the Price List Management System! This system allows you to create and manage all service prices for your business.",
+                "Maintain accurate and up-to-date pricing information for all services, including sub-services and measurement units.",
+                "Use the 'Help' button for quick access to this manual at any time."
+            ]
+        },
+        navigation: {
+            title: "Understanding the Price List Table",
+            content: [
+                "**Service Name** - Main service or category name",
+                "**Sub-services** - Detailed services within the main category",
+                "**Price in EURO without VAT** - Price excluding VAT in Euros",
+                "**Units of Measurement** - How the service is measured (pcs., hrs.)",
+                "**Actions** - Edit or delete service records",
+                "",
+                "**Important:** Click on column headers to sort the table"
+            ]
+        },
+        priceFormat: {
+            title: "Price Formatting Guide",
+            content: [
+                "**Correct Price Format:** 00113,45€",
+                "• Always use comma as decimal separator",
+                "• Two decimal places are required",
+                "• Leading zeros are added automatically",
+                "",
+                "**Examples:**",
+                "• 100€ → 00100,00",
+                "• 45.50€ → 00045,50",
+                "• 1250.75€ → 01250,75",
+                "",
+                "**Auto-formatting:**",
+                "• System automatically formats prices as you type",
+                "• Focus on input to see 00000,00 format",
+                "• Blur to see final formatted price (113,45)"
+            ]
+        },
+        units: {
+            title: "Units of Measurement Explained",
+            content: [
+                "**pcs. (pieces)** - Used for:",
+                "• Countable items or services",
+                "• One-time services",
+                "• Fixed price items",
+                "",
+                "**hrs. (hours)** - Used for:",
+                "• Time-based services",
+                "• Labor or consulting services",
+                "• Services charged per hour",
+                "",
+                "**Selecting the correct unit:**",
+                "• Choose 'pcs.' for fixed-price services",
+                "• Choose 'hrs.' for time-based services",
+                "• This affects how offers calculate total costs"
+            ]
+        },
+        subServices: {
+            title: "Managing Sub-services",
+            content: [
+                "**Purpose of Sub-services:**",
+                "• Break down complex services into components",
+                "• Provide detailed pricing for different sizes/types",
+                "• Offer customers more specific options",
+                "",
+                "**Creating Sub-services:**",
+                "1. Click 'Add Sub-service' button",
+                "2. Fill in:",
+                "   • Name - Sub-service description",
+                "   • Size - Yacht size or specific measurement",
+                "   • Price - Cost for this specific sub-service",
+                "3. Add multiple sub-services as needed",
+                "",
+                "**Usage:** Sub-services appear in offers for detailed breakdown"
+            ]
+        },
+        searchExport: {
+            title: "Searching and Exporting",
+            content: [
+                "**Search Function:**",
+                "• Type in search box to find services",
+                "• Dropdown shows matching services",
+                "• Select service to filter table",
+                "• Clear search to show all services",
+                "",
+                "**Export to Excel:**",
+                "• Click 'Export to Excel' button",
+                "• Downloads current filtered view",
+                "• Includes all visible columns",
+                "• Use for:",
+                "   - Client presentations",
+                "   - Internal reports",
+                "   - Backup purposes",
+                "",
+                "**Tips:** Export regularly to maintain price history"
+            ]
+        },
+        creatingEditing: {
+            title: "Creating and Editing Services",
+            content: [
+                "**Required Fields:**",
+                "• Service Name - Descriptive name of service",
+                "• Price in Euro excl. VAT - Must use proper format",
+                "• Units of Measurement - Select pcs. or hrs.",
+                "",
+                "**Creating New Service:**",
+                "1. Click 'Create' button",
+                "2. Fill required fields",
+                "3. Add sub-services if needed",
+                "4. Click 'Add' to save",
+                "",
+                "**Editing Existing Service:**",
+                "1. Click pencil icon in Actions column",
+                "2. Modify any field",
+                "3. Update sub-services if needed",
+                "4. Click 'Update' to save changes",
+                "",
+                "**Deleting:** Click trash icon to remove service permanently"
+            ]
+        },
+        bestPractices: {
+            title: "Best Practices for Price Management",
+            content: [
+                "**Naming Conventions:**",
+                "• Use clear, descriptive service names",
+                "• Be consistent in naming patterns",
+                "• Include relevant details in names",
+                "",
+                "**Price Updates:**",
+                "• Update prices regularly for accuracy",
+                "• Document price change reasons",
+                "• Consider seasonal price adjustments",
+                "",
+                "**Sub-service Strategy:**",
+                "• Create sub-services for complex offerings",
+                "• Keep sub-service names specific",
+                "• Include size/type variations",
+                "",
+                "**Data Integrity:**",
+                "• Regularly review and update all services",
+                "• Remove outdated or discontinued services",
+                "• Keep measurement units accurate",
+                "",
+                "**Communication:**",
+                "• Notify relevant teams of price changes",
+                "• Update offer templates when prices change",
+                "• Document special pricing arrangements"
+            ]
+        }
+    };
 
     const columns = [
         {
@@ -49,7 +205,7 @@ const PriceListPage = () => {
         },
         {
             name: 'Price in EURO without VAT',
-            selector: row => row.priceInEuroWithoutVAT,
+            selector: row => `${row.priceInEuroWithoutVAT || ''}€`,
             sortable: true,
         },
         {
@@ -64,12 +220,14 @@ const PriceListPage = () => {
                     <button
                         onClick={() => handleEdit(row)}
                         className="text-blue-500 hover:text-blue-700"
+                        title="Edit service"
                     >
                         <PencilIcon className="w-5 h-5" />
                     </button>
                     <button
                         onClick={() => handleDelete(row.id)}
                         className="text-red-500 hover:text-red-700"
+                        title="Delete service"
                     >
                         <TrashIcon className="w-5 h-5" />
                     </button>
@@ -151,13 +309,15 @@ const PriceListPage = () => {
     };
 
     const handleDelete = async (id) => {
-        try {
-            await axios.post(`${URL}/pricelist/delete/${id}`);
-            getData();
-            toast.success("Price list deleted successfully");
-        } catch (error) {
-            console.log(error);
-            toast.error("Error deleting price list");
+        if (window.confirm("Are you sure you want to delete this service? This action cannot be undone.")) {
+            try {
+                await axios.post(`${URL}/pricelist/delete/${id}`);
+                getData();
+                toast.success("Price list deleted successfully");
+            } catch (error) {
+                console.log(error);
+                toast.error("Error deleting price list");
+            }
         }
     };
 
@@ -207,11 +367,8 @@ const PriceListPage = () => {
         setFormData({ ...formData, [name]: value });
     };
 
-    // Format price input
-
     const handlePriceChange = (e) => {
         let value = e.target.value;
-        // Remove all non-digit characters
         const digits = value.replace(/\D/g, '');
         
         if (!digits) {
@@ -220,12 +377,10 @@ const PriceListPage = () => {
             return;
         }
         
-        // Format as 00113,45 while typing
         const formatted = digits.padStart(7, '0');
         const displayValue = formatted.slice(0, -2) + ',' + formatted.slice(-2);
         setPriceInputValue(displayValue);
         
-        // Store actual value (divide by 100)
         const actualValue = (parseInt(digits, 10) / 100).toFixed(2);
         setFormData({ ...formData, priceInEuroWithoutVAT: actualValue });
     };
@@ -235,7 +390,6 @@ const PriceListPage = () => {
         if (!value || value === '0.00' || value === '') {
             setPriceInputValue('00000,00');
         } else {
-            // Convert to 00113,45 format
             const num = parseFloat(value) || 0;
             const cents = Math.round(num * 100);
             const formatted = String(cents).padStart(7, '0');
@@ -246,7 +400,6 @@ const PriceListPage = () => {
     const handlePriceBlur = (e) => {
         const value = formData.priceInEuroWithoutVAT;
         if (value) {
-            // Format as 113,45 (remove leading zeros)
             const num = parseFloat(value) || 0;
             const formatted = num.toFixed(2).replace('.', ',');
             setPriceInputValue(formatted);
@@ -256,7 +409,6 @@ const PriceListPage = () => {
         }
     };
 
-    // Sub-services handlers
     const handleAddSubService = () => {
         setFormData({
             ...formData,
@@ -275,7 +427,6 @@ const PriceListPage = () => {
         setFormData({ ...formData, subServices: newSubServices });
     };
 
-    // --- SheetJS Export Function ---
     const exportToExcel = () => {
         const exportData = filteredData.map(row => ({
             'Service Name': row.serviceName || '',
@@ -332,6 +483,15 @@ const PriceListPage = () => {
                                 />
                             </div>
                             <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                                {/* Help Button */}
+                                <Button 
+                                    onClick={() => setHelpModalOpen(true)}
+                                    className="w-full sm:w-auto bg-blue-500 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-md transition-colors duration-200 flex items-center gap-2"
+                                >
+                                    <QuestionMarkCircleIcon className="w-5 h-5" />
+                                    <span>Help</span>
+                                </Button>
+                                
                                 <Button className="w-full sm:w-auto bg-[#282828] text-white" onClick={exportToExcel}>
                                     Export to Excel
                                 </Button>
@@ -378,36 +538,293 @@ const PriceListPage = () => {
                         </div>
                     </div>
                 )}
-                <Modal isOpen={modalIsOpen} onClose={closeModal} title={editMode ? "Edit" : "Create"}>
+
+                {/* Help/Manual Modal */}
+                <Modal 
+                    isOpen={helpModalOpen} 
+                    onClose={() => setHelpModalOpen(false)} 
+                    title="Price List Management Help & User Manual"
+                    size="xl"
+                >
+                    <div className="max-h-[70vh] overflow-hidden flex flex-col">
+                        {/* Navigation Sidebar */}
+                        <div className="border-b pb-4 mb-4">
+                            <div className="flex space-x-2 overflow-x-auto pb-2">
+                                {Object.keys(helpSections).map(section => (
+                                    <button
+                                        key={section}
+                                        onClick={() => setActiveHelpSection(section)}
+                                        className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${
+                                            activeHelpSection === section
+                                                ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {helpSections[section].title.split(' ').slice(0, 3).join(' ')}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        {/* Content Area */}
+                        <div className="flex-1 overflow-y-auto pr-2">
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold text-gray-800">
+                                    {helpSections[activeHelpSection].title}
+                                </h2>
+                                
+                                <div className="space-y-3 text-gray-600">
+                                    {helpSections[activeHelpSection].content.map((item, index) => {
+                                        if (item.includes('**')) {
+                                            const parts = item.split(/(\*\*.*?\*\*)/g);
+                                            return (
+                                                <p key={index} className="text-sm leading-relaxed">
+                                                    {parts.map((part, i) => {
+                                                        if (part.startsWith('**') && part.endsWith('**')) {
+                                                            return (
+                                                                <span key={i} className="font-semibold text-gray-800">
+                                                                    {part.slice(2, -2)}
+                                                                </span>
+                                                            );
+                                                        }
+                                                        return part;
+                                                    })}
+                                                </p>
+                                            );
+                                        }
+                                        
+                                        if (item.startsWith('•')) {
+                                            return (
+                                                <div key={index} className="flex items-start">
+                                                    <span className="mr-2 text-gray-400">•</span>
+                                                    <span className="text-sm leading-relaxed">{item.substring(1)}</span>
+                                                </div>
+                                            );
+                                        }
+                                        
+                                        if (item === '') {
+                                            return <div key={index} className="h-3"></div>;
+                                        }
+                                        
+                                        return (
+                                            <p key={index} className="text-sm leading-relaxed">
+                                                {item}
+                                            </p>
+                                        );
+                                    })}
+                                </div>
+                                
+                                {/* Quick Tips for Overview Section */}
+                                {activeHelpSection === 'overview' && (
+                                    <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                        <h3 className="font-semibold text-blue-700 mb-2">Quick Start Guide</h3>
+                                        <ul className="space-y-2 text-sm text-blue-600">
+                                            <li className="flex items-center gap-2">
+                                                <span className="text-blue-500">•</span>
+                                                <span>Use <strong>Search</strong> to quickly find services</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="text-blue-500">•</span>
+                                                <span>Click <strong>Create</strong> to add new services</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="text-blue-500">•</span>
+                                                <span>Follow <strong>price formatting</strong> rules carefully</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="text-blue-500">•</span>
+                                                <span>Use <strong>sub-services</strong> for detailed pricing</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                )}
+                                
+                                {/* Price Format Examples */}
+                                {activeHelpSection === 'priceFormat' && (
+                                    <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                                        <h3 className="font-semibold text-yellow-700 mb-2">Price Format Examples</h3>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-center p-2 bg-white rounded border">
+                                                <span className="text-sm">What you want to enter:</span>
+                                                <span className="font-semibold">100€</span>
+                                            </div>
+                                            <div className="flex justify-between items-center p-2 bg-white rounded border">
+                                                <span className="text-sm">How to type it:</span>
+                                                <span className="font-semibold">00100,00</span>
+                                            </div>
+                                            <div className="flex justify-between items-center p-2 bg-white rounded border">
+                                                <span className="text-sm">What appears in table:</span>
+                                                <span className="font-semibold">100,00€</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-yellow-600 mt-2">
+                                            Note: The system automatically handles formatting. Just type numbers!
+                                        </p>
+                                    </div>
+                                )}
+                                
+                                {/* Units of Measurement Info */}
+                                {activeHelpSection === 'units' && (
+                                    <div className="mt-4 p-3 bg-purple-50 rounded border border-purple-200">
+                                        <p className="text-sm text-purple-700">
+                                            <span className="font-semibold">Important:</span> The unit of measurement affects how offers calculate totals. Choose carefully!
+                                        </p>
+                                    </div>
+                                )}
+                                
+                                {/* Export Tips */}
+                                {activeHelpSection === 'searchExport' && (
+                                    <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
+                                        <p className="text-sm text-green-700">
+                                            <span className="font-semibold">Tip:</span> Export your price list before making major changes to maintain a version history.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="mt-6 pt-4 border-t flex justify-between items-center">
+                            <div className="text-sm text-gray-500">
+                                For additional support, contact system administrator
+                            </div>
+                            <div className="flex space-x-2">
+                                <Button
+                                    variant="text"
+                                    color="gray"
+                                    onClick={() => setHelpModalOpen(false)}
+                                    className="text-sm"
+                                >
+                                    Close
+                                </Button>
+                                <Button
+                                    color="blue"
+                                    onClick={() => {
+                                        const printContent = `
+                                            <html>
+                                                <head>
+                                                    <title>Price List Management Manual - ${helpSections[activeHelpSection].title}</title>
+                                                    <style>
+                                                        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+                                                        h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+                                                        h2 { color: #555; margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                                                        h3 { color: #666; margin-top: 15px; }
+                                                        p { line-height: 1.6; margin: 10px 0; }
+                                                        ul { margin-left: 20px; }
+                                                        li { margin-bottom: 5px; line-height: 1.5; }
+                                                        .tip { background: #f0f8ff; padding: 10px; border-left: 4px solid #007bff; margin: 15px 0; }
+                                                        .note { background: #fff8e1; padding: 10px; border-left: 4px solid #ffc107; margin: 15px 0; }
+                                                        .highlight { background-color: #f8f9fa; padding: 2px 4px; border-radius: 3px; font-weight: bold; }
+                                                        .example { background: #f9f9f9; padding: 10px; border-left: 4px solid #6f42c1; margin: 15px 0; }
+                                                    </style>
+                                                </head>
+                                                <body>
+                                                    <h1>${helpSections[activeHelpSection].title}</h1>
+                                                    ${helpSections[activeHelpSection].content.map(item => {
+                                                        if (item.includes('**')) {
+                                                            const htmlItem = item.replace(/\*\*(.*?)\*\*/g, '<span class="highlight">$1</span>');
+                                                            return item.startsWith('•') ? `<p>${htmlItem}</p>` : `<p>${htmlItem}</p>`;
+                                                        }
+                                                        return item.startsWith('•') ? `<p>${item}</p>` : `<p>${item}</p>`;
+                                                    }).join('')}
+                                                    ${activeHelpSection === 'overview' ? `
+                                                        <div class="tip">
+                                                            <h3>Quick Start Guide</h3>
+                                                            <ul>
+                                                                <li>Use <span class="highlight">Search</span> to quickly find services</li>
+                                                                <li>Click <span class="highlight">Create</span> to add new services</li>
+                                                                <li>Follow <span class="highlight">price formatting</span> rules carefully</li>
+                                                                <li>Use <span class="highlight">sub-services</span> for detailed pricing</li>
+                                                            </ul>
+                                                        </div>
+                                                    ` : ''}
+                                                    ${activeHelpSection === 'priceFormat' ? `
+                                                        <div class="example">
+                                                            <h3>Price Format Examples</h3>
+                                                            <div style="margin: 10px 0;">
+                                                                <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border: 1px solid #ddd; margin: 5px 0;">
+                                                                    <span>What you want to enter:</span>
+                                                                    <span style="font-weight: bold;">100€</span>
+                                                                </div>
+                                                                <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border: 1px solid #ddd; margin: 5px 0;">
+                                                                    <span>How to type it:</span>
+                                                                    <span style="font-weight: bold;">00100,00</span>
+                                                                </div>
+                                                                <div style="display: flex; justify-content: space-between; padding: 8px; background: white; border: 1px solid #ddd; margin: 5px 0;">
+                                                                    <span>What appears in table:</span>
+                                                                    <span style="font-weight: bold;">100,00€</span>
+                                                                </div>
+                                                            </div>
+                                                            <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                                                                Note: The system automatically handles formatting. Just type numbers!
+                                                            </p>
+                                                        </div>
+                                                    ` : ''}
+                                                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">
+                                                        <p>Printed from Price List Management System on ${new Date().toLocaleDateString()}</p>
+                                                        <p>© ${new Date().getFullYear()} Price List Management System. All rights reserved.</p>
+                                                    </div>
+                                                </body>
+                                            </html>
+                                        `;
+                                        
+                                        const printWindow = window.open('', '_blank');
+                                        printWindow.document.write(printContent);
+                                        printWindow.document.close();
+                                        printWindow.print();
+                                    }}
+                                    className="text-sm"
+                                >
+                                    Print This Section
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </Modal>
+
+                {/* Create/Edit Modal */}
+                <Modal isOpen={modalIsOpen} onClose={closeModal} title={editMode ? "Edit Service" : "Create New Service"}>
                     <div className="max-h-[70vh] overflow-y-auto pr-2 text-black">
                         <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="mb-2 p-2 bg-blue-50 rounded border border-blue-200">
+                                <p className="text-sm text-blue-700">
+                                    <span className="font-semibold">Required Fields:</span> All fields must be completed
+                                </p>
+                            </div>
+                            
                             <Input
-                                label="Service Name"
+                                label="Service Name *"
                                 name="serviceName"
                                 value={formData.serviceName}
                                 onChange={handleChange}
                                 required
+                                placeholder="e.g., Engine Maintenance, Hull Cleaning"
                             />
                             
                             <div>
                                 <label className="block text-sm font-medium text-black mb-1">
-                                    Price in Euro excl. VAT
+                                    Price in Euro excl. VAT *
                                 </label>
-                                <input
-                                    type="text"
-                                    name="priceInEuroWithoutVAT"
-                                    value={priceInputValue || (formData.priceInEuroWithoutVAT ? parseFloat(formData.priceInEuroWithoutVAT).toFixed(2).replace('.', ',') : '')}
-                                    onChange={handlePriceChange}
-                                    onFocus={handlePriceFocus}
-                                    onBlur={handlePriceBlur}
-                                    placeholder="00000,00€"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring text-black placeholder-gray-400"
-                                    required
-                                />
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        name="priceInEuroWithoutVAT"
+                                        value={priceInputValue}
+                                        onChange={handlePriceChange}
+                                        onFocus={handlePriceFocus}
+                                        onBlur={handlePriceBlur}
+                                        placeholder="00000,00"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-400"
+                                        required
+                                    />
+                                    <div className="absolute right-3 top-2.5 text-gray-500">€</div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Format: 00113,45 (comma as decimal separator)
+                                </p>
                             </div>
 
                             <Select
-                                label="Units of Measurement"
+                                label="Units of Measurement *"
                                 value={formData.unitsOfMeasurement}
                                 onChange={(value) => setFormData({ ...formData, unitsOfMeasurement: value })}
                                 className="text-black border-gray-300 rounded-xs [&>div]:text-black"
@@ -415,19 +832,22 @@ const PriceListPage = () => {
                                 required
                             >
                                 <Option className="text-black" value="">Select...</Option>
-                                <Option className="text-black" value="pcs.">pcs.</Option>
-                                <Option className="text-black" value="hrs.">hrs.</Option>
+                                <Option className="text-black" value="pcs.">pcs. (pieces)</Option>
+                                <Option className="text-black" value="hrs.">hrs. (hours)</Option>
                             </Select>
 
                             {/* Sub-services Section */}
                             <div className="space-y-4 border-t pt-4">
                                 <div className="flex justify-between items-center">
-                                    <h3 className="text-lg font-semibold text-black">Sub-services</h3>
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-black">Sub-services (Optional)</h3>
+                                        <p className="text-sm text-gray-500">Add detailed service components</p>
+                                    </div>
                                     <Button
                                         type="button"
                                         onClick={handleAddSubService}
                                         size="sm"
-                                        className="bg-blue-500 text-white"
+                                        className="bg-blue-500 text-white hover:bg-blue-600"
                                     >
                                         Add Sub-service
                                     </Button>
@@ -435,14 +855,14 @@ const PriceListPage = () => {
                                 {formData.subServices && formData.subServices.length > 0 && (
                                     <div className="space-y-3">
                                         {formData.subServices.map((subService, index) => (
-                                            <div key={index} className="bg-gray-50 p-3 rounded space-y-2">
+                                            <div key={index} className="bg-gray-50 p-3 rounded space-y-2 border border-gray-200">
                                                 <div className="flex justify-between items-center mb-2">
                                                     <h4 className="font-medium text-black">Sub-service {index + 1}</h4>
                                                     <Button
                                                         type="button"
                                                         onClick={() => handleRemoveSubService(index)}
                                                         size="sm"
-                                                        className="bg-red-500 text-white"
+                                                        className="bg-red-500 text-white hover:bg-red-600"
                                                     >
                                                         Remove
                                                     </Button>
@@ -451,30 +871,38 @@ const PriceListPage = () => {
                                                     label="Sub-service Name"
                                                     value={subService.name || ''}
                                                     onChange={(e) => handleSubServiceChange(index, 'name', e.target.value)}
+                                                    placeholder="e.g., Cleaning, Polishing"
                                                 />
                                                 <Input
                                                     label="Size (e.g., yacht size)"
                                                     value={subService.size || ''}
                                                     onChange={(e) => handleSubServiceChange(index, 'size', e.target.value)}
+                                                    placeholder="e.g., 10m, 15m, 20m"
                                                 />
                                                 <Input
                                                     label="Price"
                                                     type="text"
                                                     value={subService.price || ''}
                                                     onChange={(e) => handleSubServiceChange(index, 'price', e.target.value)}
+                                                    placeholder="Additional price for this size"
                                                 />
                                             </div>
                                         ))}
                                     </div>
                                 )}
+                                {formData.subServices.length === 0 && (
+                                    <div className="text-center py-4 text-gray-500 border-2 border-dashed border-gray-300 rounded">
+                                        No sub-services added. Click "Add Sub-service" to create detailed service components.
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="flex justify-end gap-2">
+                            <div className="flex justify-end gap-2 pt-4 border-t">
                                 <Button variant="text" color="red" onClick={closeModal} className="w-full md:w-auto">
                                     <span>Cancel</span>
                                 </Button>
-                                <Button color="green" type="submit" className="w-full md:w-auto">
-                                    <span>{editMode ? 'Update' : 'Add'}</span>
+                                <Button color="green" type="submit" className="w-full md:w-auto bg-green-600 hover:bg-green-700">
+                                    <span>{editMode ? 'Update Service' : 'Create Service'}</span>
                                 </Button>
                             </div>
                         </form>

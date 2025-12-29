@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Button, Select, Option } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { PencilIcon, TrashIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/solid';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import Header from '@/component/header';
@@ -32,15 +32,179 @@ const WarehousePage = () => {
     const [search, setSearch] = useState('');
     const [editMode, setEditMode] = useState(false);
     const [editId, setEditId] = useState(null);
+    const [helpModalOpen, setHelpModalOpen] = useState(false);
+    const [activeHelpSection, setActiveHelpSection] = useState('overview');
     const router = useRouter();
     const tableRef = useRef(null);
 
+    // Manual/Help content in English
+    const helpSections = {
+        overview: {
+            title: "Warehouse Management System - User Manual",
+            content: [
+                "Welcome to the Warehouse Management System! This system manages unofficial warehouse inventory (parts without documents).",
+                "Track inventory, prices, and service categories for all parts that don't have official documentation.",
+                "Use the 'Help' button for quick access to this manual at any time."
+            ]
+        },
+        navigation: {
+            title: "Understanding the Warehouse Table",
+            content: [
+                "**Name** - Part or item name",
+                "**Quantity** - Current stock quantity available",
+                "**Comment** - Additional notes or specifications",
+                "**Price** - Price per unit in Euros (€)",
+                "**Service Category** - Which service category this part belongs to",
+                "**Actions** - Edit or delete warehouse records",
+                "",
+                "**Important:** This is the unofficial warehouse - parts here do not have formal documentation"
+            ]
+        },
+        officialVsUnofficial: {
+            title: "Official vs Unofficial Warehouse",
+            content: [
+                "**Unofficial Warehouse (This System):**",
+                "• Parts without formal documentation",
+                "• Used or refurbished parts",
+                "• Parts without warranty",
+                "• Typically lower-cost items",
+                "",
+                "**Official Warehouse:**",
+                "• Parts with full documentation",
+                "• New parts with warranty",
+                "• Higher price point",
+                "• Used in formal offers",
+                "",
+                "**When to use Unofficial Warehouse:**",
+                "• For budget-conscious repairs",
+                "• When documentation is not required",
+                "• For non-critical parts",
+                "• When cost is primary concern"
+            ]
+        },
+        creatingParts: {
+            title: "Adding Parts to Unofficial Warehouse",
+            content: [
+                "**Required Fields:**",
+                "• Name - Descriptive name of the part",
+                "• Quantity - How many units in stock",
+                "• Price - Price per unit in Euros",
+                "• Service Category - Must select a category",
+                "",
+                "**Optional Fields:**",
+                "• Comment - Additional details or specifications",
+                "",
+                "**Step-by-Step Creation:**",
+                "1. Click 'Create' button",
+                "2. Fill in all required fields",
+                "3. Select appropriate service category",
+                "4. Click 'Add' to save",
+                "",
+                "**Service Categories:** Linked to price list services for proper categorization"
+            ]
+        },
+        inventoryManagement: {
+            title: "Inventory Management Best Practices",
+            content: [
+                "**Quantity Tracking:**",
+                "• Update quantities immediately when parts are used",
+                "• Set reorder points for critical items",
+                "• Regular physical inventory counts",
+                "",
+                "**Pricing Strategy:**",
+                "• Price should reflect part condition (used/refurbished)",
+                "• Consider market prices for similar parts",
+                "• Document price changes",
+                "",
+                "**Service Category Assignment:**",
+                "• Assign parts to correct service categories",
+                "• This ensures parts appear in relevant offers",
+                "• Multiple parts can share same category",
+                "",
+                "**Comment Usage:**",
+                "• Document part condition",
+                "• Note any special requirements",
+                "• Record supplier information",
+                "• Add compatibility notes"
+            ]
+        },
+        searchExport: {
+            title: "Searching and Exporting Warehouse Data",
+            content: [
+                "**Search Function:**",
+                "• Search by part name, service category, or comments",
+                "• Real-time filtering as you type",
+                "• Select from dropdown for precise matching",
+                "",
+                "**Export to Excel:**",
+                "• Click 'Export to Excel' button",
+                "• Downloads current filtered view",
+                "• Includes all visible columns",
+                "• Useful for:",
+                "   - Inventory reporting",
+                "   - Supplier orders",
+                "   - Financial analysis",
+                "   - Backup purposes",
+                "",
+                "**View History:**",
+                "• Track changes over time",
+                "• View part usage history",
+                "• Monitor inventory trends"
+            ]
+        },
+        editingDeleting: {
+            title: "Editing and Deleting Parts",
+            content: [
+                "**Editing Parts:**",
+                "1. Click pencil icon in Actions column",
+                "2. Modify any field",
+                "3. Click 'Update' to save changes",
+                "",
+                "**When to Edit:**",
+                "• Update quantity after use",
+                "• Change price due to market conditions",
+                "• Add additional comments",
+                "• Change service category",
+                "",
+                "**Deleting Parts:**",
+                "• Click trash icon to remove part",
+                "• Confirmation required before deletion",
+                "• Use when part is no longer available",
+                "• Consider setting quantity to 0 instead of deleting"
+            ]
+        },
+        bestPractices: {
+            title: "Best Practices for Unofficial Warehouse",
+            content: [
+                "**Data Accuracy:**",
+                "• Keep quantities up-to-date",
+                "• Update prices regularly",
+                "• Ensure correct service category assignment",
+                "",
+                "**Inventory Control:**",
+                "• Regular audits of unofficial inventory",
+                "• Document part condition thoroughly",
+                "• Set minimum stock levels",
+                "",
+                "**Financial Management:**",
+                "• Track cost vs selling price",
+                "• Document profit margins",
+                "• Regular financial reporting",
+                "",
+                "**Customer Communication:**",
+                "• Clearly explain unofficial vs official parts",
+                "• Document customer choices in offers",
+                "• Maintain transparency about warranties",
+                "",
+                "**Legal Compliance:**",
+                "• Ensure proper labeling of unofficial parts",
+                "• Maintain safety standards",
+                "• Document customer agreements for unofficial parts"
+            ]
+        }
+    };
+
     const columns = [
-        // {
-        //     name: 'Boat Registration',
-        //     selector: row => row.countryCode,
-        //     sortable: true,
-        // },
         {
             name: 'Name',
             selector: row => row.name,
@@ -58,12 +222,12 @@ const WarehousePage = () => {
         },
         {
             name: 'Price',
-            selector: row => row.pricePerUnit,
+            selector: row => `${row.pricePerUnit || ''}€`,
             sortable: true,
         },
         {
             name: 'Service Category',
-            selector: row => row.serviceCategory.serviceName,
+            selector: row => row.serviceCategory?.serviceName || 'N/A',
             sortable: true,
         },
         {
@@ -73,12 +237,14 @@ const WarehousePage = () => {
                     <button
                         onClick={() => handleEdit(row)}
                         className="text-blue-500 hover:text-blue-700"
+                        title="Edit part"
                     >
                         <PencilIcon className="w-5 h-5" />
                     </button>
                     <button
                         onClick={() => handleDelete(row.id)}
                         className="text-red-500 hover:text-red-700"
+                        title="Delete part"
                     >
                         <TrashIcon className="w-5 h-5" />
                     </button>
@@ -166,16 +332,18 @@ const WarehousePage = () => {
     };
 
     const handleDelete = async (id) => {
-        try {
-            await axios.post(`${URL}/warehouse/delete/${id}`);
-            getData().then((res) => {
-                setData(res);
-                setFilteredData(res);
-            })
-            toast.success("Warehouse deleted successfully");
-        } catch (error) {
-            console.log(error);
-            toast.error("Error deleting warehouse");
+        if (window.confirm("Are you sure you want to delete this part? This action cannot be undone.")) {
+            try {
+                await axios.post(`${URL}/warehouse/delete/${id}`);
+                getData().then((res) => {
+                    setData(res);
+                    setFilteredData(res);
+                })
+                toast.success("Warehouse deleted successfully");
+            } catch (error) {
+                console.log(error);
+                toast.error("Error deleting warehouse");
+            }
         }
     };
 
@@ -218,20 +386,18 @@ const WarehousePage = () => {
         router.push('/warehouseHistory');
     };
 
-    // --- SheetJS Export Function ---
     const exportToExcel = () => {
         const exportData = filteredData.map(row => ({
-            'Boat Registration': row.countryCode || '',
-            Name: row.name || '',
-            Quantity: row.quantity || '',
-            Comment: row.comment || '',
-            Price: `${row.pricePerUnit || ''}€`,
+            'Name': row.name || '',
+            'Quantity': row.quantity || '',
+            'Comment': row.comment || '',
+            'Price': `${row.pricePerUnit || ''}€`,
             'Service Category': row.serviceCategory?.serviceName || ''
         }));
         const worksheet = XLSX.utils.json_to_sheet(exportData);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Warehouse');
-        XLSX.writeFile(workbook, 'warehouse_export.xlsx');
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Unofficial Warehouse');
+        XLSX.writeFile(workbook, 'unofficial_warehouse_export.xlsx');
     };
 
     useEffect(() => {
@@ -267,6 +433,15 @@ const WarehousePage = () => {
                             <SearchInput search={search} setSearch={setSearch} filteredData={filteredData} onSearchSelect={handleSearchSelect} />
                         </div>
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                            {/* Help Button */}
+                            <Button 
+                                onClick={() => setHelpModalOpen(true)}
+                                className="w-full sm:w-auto bg-blue-500 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-md transition-colors duration-200 flex items-center gap-2"
+                            >
+                                <QuestionMarkCircleIcon className="w-5 h-5" />
+                                <span>Help</span>
+                            </Button>
+                            
                             <Button onClick={openModal} className="w-full md:w-auto bg-[#dd3333] text-white">
                                 Create
                             </Button>
@@ -282,7 +457,6 @@ const WarehousePage = () => {
                         <table ref={tableRef} style={{ display: 'none' }}>
                             <thead>
                                 <tr>
-                                    <th>Boat Registration</th>
                                     <th>Name</th>
                                     <th>Quantity</th>
                                     <th>Comment</th>
@@ -293,7 +467,6 @@ const WarehousePage = () => {
                             <tbody>
                                 {filteredData.map((row) => (
                                     <tr key={row.id}>
-                                        {/* <td>{row.countryCode || ''}</td> */}
                                         <td>{row.name || ''}</td>
                                         <td>{row.quantity || ''}</td>
                                         <td>{row.comment || ''}</td>
@@ -315,63 +488,299 @@ const WarehousePage = () => {
                     </div>
                 </div>
             )}
-            <Modal isOpen={modalIsOpen} onClose={closeModal} title={editMode ? "Edit" : "Create"}>
+
+            {/* Help/Manual Modal */}
+            <Modal 
+                isOpen={helpModalOpen} 
+                onClose={() => setHelpModalOpen(false)} 
+                title="Unofficial Warehouse Management Help & User Manual"
+                size="xl"
+            >
+                <div className="max-h-[70vh] overflow-hidden flex flex-col">
+                    {/* Navigation Sidebar */}
+                    <div className="border-b pb-4 mb-4">
+                        <div className="flex space-x-2 overflow-x-auto pb-2">
+                            {Object.keys(helpSections).map(section => (
+                                <button
+                                    key={section}
+                                    onClick={() => setActiveHelpSection(section)}
+                                    className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${
+                                        activeHelpSection === section
+                                            ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    {helpSections[section].title.split(' ').slice(0, 3).join(' ')}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    {/* Content Area */}
+                    <div className="flex-1 overflow-y-auto pr-2">
+                        <div className="space-y-4">
+                            <h2 className="text-xl font-bold text-gray-800">
+                                {helpSections[activeHelpSection].title}
+                            </h2>
+                            
+                            <div className="space-y-3 text-gray-600">
+                                {helpSections[activeHelpSection].content.map((item, index) => {
+                                    if (item.includes('**')) {
+                                        const parts = item.split(/(\*\*.*?\*\*)/g);
+                                        return (
+                                            <p key={index} className="text-sm leading-relaxed">
+                                                {parts.map((part, i) => {
+                                                    if (part.startsWith('**') && part.endsWith('**')) {
+                                                        return (
+                                                            <span key={i} className="font-semibold text-gray-800">
+                                                                {part.slice(2, -2)}
+                                                            </span>
+                                                        );
+                                                    }
+                                                    return part;
+                                                })}
+                                            </p>
+                                        );
+                                    }
+                                    
+                                    if (item.startsWith('•')) {
+                                        return (
+                                            <div key={index} className="flex items-start">
+                                                <span className="mr-2 text-gray-400">•</span>
+                                                <span className="text-sm leading-relaxed">{item.substring(1)}</span>
+                                            </div>
+                                        );
+                                    }
+                                    
+                                    if (item === '') {
+                                        return <div key={index} className="h-3"></div>;
+                                    }
+                                    
+                                    return (
+                                        <p key={index} className="text-sm leading-relaxed">
+                                            {item}
+                                        </p>
+                                    );
+                                })}
+                            </div>
+                            
+                            {/* Quick Tips for Overview Section */}
+                            {activeHelpSection === 'overview' && (
+                                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                    <h3 className="font-semibold text-blue-700 mb-2">Quick Start Guide</h3>
+                                    <ul className="space-y-2 text-sm text-blue-600">
+                                        <li className="flex items-center gap-2">
+                                            <span className="text-blue-500">•</span>
+                                            <span>Use <strong>Search</strong> to quickly find parts</span>
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <span className="text-blue-500">•</span>
+                                            <span>Click <strong>Create</strong> to add new parts</span>
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <span className="text-blue-500">•</span>
+                                            <span>Update <strong>quantities</strong> when parts are used</span>
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <span className="text-blue-500">•</span>
+                                            <span>Export data regularly for <strong>backup</strong></span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            )}
+                            
+                            {/* Warning for Unofficial Warehouse */}
+                            {activeHelpSection === 'officialVsUnofficial' && (
+                                <div className="mt-4 p-3 bg-orange-50 rounded border border-orange-200">
+                                    <h4 className="font-semibold text-orange-700 mb-2">⚠️ Important Notice</h4>
+                                    <p className="text-sm text-orange-600">
+                                        Unofficial warehouse parts do not come with formal documentation or warranty. 
+                                        Always inform customers when using unofficial parts and document their agreement.
+                                    </p>
+                                </div>
+                            )}
+                            
+                            {/* Export Tips */}
+                            {activeHelpSection === 'searchExport' && (
+                                <div className="mt-4 p-3 bg-green-50 rounded border border-green-200">
+                                    <p className="text-sm text-green-700">
+                                        <span className="font-semibold">Tip:</span> Export your inventory data monthly for financial reporting and audit purposes.
+                                    </p>
+                                </div>
+                            )}
+                            
+                            {/* Category Assignment Tip */}
+                            {activeHelpSection === 'creatingParts' && (
+                                <div className="mt-4 p-3 bg-purple-50 rounded border border-purple-200">
+                                    <p className="text-sm text-purple-700">
+                                        <span className="font-semibold">Note:</span> Service category selection determines which offers this part will appear in. Choose carefully!
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    
+                    <div className="mt-6 pt-4 border-t flex justify-between items-center">
+                        <div className="text-sm text-gray-500">
+                            For additional support, contact system administrator
+                        </div>
+                        <div className="flex space-x-2">
+                            <Button
+                                variant="text"
+                                color="gray"
+                                onClick={() => setHelpModalOpen(false)}
+                                className="text-sm"
+                            >
+                                Close
+                            </Button>
+                            <Button
+                                color="blue"
+                                onClick={() => {
+                                    const printContent = `
+                                        <html>
+                                            <head>
+                                                <title>Unofficial Warehouse Manual - ${helpSections[activeHelpSection].title}</title>
+                                                <style>
+                                                    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+                                                    h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+                                                    h2 { color: #555; margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                                                    h3 { color: #666; margin-top: 15px; }
+                                                    h4 { color: #777; margin-top: 10px; }
+                                                    p { line-height: 1.6; margin: 10px 0; }
+                                                    ul { margin-left: 20px; }
+                                                    li { margin-bottom: 5px; line-height: 1.5; }
+                                                    .tip { background: #f0f8ff; padding: 10px; border-left: 4px solid #007bff; margin: 15px 0; }
+                                                    .warning { background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; margin: 15px 0; }
+                                                    .highlight { background-color: #f8f9fa; padding: 2px 4px; border-radius: 3px; font-weight: bold; }
+                                                    .note { background: #e7f1ff; padding: 10px; border-left: 4px solid #0d6efd; margin: 15px 0; }
+                                                </style>
+                                            </head>
+                                            <body>
+                                                <h1>${helpSections[activeHelpSection].title}</h1>
+                                                ${helpSections[activeHelpSection].content.map(item => {
+                                                    if (item.includes('**')) {
+                                                        const htmlItem = item.replace(/\*\*(.*?)\*\*/g, '<span class="highlight">$1</span>');
+                                                        return item.startsWith('•') ? `<p>${htmlItem}</p>` : `<p>${htmlItem}</p>`;
+                                                    }
+                                                    return item.startsWith('•') ? `<p>${item}</p>` : `<p>${item}</p>`;
+                                                }).join('')}
+                                                ${activeHelpSection === 'overview' ? `
+                                                    <div class="tip">
+                                                        <h3>Quick Start Guide</h3>
+                                                        <ul>
+                                                            <li>Use <span class="highlight">Search</span> to quickly find parts</li>
+                                                            <li>Click <span class="highlight">Create</span> to add new parts</li>
+                                                            <li>Update <span class="highlight">quantities</span> when parts are used</li>
+                                                            <li>Export data regularly for <span class="highlight">backup</span></li>
+                                                        </ul>
+                                                    </div>
+                                                ` : ''}
+                                                ${activeHelpSection === 'officialVsUnofficial' ? `
+                                                    <div class="warning">
+                                                        <h4>⚠️ Important Notice</h4>
+                                                        <p>Unofficial warehouse parts do not come with formal documentation or warranty. 
+                                                        Always inform customers when using unofficial parts and document their agreement.</p>
+                                                    </div>
+                                                ` : ''}
+                                                ${activeHelpSection === 'creatingParts' ? `
+                                                    <div class="note">
+                                                        <p><strong>Note:</strong> Service category selection determines which offers this part will appear in. Choose carefully!</p>
+                                                    </div>
+                                                ` : ''}
+                                                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">
+                                                    <p>Printed from Unofficial Warehouse Management System on ${new Date().toLocaleDateString()}</p>
+                                                    <p>© ${new Date().getFullYear()} Warehouse Management System. All rights reserved.</p>
+                                                </div>
+                                            </body>
+                                        </html>
+                                    `;
+                                    
+                                    const printWindow = window.open('', '_blank');
+                                    printWindow.document.write(printContent);
+                                    printWindow.document.close();
+                                    printWindow.print();
+                                }}
+                                className="text-sm"
+                            >
+                                Print This Section
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Create/Edit Modal */}
+            <Modal isOpen={modalIsOpen} onClose={closeModal} title={editMode ? "Edit Part" : "Add New Part to Unofficial Warehouse"}>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="mb-2 p-2 bg-blue-50 rounded border border-blue-200">
+                        <p className="text-sm text-blue-700">
+                            <span className="font-semibold">Unofficial Warehouse:</span> These parts do not have formal documentation or warranty.
+                        </p>
+                    </div>
+                    
                     <Input
-                        label="Name"
+                        label="Part Name *"
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
                         required
+                        placeholder="e.g., Engine Filter, Propeller"
                     />
                     <Input
-                        label="Quantity"
+                        label="Quantity *"
                         name="quantity"
+                        type="number"
                         value={formData.quantity}
                         onChange={handleChange}
                         required
+                        placeholder="Number of units in stock"
+                    />
+                    <Input
+                        label="Price per Unit (€) *"
+                        name="pricePerUnit"
+                        type="text"
+                        value={formData.pricePerUnit}
+                        onChange={handleChange}
+                        required
+                        placeholder="e.g., 45.50"
                     />
                     <Input
                         label="Comment"
                         name="comment"
                         value={formData.comment}
                         onChange={handleChange}
-                        required
-                    />
-                    {/* <Input
-                        label="Boat Registration"
-                        name="countryCode"
-                        value={formData.countryCode}
-                        onChange={handleChange}
-                        required
-                    /> */}
-                    <Input
-                        label="Price"
-                        name="pricePerUnit"
-                        value={formData.pricePerUnit}
-                        onChange={handleChange}
-                        required
+                        placeholder="Condition, specifications, notes"
                     />
                     <Select
-                        label="Service Category"
+                        label="Service Category *"
                         value={formData.serviceCategory}
                         onChange={handleSelectChange}
                         required
                         className="text-black"
                         labelProps={{ className: "text-black" }}
                     >
+                        <Option value={{ serviceName: '', priceInEuroWithoutVAT: '' }} className="text-black">
+                            Select a category...
+                        </Option>
                         {catagoryData.map((category) => (
                             <Option key={category.id} value={category} className="text-black">
-                                {category.serviceName}
+                                {category.serviceName} - {category.priceInEuroWithoutVAT}€
                             </Option>
                         ))}
                     </Select>
+                    
+                    <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
+                        <p className="text-sm text-yellow-700">
+                            <span className="font-semibold">Reminder:</span> This part will be added to the unofficial warehouse (no documentation/warranty).
+                        </p>
+                    </div>
+                    
                     <div className="flex justify-end gap-2">
                         <Button variant="text" color="red" onClick={closeModal} className="w-full md:w-auto">
                             <span>Cancel</span>
                         </Button>
                         <Button color="green" type="submit" className="w-full md:w-auto">
-                            <span>{editMode ? 'Update' : 'Add'}</span>
+                            <span>{editMode ? 'Update Part' : 'Add to Unofficial Warehouse'}</span>
                         </Button>
                     </div>
                 </form>

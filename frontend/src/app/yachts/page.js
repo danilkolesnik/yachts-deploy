@@ -5,7 +5,7 @@ import { URL } from '@/utils/constants';
 import Header from '@/component/header';
 import axios from 'axios';
 import DataTable from 'react-data-table-component';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { PencilIcon, TrashIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-toastify'; 
 import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
@@ -21,6 +21,8 @@ const YachtsPage = () => {
         searchCriteria: 'name',
         searchValue: '',
     });
+    const [helpModalOpen, setHelpModalOpen] = useState(false);
+    const [activeHelpSection, setActiveHelpSection] = useState('overview');
 
     const [formData, setFormData] = useState({
         name: '',
@@ -42,6 +44,119 @@ const YachtsPage = () => {
         description:''
     });
 
+    // Manual/Help content in English
+    const helpSections = {
+        overview: {
+            title: "Yacht Management System - User Manual",
+            content: [
+                "Welcome to the Yacht Management System! This comprehensive guide will help you manage all yacht-related information efficiently.",
+                "The system allows you to create, edit, view, and delete yacht records with detailed technical specifications and owner information.",
+                "Use the 'Help' button for quick access to this manual anytime."
+            ]
+        },
+        navigation: {
+            title: "Understanding the Yacht Table",
+            content: [
+                "**Boat Registration** - Official registration number/code of the yacht",
+                "**Date** - Date when the yacht record was created",
+                "**Name** - Yacht's given name",
+                "**Model** - Yacht model/manufacturer",
+                "**Owner Contacts** - Owner name and contact details (email, phone, address)",
+                "**Engine Hours** - Engine running hours for each motor",
+                "**Actions** - Edit or delete yacht records"
+            ]
+        },
+        creatingYacht: {
+            title: "Creating a New Yacht Record - Step by Step",
+            content: [
+                "**Required Fields:**",
+                "• Yacht Name - Unique identifier for the yacht",
+                "• Model - Manufacturer and model information",
+                "• Boat Registration - Official registration number",
+                "",
+                "**Owner Contacts Section (Optional):**",
+                "• Owner - Name of the yacht owner",
+                "• Email, Phone, Address - Contact details",
+                "",
+                "**Technical Specifications (Optional):**",
+                "• Engine Hours - Add motors and their running hours",
+                "• Generators - Specify if yacht has generators",
+                "• Air Conditioners - Specify air conditioning units",
+                "",
+                "**Tips:** Fill as much information as possible for comprehensive records."
+            ]
+        },
+        technicalSpecs: {
+            title: "Technical Specifications Guide",
+            content: [
+                "**Engine Hours Section:**",
+                "• Number of Motors - Select how many engines the yacht has",
+                "• For each motor: specify model and running hours",
+                "",
+                "**Generators Section:**",
+                "• First select if yacht has generators (Yes/No)",
+                "• If Yes, specify number of generators",
+                "• For each generator: model and running hours",
+                "",
+                "**Air Conditioners Section:**",
+                "• Select if yacht has AC units (Yes/No)",
+                "• If Yes, specify number of AC units",
+                "• For each AC: model and running hours",
+                "",
+                "**Description:** Add any additional notes or special requirements"
+            ]
+        },
+        searching: {
+            title: "Searching and Filtering Yachts",
+            content: [
+                "**Search by:** Select search criteria:",
+                "• Name - Search by yacht name",
+                "• Model - Search by yacht model",
+                "",
+                "**Search box:** Enter text to filter yacht list",
+                "",
+                "**Real-time filtering:** Results update as you type",
+                "",
+                "**Tips:** Use registration numbers for precise searches"
+            ]
+        },
+        editing: {
+            title: "Editing Yacht Information",
+            content: [
+                "To edit a yacht record:",
+                "1. Click the **Edit icon (pencil)** in the Actions column",
+                "2. Modify any field in the edit form",
+                "3. Click **Save** to update",
+                "",
+                "**Important:**",
+                "• All changes are saved immediately",
+                "• You can update technical specifications anytime",
+                "• Owner information can be added or modified",
+                "",
+                "**Deleting:** Use the trash icon to remove yacht records permanently"
+            ]
+        },
+        bestPractices: {
+            title: "Best Practices & Tips",
+            content: [
+                "**Data Accuracy:**",
+                "• Always verify boat registration numbers",
+                "• Keep engine hours up to date",
+                "• Include all owner contact information",
+                "",
+                "**Organization:**",
+                "• Use consistent naming conventions",
+                "• Update records after maintenance",
+                "• Add detailed descriptions for special requirements",
+                "",
+                "**Security:**",
+                "• Keep owner contact information confidential",
+                "• Regular backups of yacht data",
+                "• Limit editing permissions as needed"
+            ]
+        }
+    };
+
     const columns = [
         {
             name: 'Boat Registration',
@@ -50,7 +165,7 @@ const YachtsPage = () => {
         },
         {
             name: "Date",
-            selector: row => row.createdAt,
+            selector: row => new Date(row.createdAt).toLocaleDateString(),
             sortable: true,
         },
         {
@@ -63,15 +178,9 @@ const YachtsPage = () => {
             selector: row => row.model,
             sortable: true,
         },
-        // {
-        //     name: 'Repair Time',
-        //     selector: row => `${row.repairTime}h`,
-        //     sortable: true,
-        // },
         {
             name: 'Owner Contacts',
             selector: row => {
-                // Support both old and new format
                 if (row.ownerContacts) return row.ownerContacts;
                 const owner = row.owner || '';
                 const contacts = [];
@@ -85,7 +194,6 @@ const YachtsPage = () => {
         {
             name: 'Engine Hours',
             selector: row => {
-                // Support both old and new format
                 if (row.engineHours) return row.engineHours;
                 if (row.engines && row.engines.length > 0) {
                     return row.engines.map((e, i) => `Motor ${i + 1}: ${e.hours || 0}h`).join(', ');
@@ -101,12 +209,14 @@ const YachtsPage = () => {
                     <button
                         onClick={() => handleEdit(row)}
                         className="text-blue-500 hover:text-blue-700"
+                        title="Edit yacht"
                     >
                         <PencilIcon className="w-5 h-5" />
                     </button>
                     <button
                         onClick={() => handleDelete(row.id)}
                         className="text-red-500 hover:text-red-700"
+                        title="Delete yacht"
                     >
                         <TrashIcon className="w-5 h-5" />
                     </button>
@@ -145,10 +255,6 @@ const YachtsPage = () => {
                 toast.error("Error: Model is required");
                 return;
             }
-            // if(formData.repairTime.trim() === ''){
-            //     toast.error("Error: Repair Time is required");
-            //     return;
-            // }
             if(formData.countryCode.trim() === ''){
                 toast.error("Error: Country code is required");
                 return;
@@ -191,7 +297,6 @@ const YachtsPage = () => {
     };
 
     const handleEdit = (yacht) => {
-        // Initialize with default values if missing
         const initializedYacht = {
             ...yacht,
             owner: yacht.owner || '',
@@ -234,15 +339,17 @@ const YachtsPage = () => {
     };
 
     const handleDelete = async (id) => {
-        try {
-            const response = await axios.delete(`${URL}/yachts/${id}`);
-            if (response.data.code === 200) {
-                fetchYachts();
-                toast.success("Yacht deleted successfully");
+        if (window.confirm("Are you sure you want to delete this yacht? This action cannot be undone.")) {
+            try {
+                const response = await axios.delete(`${URL}/yachts/${id}`);
+                if (response.data.code === 200) {
+                    fetchYachts();
+                    toast.success("Yacht deleted successfully");
+                }
+            } catch (error) {
+                console.error('Error deleting yacht:', error);
+                toast.error("Error deleting yacht");
             }
-        } catch (error) {
-            console.error('Error deleting yacht:', error);
-            toast.error("Error deleting yacht");
         }
     };
 
@@ -298,7 +405,6 @@ const YachtsPage = () => {
         setFormData({ ...formData, airConditioners });
     };
 
-    // Edit handlers
     const handleEditEngineCountChange = (count) => {
         const numCount = parseInt(count) || 0;
         const engines = Array.from({ length: numCount }, (_, i) => 
@@ -387,6 +493,15 @@ const YachtsPage = () => {
                                 </div>
                             </div>
                             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto justify-end">
+                                {/* Help Button */}
+                                <Button 
+                                    onClick={() => setHelpModalOpen(true)}
+                                    className="w-full sm:w-auto bg-blue-500 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-md transition-colors duration-200 flex items-center gap-2"
+                                >
+                                    <QuestionMarkCircleIcon className="w-5 h-5" />
+                                    <span>Help</span>
+                                </Button>
+                                
                                 <Button onClick={() => setModalIsOpen(true)} className="w-full sm:w-auto bg-[#dd3333] text-white">
                                     Create
                                 </Button>
@@ -405,6 +520,197 @@ const YachtsPage = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Help/Manual Modal */}
+                <Modal 
+                    isOpen={helpModalOpen} 
+                    onClose={() => setHelpModalOpen(false)} 
+                    title="Yacht Management Help & User Manual"
+                    size="xl"
+                >
+                    <div className="max-h-[70vh] overflow-hidden flex flex-col">
+                        {/* Navigation Sidebar */}
+                        <div className="border-b pb-4 mb-4">
+                            <div className="flex space-x-2 overflow-x-auto pb-2">
+                                {Object.keys(helpSections).map(section => (
+                                    <button
+                                        key={section}
+                                        onClick={() => setActiveHelpSection(section)}
+                                        className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${
+                                            activeHelpSection === section
+                                                ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {helpSections[section].title.split(' ').slice(0, 3).join(' ')}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        
+                        {/* Content Area */}
+                        <div className="flex-1 overflow-y-auto pr-2">
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold text-gray-800">
+                                    {helpSections[activeHelpSection].title}
+                                </h2>
+                                
+                                <div className="space-y-3 text-gray-600">
+                                    {helpSections[activeHelpSection].content.map((item, index) => {
+                                        if (item.includes('**')) {
+                                            const parts = item.split(/(\*\*.*?\*\*)/g);
+                                            return (
+                                                <p key={index} className="text-sm leading-relaxed">
+                                                    {parts.map((part, i) => {
+                                                        if (part.startsWith('**') && part.endsWith('**')) {
+                                                            return (
+                                                                <span key={i} className="font-semibold text-gray-800">
+                                                                    {part.slice(2, -2)}
+                                                                </span>
+                                                            );
+                                                        }
+                                                        return part;
+                                                    })}
+                                                </p>
+                                            );
+                                        }
+                                        
+                                        if (item.startsWith('•')) {
+                                            return (
+                                                <div key={index} className="flex items-start">
+                                                    <span className="mr-2 text-gray-400">•</span>
+                                                    <span className="text-sm leading-relaxed">{item.substring(1)}</span>
+                                                </div>
+                                            );
+                                        }
+                                        
+                                        if (item === '') {
+                                            return <div key={index} className="h-3"></div>;
+                                        }
+                                        
+                                        return (
+                                            <p key={index} className="text-sm leading-relaxed">
+                                                {item}
+                                            </p>
+                                        );
+                                    })}
+                                </div>
+                                
+                                {/* Quick Tips for Overview Section */}
+                                {activeHelpSection === 'overview' && (
+                                    <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                        <h3 className="font-semibold text-blue-700 mb-2">Quick Start Guide</h3>
+                                        <ul className="space-y-2 text-sm text-blue-600">
+                                            <li className="flex items-center gap-2">
+                                                <span className="text-blue-500">•</span>
+                                                <span>Click <strong>Create</strong> to add a new yacht</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="text-blue-500">•</span>
+                                                <span>Use <strong>Search</strong> to quickly find yachts</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="text-blue-500">•</span>
+                                                <span>Click <strong>Edit</strong> (pencil icon) to update information</span>
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <span className="text-blue-500">•</span>
+                                                <span>Complete all required fields marked with *</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                )}
+                                
+                                {/* Field Requirements for Creating Yacht */}
+                                {activeHelpSection === 'creatingYacht' && (
+                                    <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
+                                        <p className="text-sm text-yellow-700">
+                                            <span className="font-semibold">Note:</span> Only <strong>Yacht Name</strong>, <strong>Model</strong>, and <strong>Boat Registration</strong> are required fields. All other information is optional but recommended.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="mt-6 pt-4 border-t flex justify-between items-center">
+                            <div className="text-sm text-gray-500">
+                                For additional support, contact system administrator
+                            </div>
+                            <div className="flex space-x-2">
+                                <Button
+                                    variant="text"
+                                    color="gray"
+                                    onClick={() => setHelpModalOpen(false)}
+                                    className="text-sm"
+                                >
+                                    Close
+                                </Button>
+                                <Button
+                                    color="blue"
+                                    onClick={() => {
+                                        const printContent = `
+                                            <html>
+                                                <head>
+                                                    <title>Yacht Management Manual - ${helpSections[activeHelpSection].title}</title>
+                                                    <style>
+                                                        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+                                                        h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+                                                        h2 { color: #555; margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                                                        h3 { color: #666; margin-top: 15px; }
+                                                        p { line-height: 1.6; margin: 10px 0; }
+                                                        ul { margin-left: 20px; }
+                                                        li { margin-bottom: 5px; line-height: 1.5; }
+                                                        .tip { background: #f0f8ff; padding: 10px; border-left: 4px solid #007bff; margin: 15px 0; }
+                                                        .note { background: #fff8e1; padding: 10px; border-left: 4px solid #ffc107; margin: 15px 0; }
+                                                        .highlight { background-color: #f8f9fa; padding: 2px 4px; border-radius: 3px; font-weight: bold; }
+                                                    </style>
+                                                </head>
+                                                <body>
+                                                    <h1>${helpSections[activeHelpSection].title}</h1>
+                                                    ${helpSections[activeHelpSection].content.map(item => {
+                                                        if (item.includes('**')) {
+                                                            const htmlItem = item.replace(/\*\*(.*?)\*\*/g, '<span class="highlight">$1</span>');
+                                                            return item.startsWith('•') ? `<p>${htmlItem}</p>` : `<p>${htmlItem}</p>`;
+                                                        }
+                                                        return item.startsWith('•') ? `<p>${item}</p>` : `<p>${item}</p>`;
+                                                    }).join('')}
+                                                    ${activeHelpSection === 'overview' ? `
+                                                        <div class="tip">
+                                                            <h3>Quick Start Guide</h3>
+                                                            <ul>
+                                                                <li>Click <span class="highlight">Create</span> to add a new yacht</li>
+                                                                <li>Use <span class="highlight">Search</span> to quickly find yachts</li>
+                                                                <li>Click <span class="highlight">Edit</span> (pencil icon) to update information</li>
+                                                                <li>Complete all required fields marked with *</li>
+                                                            </ul>
+                                                        </div>
+                                                    ` : ''}
+                                                    ${activeHelpSection === 'creatingYacht' ? `
+                                                        <div class="note">
+                                                            <p><strong>Note:</strong> Only <span class="highlight">Yacht Name</span>, <span class="highlight">Model</span>, and <span class="highlight">Boat Registration</span> are required fields. All other information is optional but recommended.</p>
+                                                        </div>
+                                                    ` : ''}
+                                                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666;">
+                                                        <p>Printed from Yacht Management System on ${new Date().toLocaleDateString()}</p>
+                                                        <p>© ${new Date().getFullYear()} Yacht Management System. All rights reserved.</p>
+                                                    </div>
+                                                </body>
+                                            </html>
+                                        `;
+                                        
+                                        const printWindow = window.open('', '_blank');
+                                        printWindow.document.write(printContent);
+                                        printWindow.document.close();
+                                        printWindow.print();
+                                    }}
+                                    className="text-sm"
+                                >
+                                    Print This Section
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </Modal>
 
                 {/* Create Modal */}
                 <Modal isOpen={modalIsOpen} onClose={() => {
@@ -431,20 +737,27 @@ const YachtsPage = () => {
                 }} title="Add New Yacht">
                     <div className="max-h-[70vh] overflow-y-auto pr-2 text-black">
                         <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="mb-2 p-2 bg-blue-50 rounded border border-blue-200">
+                            <p className="text-sm text-blue-700">
+                                <span className="font-semibold">Required Fields:</span> Yacht Name, Model, and Boat Registration
+                            </p>
+                        </div>
                         <Input
-                            label="Yacht Name"
+                            label="Yacht Name *"
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
+                            required
                         />
                         <Input
-                            label="Model"
+                            label="Model *"
                             name="model"
                             value={formData.model}
                             onChange={handleChange}
+                            required
                         />
                         <Input
-                            label="Boat Registration"
+                            label="Boat Registration *"
                             name="countryCode"
                             value={formData.countryCode}
                             onChange={handleChange}
@@ -453,7 +766,7 @@ const YachtsPage = () => {
                         
                         {/* Owner Contacts Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold">Owner Contacts</h3>
+                            <h3 className="text-lg font-semibold">Owner Contacts (Optional)</h3>
                             <Input
                                 label="Owner"
                                 name="owner"
@@ -487,7 +800,7 @@ const YachtsPage = () => {
 
                         {/* Engine Hours Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold text-black">Engine Hours (Motors)</h3>
+                            <h3 className="text-lg font-semibold text-black">Engine Hours (Motors) (Optional)</h3>
                             <Select
                                 label="Number of Motors"
                                 value={formData.engineCount}
@@ -526,7 +839,7 @@ const YachtsPage = () => {
 
                         {/* Generators Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold text-black">Generators</h3>
+                            <h3 className="text-lg font-semibold text-black">Generators (Optional)</h3>
                             <Select
                                 label="Generator(s)"
                                 value={formData.hasGenerators}
@@ -587,7 +900,7 @@ const YachtsPage = () => {
 
                         {/* Air Conditioners Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold text-black">Air Conditioners</h3>
+                            <h3 className="text-lg font-semibold text-black">Air Conditioners (Optional)</h3>
                             <Select
                                 label="Air Conditioner(s)"
                                 value={formData.hasAirConditioners}
@@ -647,7 +960,7 @@ const YachtsPage = () => {
                         </div>
 
                         <Input
-                            label="Description"
+                            label="Description (Optional)"
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
@@ -668,20 +981,27 @@ const YachtsPage = () => {
                 <Modal isOpen={editModalIsOpen} onClose={() => setEditModalIsOpen(false)} title="Edit Yacht">
                     <div className="max-h-[70vh] overflow-y-auto pr-2 text-black">
                         <form onSubmit={handleEditSubmit} className="space-y-4">
+                        <div className="mb-2 p-2 bg-blue-50 rounded border border-blue-200">
+                            <p className="text-sm text-blue-700">
+                                <span className="font-semibold">Required Fields:</span> Yacht Name, Model, and Boat Registration
+                            </p>
+                        </div>
                         <Input
-                            label="Yacht Name"
+                            label="Yacht Name *"
                             name="name"
                             value={editingYacht?.name || ''}
                             onChange={handleEditChange}
+                            required
                         />
                         <Input
-                            label="Model"
+                            label="Model *"
                             name="model"
                             value={editingYacht?.model || ''}
                             onChange={handleEditChange}
+                            required
                         />
                         <Input
-                            label="Boat Registration"
+                            label="Boat Registration *"
                             name="countryCode"
                             value={editingYacht?.countryCode || ''}
                             onChange={handleEditChange}
@@ -690,7 +1010,7 @@ const YachtsPage = () => {
                         
                         {/* Owner Contacts Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold text-black">Owner Contacts</h3>
+                            <h3 className="text-lg font-semibold text-black">Owner Contacts (Optional)</h3>
                             <Input
                                 label="Owner"
                                 name="owner"
@@ -724,7 +1044,7 @@ const YachtsPage = () => {
 
                         {/* Engine Hours Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold text-black">Engine Hours (Motors)</h3>
+                            <h3 className="text-lg font-semibold text-black">Engine Hours (Motors) (Optional)</h3>
                             <Select
                                 label="Number of Motors"
                                 value={editingYacht?.engineCount || ''}
@@ -763,7 +1083,7 @@ const YachtsPage = () => {
 
                         {/* Generators Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold text-black">Generators</h3>
+                            <h3 className="text-lg font-semibold text-black">Generators (Optional)</h3>
                             <Select
                                 label="Generator(s)"
                                 value={editingYacht?.hasGenerators || ''}
@@ -824,7 +1144,7 @@ const YachtsPage = () => {
 
                         {/* Air Conditioners Section */}
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="text-lg font-semibold text-black">Air Conditioners</h3>
+                            <h3 className="text-lg font-semibold text-black">Air Conditioners (Optional)</h3>
                             <Select
                                 label="Air Conditioner(s)"
                                 value={editingYacht?.hasAirConditioners || ''}
@@ -884,7 +1204,7 @@ const YachtsPage = () => {
                         </div>
 
                         <Input
-                            label="Description"
+                            label="Description (Optional)"
                             name="description"
                             value={editingYacht?.description || ''}
                             onChange={handleEditChange}
@@ -905,4 +1225,4 @@ const YachtsPage = () => {
     );
 };
 
-export default YachtsPage; 
+export default YachtsPage;
