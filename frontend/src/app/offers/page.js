@@ -251,11 +251,18 @@ const OfferPage = () => {
     const columns = [
         {
             name: 'ID',
-            selector: row => (
-                <Link href={`/offers/${row.id}`} className="text-black">
-                    <div className="text-blue-500 hover:underline">{row.id}</div>
-                </Link>
-            ),
+            selector: row => {
+                const shortId = row.id.split('-')[0].replace(/[a-z]/gi, '');
+                const numericId = parseInt(shortId) || row.id.substring(0, 8);
+                
+                return (
+                    <Link href={`/offers/${row.id}`} className="text-black">
+                        <div className="text-blue-500 hover:underline">
+                            #{numericId}
+                        </div>
+                    </Link>
+                );
+            },
             sortable: true,
         },
         {
