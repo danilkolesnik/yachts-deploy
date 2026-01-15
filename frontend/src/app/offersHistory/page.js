@@ -26,13 +26,13 @@ const OffersHistoryPage = () => {
         }
     };
 
-    useEffect(() => {
-        const fetchAndSortHistory = async () => {
-            await getOfferHistory();
-            // setOfferHistory(prevHistory => prevHistory.sort((a, b) => new Date(b.changeDate) - new Date(a.changeDate)));
-        };
-        fetchAndSortHistory();
-    }, []);
+    // useEffect(() => {
+    //     const fetchAndSortHistory = async () => {
+    //         await getOfferHistory();
+    //         // setOfferHistory(prevHistory => prevHistory.sort((a, b) => new Date(b.changeDate) - new Date(a.changeDate)));
+    //     };
+    //     fetchAndSortHistory();
+    // }, []);
 
     const formatKey = (key) => {
         return key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, str => str.toUpperCase());
