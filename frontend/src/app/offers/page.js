@@ -213,7 +213,7 @@ const OfferPage = () => {
         {
             name: 'Actions',
             cell: row => (
-                <div className="flex space-x-2 mr-[60px]">
+                <div className="flex space-x-2 ml-[60px]">
                     <button
                         onClick={() => handleHistoryExportPdf(row.id)}
                         disabled={pdfExportLoading[row.id]}
