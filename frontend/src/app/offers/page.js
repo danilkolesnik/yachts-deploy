@@ -1629,7 +1629,7 @@ const OfferPage = () => {
                 >
                     <div className="space-y-6">
                         {/* Filters Section */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-4 bg-gray-50 rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-4 bg-gray-50 rounded-lg w-full overflow-y-auto">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Date
@@ -1650,7 +1650,7 @@ const OfferPage = () => {
                                 <Select
                                     value={historyFilters.year}
                                     onChange={(value) => handleHistorySelectChange(value, 'year')}
-                                    className="border-gray-300 rounded-md [&>div]:text-black"
+                                    className="border-gray-300 rounded-md text-black"
                                     labelProps={{ className: 'hidden' }}
                                 >
                                     <Option value="">All Years</Option>
