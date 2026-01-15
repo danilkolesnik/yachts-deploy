@@ -226,16 +226,16 @@ const OfferPage = () => {
                         {pdfExportLoading[row.id] ? '...' : 'PDF'}
                     </button>
                     <button
-                        onClick={() => handleHistorySendEmail(row.id)}
-                        disabled={emailSendingLoading[row.id]}
-                        className={`px-3 py-1 text-white rounded flex items-center gap-1 ${
-                            emailSendingLoading[row.id] 
-                                ? 'bg-gray-400 cursor-not-allowed' 
-                                : 'bg-orange-500 hover:bg-orange-700'
-                        }`}
-                    >
-                        {emailSendingLoading[row.id] ? '...' : 'Email'}
-                    </button>
+                    onClick={() => handleSendEmail(row.id)}
+                    disabled={emailSendingLoading[row.id]}
+                    className={`px-2 py-2 text-white rounded ${
+                        emailSendingLoading[row.id] 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-orange-500 hover:bg-orange-700'
+                    }`}
+                >
+                    {emailSendingLoading[row.id] ? 'Sending...' : 'Send Email'}
+                </button>
                     <button
                         onClick={() => handlePrintOffer(row)}
                         className="px-3 py-1 text-white rounded bg-blue-500 hover:bg-blue-700 flex items-center gap-1"
