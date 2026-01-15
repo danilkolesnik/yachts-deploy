@@ -1629,165 +1629,86 @@ const OfferPage = () => {
                 >
                     <div className="space-y-6">
                         {/* Filters Section */}
-                        <div className="w-full">
-    <div className="p-6 bg-gradient-to-br from-gray-50 to-white rounded-2xl shadow-lg border border-gray-100">
-        <h2 className="text-xl font-bold text-gray-800 mb-6 pb-3 border-b border-gray-200">
-            Boat History Filters
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
-            <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                    📅 Date
-                </label>
-                <div className="relative">
-                    <input
-                        type="date"
-                        name="date"
-                        value={historyFilters.date}
-                        onChange={handleHistoryFilterChange}
-                        className="w-full border border-gray-200 px-4 py-2.5 rounded-xl 
-                                 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                 focus:border-blue-400 text-gray-800 bg-white
-                                 shadow-sm hover:border-gray-300 transition-all duration-200"
-                    />
-                </div>
-            </div>
-            
-            <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                    📊 Year
-                </label>
-                <div className="relative">
-                    <Select
-                        value={historyFilters.year}
-                        onChange={(value) => handleHistorySelectChange(value, 'year')}
-                        className="border-gray-200 rounded-xl bg-white shadow-sm"
-                        labelProps={{ className: 'hidden' }}
-                    >
-                        <Option value="" className="text-gray-500 py-2">
-                            <div className="flex items-center">
-                                <span>All Years</span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-4 bg-gray-50 rounded-lg w-full">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Date
+                                </label>
+                                <input
+                                    type="date"
+                                    name="date"
+                                    value={historyFilters.date}
+                                    onChange={handleHistoryFilterChange}
+                                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+                                />
                             </div>
-                        </Option>
-                        {years.map(year => (
-                            <Option key={year.value} value={year.value} 
-                                    className="text-gray-700 hover:bg-blue-50 py-2">
-                                <div className="flex items-center">
-                                    <span className="ml-2">{year.label}</span>
-                                </div>
-                            </Option>
-                        ))}
-                    </Select>
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        
-            <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                    📅 Month
-                </label>
-                <div className="relative">
-                    <Select
-                        value={historyFilters.month}
-                        onChange={(value) => handleHistorySelectChange(value, 'month')}
-                        className="border-gray-200 rounded-xl bg-white shadow-sm"
-                        labelProps={{ className: 'hidden' }}
-                    >
-                        <Option value="" className="text-gray-500 py-2">
-                            <div className="flex items-center">
-                                <span>All Months</span>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Year
+                                </label>
+                                <Select
+                                    value={historyFilters.year}
+                                    onChange={(value) => handleHistorySelectChange(value, 'year')}
+                                    className="border-gray-300 rounded-md text-black"
+                                    labelProps={{ className: 'hidden' }}
+                                >
+                                    <Option value="">All Years</Option>
+                                    {years.map(year => (
+                                        <Option key={year.value} value={year.value}>
+                                            {year.label}
+                                        </Option>
+                                    ))}
+                                </Select>
                             </div>
-                        </Option>
-                        {months.map(month => (
-                            <Option key={month.value} value={month.value} 
-                                    className="text-gray-700 hover:bg-blue-50 py-2">
-                                <div className="flex items-center">
-                                    <span className="ml-2">{month.label}</span>
-                                </div>
-                            </Option>
-                        ))}
-                    </Select>
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        
-            <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                    🚤 Boat Name
-                </label>
-                <div className="relative">
-                    <input
-                        type="text"
-                        name="boatName"
-                        value={historyFilters.boatName}
-                        onChange={handleHistoryFilterChange}
-                        placeholder="Search boat name..."
-                        className="w-full border border-gray-200 px-4 py-2.5 rounded-xl 
-                                 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                 focus:border-blue-400 text-gray-800 bg-white
-                                 shadow-sm hover:border-gray-300 transition-all duration-200
-                                 placeholder:text-gray-400"
-                    />
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-            <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
-                    👤 Owner Name
-                </label>
-                <div className="relative">
-                    <input
-                        type="text"
-                        name="ownerName"
-                        value={historyFilters.ownerName}
-                        onChange={handleHistoryFilterChange}
-                        placeholder="Search owner name..."
-                        className="w-full border border-gray-200 px-4 py-2.5 rounded-xl 
-                                 focus:outline-none focus:ring-2 focus:ring-blue-500 
-                                 focus:border-blue-400 text-gray-800 bg-white
-                                 shadow-sm hover:border-gray-300 transition-all duration-200
-                                 placeholder:text-gray-400"
-                    />
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
-            <button
-                onClick={() => {/* Reset filter logic */}}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 
-                         rounded-lg hover:bg-gray-200 transition-colors duration-200"
-            >
-                Reset Filters
-            </button>
-            <button
-                onClick={() => {/* Apply filter logic */}}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 
-                         rounded-lg hover:bg-blue-700 transition-colors duration-200"
-            >
-                Apply Filters
-            </button>
-        </div>
-    </div>
-</div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Month
+                                </label>
+                                <Select
+                                    value={historyFilters.month}
+                                    onChange={(value) => handleHistorySelectChange(value, 'month')}
+                                    className="border-gray-300 rounded-md [&>div]:text-black"
+                                    labelProps={{ className: 'hidden' }}
+                                >
+                                    <Option value="">All Months</Option>
+                                    {months.map(month => (
+                                        <Option key={month.value} value={month.value}>
+                                            {month.label}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Boat Name
+                                </label>
+                                <input
+                                    type="text"
+                                    name="boatName"
+                                    value={historyFilters.boatName}
+                                    onChange={handleHistoryFilterChange}
+                                    placeholder="Search by boat name..."
+                                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Owner Name
+                                </label>
+                                <input
+                                    type="text"
+                                    name="ownerName"
+                                    value={historyFilters.ownerName}
+                                    onChange={handleHistoryFilterChange}
+                                    placeholder="Search by owner name..."
+                                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
                         
                         {/* Results Count */}
                         <div className="flex justify-between items-center">
