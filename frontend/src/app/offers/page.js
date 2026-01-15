@@ -223,7 +223,6 @@ const OfferPage = () => {
                                 : 'bg-green-500 hover:bg-green-700'
                         }`}
                     >
-                        <DocumentArrowDownIcon className="w-4 h-4" />
                         {pdfExportLoading[row.id] ? '...' : 'PDF'}
                     </button>
                     <button
@@ -235,14 +234,12 @@ const OfferPage = () => {
                                 : 'bg-orange-500 hover:bg-orange-700'
                         }`}
                     >
-                        <EnvelopeIcon className="w-4 h-4" />
                         {emailSendingLoading[row.id] ? '...' : 'Email'}
                     </button>
                     <button
                         onClick={() => handlePrintOffer(row)}
                         className="px-3 py-1 text-white rounded bg-blue-500 hover:bg-blue-700 flex items-center gap-1"
                     >
-                        <PrinterIcon className="w-4 h-4" />
                         Print
                     </button>
                 </div>
