@@ -17,7 +17,7 @@ const OffersHistoryPage = () => {
     const getOfferHistory = async () => {
         try {
             setLoading(true);
-            const res = await axios.get(`${URL}/offer/history`);
+            const res = await axios.get(`${URL}/offer`);
             setOfferHistory(res.data.data);
         } catch (error) {
             console.error(error);

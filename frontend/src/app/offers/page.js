@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { statusStyles } from '@/utils/statusStyles';
 import { Button, Select, Option } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
-import { PencilIcon, TrashIcon, QuestionMarkCircleIcon, InformationCircleIcon } from '@heroicons/react/24/solid';
+import { PencilIcon, TrashIcon, QuestionMarkCircleIcon, InformationCircleIcon, DocumentArrowDownIcon, EnvelopeIcon, PrinterIcon } from '@heroicons/react/24/solid';
 import { useAppSelector } from '@/lib/hooks';
 import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -52,6 +52,19 @@ const OfferPage = () => {
     // State for manual/help
     const [helpModalOpen, setHelpModalOpen] = useState(false);
     const [activeHelpSection, setActiveHelpSection] = useState('overview');
+
+    // History modal states
+    const [historyModalOpen, setHistoryModalOpen] = useState(false);
+    const [historyFilters, setHistoryFilters] = useState({
+        date: '',
+        year: '',
+        month: '',
+        boatName: '',
+        ownerName: ''
+    });
+    const [filteredHistoryData, setFilteredHistoryData] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyData, setHistoryData] = useState([]);
 
     const [formData, setFormData] = useState({
         customerFullName: '',
@@ -248,6 +261,106 @@ const OfferPage = () => {
         }
     };
 
+    // History table columns
+    const historyColumns = [
+        {
+            name: 'ID',
+            selector: row => {
+                const shortId = row.id.split('-')[0].replace(/[a-z]/gi, '');
+                const numericId = parseInt(shortId) || row.id.substring(0, 8);
+                return `#${numericId}`;
+            },
+            sortable: true,
+        },
+        {
+            name: 'Date',
+            selector: row => new Date(row.createdAt).toLocaleString(),
+            sortable: true,
+        },
+        {
+            name: 'Customer',
+            selector: row => row.customerFullName || '',
+            sortable: true,
+        },
+        {
+            name: 'Yacht Name',
+            selector: row => {
+                if (Array.isArray(row.yachts) && row.yachts.length > 0) {
+                    return row.yachts.map(yacht => yacht.name).join(', ');
+                } else if (row.yachtName) {
+                    return row.yachtName;
+                }
+                return 'N/A';
+            },
+            sortable: true,
+        },
+        {
+            name: 'Owner Name',
+            selector: row => {
+                if (Array.isArray(row.yachts) && row.yachts.length > 0) {
+                    const owners = row.yachts.map(yacht => yacht.userName).filter(Boolean);
+                    return owners.length > 0 ? owners.join(', ') : row.customerFullName || 'N/A';
+                }
+                return row.customerFullName || 'N/A';
+            },
+            sortable: true,
+        },
+        {
+            name: 'Status',
+            selector: row => row.status,
+            sortable: true,
+            cell: row => (
+                <span style={{
+                    ...statusStyles[row.status],
+                    padding: '5px 10px',
+                    borderRadius: '5px'
+                }}>
+                    {row.status}
+                </span>
+            )
+        },
+        {
+            name: 'Actions',
+            cell: row => (
+                <div className="flex space-x-2">
+                    <button
+                        onClick={() => handleHistoryExportPdf(row.id)}
+                        disabled={pdfExportLoading[row.id]}
+                        className={`px-3 py-1 text-white rounded flex items-center gap-1 ${
+                            pdfExportLoading[row.id] 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-green-500 hover:bg-green-700'
+                        }`}
+                    >
+                        <DocumentArrowDownIcon className="w-4 h-4" />
+                        {pdfExportLoading[row.id] ? '...' : 'PDF'}
+                    </button>
+                    <button
+                        onClick={() => handleHistorySendEmail(row.id)}
+                        disabled={emailSendingLoading[row.id]}
+                        className={`px-3 py-1 text-white rounded flex items-center gap-1 ${
+                            emailSendingLoading[row.id] 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-orange-500 hover:bg-orange-700'
+                        }`}
+                    >
+                        <EnvelopeIcon className="w-4 h-4" />
+                        {emailSendingLoading[row.id] ? '...' : 'Email'}
+                    </button>
+                    <button
+                        onClick={() => handlePrintOffer(row)}
+                        className="px-3 py-1 text-white rounded bg-blue-500 hover:bg-blue-700 flex items-center gap-1"
+                    >
+                        <PrinterIcon className="w-4 h-4" />
+                        Print
+                    </button>
+                </div>
+            ),
+            ignoreRowClick: true,
+            button: true.toString(),
+        },
+    ];
+
     const columns = [
         {
             name: 'ID',
@@ -405,7 +518,297 @@ const OfferPage = () => {
         }] : []),
     ];
 
-    // Functions remain the same as before...
+    // Functions for history modal
+    const openHistoryModal = async () => {
+        setHistoryModalOpen(true);
+        setHistoryLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${URL}/offer`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }   
+            });
+            setHistoryData(res.data.data || []);
+            setFilteredHistoryData(res.data.data || []);
+        } catch (error) {
+            console.error('Error loading history:', error);
+            toast.error("Error loading history data");
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
+
+    const closeHistoryModal = () => {
+        setHistoryModalOpen(false);
+        setHistoryFilters({
+            date: '',
+            year: '',
+            month: '',
+            boatName: '',
+            ownerName: ''
+        });
+        setFilteredHistoryData([]);
+    };
+
+    const handleHistoryFilterChange = (e) => {
+        const { name, value } = e.target;
+        const newFilters = { ...historyFilters, [name]: value };
+        setHistoryFilters(newFilters);
+        
+        // Apply filters
+        applyHistoryFilters(newFilters);
+    };
+
+    const applyHistoryFilters = (filters) => {
+        let filtered = historyData;
+
+        if (filters.date) {
+            const filterDate = new Date(filters.date);
+            filtered = filtered.filter(offer => {
+                const offerDate = new Date(offer.createdAt);
+                return offerDate.toDateString() === filterDate.toDateString();
+            });
+        }
+
+        if (filters.year) {
+            filtered = filtered.filter(offer => {
+                const offerYear = new Date(offer.createdAt).getFullYear().toString();
+                return offerYear === filters.year;
+            });
+        }
+
+        if (filters.month) {
+            filtered = filtered.filter(offer => {
+                const offerMonth = (new Date(offer.createdAt).getMonth() + 1).toString();
+                return offerMonth === filters.month;
+            });
+        }
+
+        if (filters.boatName) {
+            const searchTerm = filters.boatName.toLowerCase();
+            filtered = filtered.filter(offer => {
+                if (Array.isArray(offer.yachts) && offer.yachts.length > 0) {
+                    return offer.yachts.some(yacht => 
+                        yacht.name.toLowerCase().includes(searchTerm)
+                    );
+                } else if (offer.yachtName) {
+                    return offer.yachtName.toLowerCase().includes(searchTerm);
+                }
+                return false;
+            });
+        }
+
+        if (filters.ownerName) {
+            const searchTerm = filters.ownerName.toLowerCase();
+            filtered = filtered.filter(offer => {
+                // Search in customer name
+                if (offer.customerFullName && offer.customerFullName.toLowerCase().includes(searchTerm)) {
+                    return true;
+                }
+                
+                // Search in yacht owners
+                if (Array.isArray(offer.yachts)) {
+                    return offer.yachts.some(yacht => 
+                        yacht.userName && yacht.userName.toLowerCase().includes(searchTerm)
+                    );
+                }
+                return false;
+            });
+        }
+
+        setFilteredHistoryData(filtered);
+    };
+
+    const handleHistoryExportPdf = async (offerId) => {
+        setPdfExportLoading(prev => ({ ...prev, [offerId]: true }));
+        try {
+            const response = await axios.get(`${URL}/offer/${offerId}/export-pdf`, {
+                responseType: 'blob',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = `${url}?${new Date().getTime()}`;
+            link.setAttribute('download', `offer-${offerId}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error exporting PDF:', error);
+            toast.error("Error exporting PDF");
+        } finally {
+            setPdfExportLoading(prev => ({ ...prev, [offerId]: false }));
+        }
+    };
+
+    const handleHistorySendEmail = async (offerId) => {
+        setSelectedOfferId(offerId);
+        setEmailModalOpen(true);
+    };
+
+    const handlePrintOffer = (row) => {
+        // Create a print-friendly version of the offer
+        const printContent = `
+            <html>
+                <head>
+                    <title>Offer #${row.id}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+                        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .section { margin-bottom: 30px; }
+                        .status { 
+                            display: inline-block; 
+                            padding: 5px 10px; 
+                            border-radius: 5px; 
+                            font-weight: bold;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>Offer Details</h1>
+                    
+                    <div class="section">
+                        <h2>Basic Information</h2>
+                        <p><strong>Offer ID:</strong> ${row.id}</p>
+                        <p><strong>Date:</strong> ${new Date(row.createdAt).toLocaleString()}</p>
+                        <p><strong>Customer:</strong> ${row.customerFullName || 'N/A'}</p>
+                        <p><strong>Status:</strong> <span class="status" style="${statusStyles[row.status]?.backgroundColor ? `background-color: ${statusStyles[row.status].backgroundColor}; color: ${statusStyles[row.status].color}` : ''}">${row.status}</span></p>
+                    </div>
+
+                    <div class="section">
+                        <h2>Yacht Information</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Yacht Name</th>
+                                    <th>Model</th>
+                                    <th>Boat Registration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Array.isArray(row.yachts) && row.yachts.length > 0 ? 
+                                    row.yachts.map(yacht => `
+                                        <tr>
+                                            <td>${yacht.name || 'N/A'}</td>
+                                            <td>${yacht.model || 'N/A'}</td>
+                                            <td>${yacht.countryCode || 'N/A'}</td>
+                                        </tr>
+                                    `).join('') : `
+                                    <tr>
+                                        <td>${row.yachtName || 'N/A'}</td>
+                                        <td>${row.yachtModel || 'N/A'}</td>
+                                        <td>${row.countryCode || 'N/A'}</td>
+                                    </tr>
+                                `}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h2>Services</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Service Name</th>
+                                    <th>Price (€)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Array.isArray(row.services) && row.services.length > 0 ? 
+                                    row.services.map(service => `
+                                        <tr>
+                                            <td>${service.serviceName || service.label || 'N/A'}</td>
+                                            <td>${service.priceInEuroWithoutVAT || '0'} €</td>
+                                        </tr>
+                                    `).join('') : `
+                                    <tr>
+                                        <td>${row.services?.serviceName || 'N/A'}</td>
+                                        <td>${row.services?.priceInEuroWithoutVAT || '0'} €</td>
+                                    </tr>
+                                `}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="section">
+                        <h2>Parts</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Part Name</th>
+                                    <th>Quantity</th>
+                                    <th>Price per Unit (€)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${Array.isArray(row.parts) && row.parts.length > 0 ? 
+                                    row.parts.map(part => `
+                                        <tr>
+                                            <td>${part.label || part.name || 'N/A'}</td>
+                                            <td>${part.quantity || 1}</td>
+                                            <td>${part.pricePerUnit || '0'} €</td>
+                                        </tr>
+                                    `).join('') : `
+                                    <tr>
+                                        <td colspan="3">No parts</td>
+                                    </tr>
+                                `}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    ${row.comment ? `
+                    <div class="section">
+                        <h2>Comments</h2>
+                        <p>${row.comment}</p>
+                    </div>
+                    ` : ''}
+
+                    <div class="section">
+                        <p><strong>Printed on:</strong> ${new Date().toLocaleString()}</p>
+                    </div>
+                </body>
+            </html>
+        `;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.print();
+    };
+
+    // Months for dropdown
+    const months = [
+        { value: '1', label: 'January' },
+        { value: '2', label: 'February' },
+        { value: '3', label: 'March' },
+        { value: '4', label: 'April' },
+        { value: '5', label: 'May' },
+        { value: '6', label: 'June' },
+        { value: '7', label: 'July' },
+        { value: '8', label: 'August' },
+        { value: '9', label: 'September' },
+        { value: '10', label: 'October' },
+        { value: '11', label: 'November' },
+        { value: '12', label: 'December' },
+    ];
+
+    // Generate years (last 10 years)
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 10 }, (_, i) => ({
+        value: (currentYear - i).toString(),
+        label: (currentYear - i).toString()
+    }));
+
+    // Rest of your existing functions remain the same...
     const getData = async () => {
         const token = localStorage.getItem('token');
         try {
@@ -797,9 +1200,10 @@ const OfferPage = () => {
         }
     };
 
-    const handleHistoryClick = () => {
-        router.push('/offersHistory');
-    };
+    // Remove or comment out the old handleHistoryClick function
+    // const handleHistoryClick = () => {
+    //     router.push('/offersHistory');
+    // };
 
     const handleExportPdf = async (offerId) => {
         setPdfExportLoading(prev => ({ ...prev, [offerId]: true }));
@@ -1237,8 +1641,9 @@ const OfferPage = () => {
                                 >
                                     Create
                                 </Button>
+                                {/* Modified History Button */}
                                 <Button 
-                                    onClick={handleHistoryClick} 
+                                    onClick={openHistoryModal} 
                                     className="bg-[white] w-full sm:w-auto border-2 border-[#dd3333] text-[#000] font-medium px-4 py-2 rounded-md transition-colors duration-200"
                                 >
                                     History
@@ -1490,6 +1895,167 @@ const OfferPage = () => {
                                     Print This Section
                                 </Button>
                             </div>
+                        </div>
+                    </div>
+                </Modal>
+
+                {/* History Modal */}
+                <Modal 
+                    isOpen={historyModalOpen} 
+                    onClose={closeHistoryModal} 
+                    title="Offer History"
+                    size="xl"
+                >
+                    <div className="space-y-6">
+                        {/* Filters Section */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Date
+                                </label>
+                                <input
+                                    type="date"
+                                    name="date"
+                                    value={historyFilters.date}
+                                    onChange={handleHistoryFilterChange}
+                                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Year
+                                </label>
+                                <Select
+                                    value={historyFilters.year}
+                                    onChange={(value) => {
+                                        setHistoryFilters({...historyFilters, year: value});
+                                        applyHistoryFilters({...historyFilters, year: value});
+                                    }}
+                                    className="border-gray-300 rounded-md [&>div]:text-black"
+                                    labelProps={{ className: 'hidden' }}
+                                >
+                                    <Option value="">All Years</Option>
+                                    {years.map(year => (
+                                        <Option key={year.value} value={year.value}>
+                                            {year.label}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Month
+                                </label>
+                                <Select
+                                    value={historyFilters.month}
+                                    onChange={(value) => {
+                                        setHistoryFilters({...historyFilters, month: value});
+                                        applyHistoryFilters({...historyFilters, month: value});
+                                    }}
+                                    className="border-gray-300 rounded-md [&>div]:text-black"
+                                    labelProps={{ className: 'hidden' }}
+                                >
+                                    <Option value="">All Months</Option>
+                                    {months.map(month => (
+                                        <Option key={month.value} value={month.value}>
+                                            {month.label}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Boat Name
+                                </label>
+                                <input
+                                    type="text"
+                                    name="boatName"
+                                    value={historyFilters.boatName}
+                                    onChange={handleHistoryFilterChange}
+                                    placeholder="Search by boat name..."
+                                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Owner Name
+                                </label>
+                                <input
+                                    type="text"
+                                    name="ownerName"
+                                    value={historyFilters.ownerName}
+                                    onChange={handleHistoryFilterChange}
+                                    placeholder="Search by owner name..."
+                                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
+                        
+                        {/* Results Count */}
+                        <div className="flex justify-between items-center">
+                            <div className="text-sm text-gray-600">
+                                Found {filteredHistoryData.length} offer(s)
+                            </div>
+                            <div className="flex space-x-2">
+                                <Button
+                                    variant="text"
+                                    color="gray"
+                                    size="sm"
+                                    onClick={() => {
+                                        setHistoryFilters({
+                                            date: '',
+                                            year: '',
+                                            month: '',
+                                            boatName: '',
+                                            ownerName: ''
+                                        });
+                                        setFilteredHistoryData(historyData);
+                                    }}
+                                >
+                                    Clear Filters
+                                </Button>
+                            </div>
+                        </div>
+                        
+                        {/* History Table */}
+                        {historyLoading ? (
+                            <div className="flex justify-center items-center py-12">
+                                <Loader loading={historyLoading} />
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <DataTable
+                                    columns={historyColumns}
+                                    data={filteredHistoryData}
+                                    pagination
+                                    paginationPerPage={10}
+                                    paginationRowsPerPageOptions={[10, 25, 50]}
+                                    highlightOnHover
+                                    pointerOnHover
+                                    className="min-w-full border-collapse"
+                                    responsive
+                                    noDataComponent={
+                                        <div className="text-center py-12 text-gray-500">
+                                            No offers found matching your criteria
+                                        </div>
+                                    }
+                                />
+                            </div>
+                        )}
+                        
+                        <div className="flex justify-end pt-4 border-t">
+                            <Button
+                                variant="text"
+                                color="red"
+                                onClick={closeHistoryModal}
+                                className="mr-2"
+                            >
+                                Close
+                            </Button>
                         </div>
                     </div>
                 </Modal>
