@@ -5,25 +5,25 @@ export class offer {
   @PrimaryColumn()
   id: string;
 
-  @Column({default: ''})
+  @Column({ default: '' })
   customerId: string;
 
-  @Column({default: ''})
+  @Column({ default: '' })
   customerFullName: string;
 
-  @Column({default: ''})
+  @Column({ default: '' })
   yachtName: string;
 
-  @Column({default: ''})
+  @Column({ default: '' })
   yachtModel: string;
 
-  @Column({default: ''})
+  @Column({ default: '' })
   location: string;
 
   @Column({ default: '' })
   comment: string;
 
-  @Column({default: ''})
+  @Column({ default: '' })
   countryCode: string;
 
   @Column('json', { default: [] })
@@ -36,7 +36,7 @@ export class offer {
   parts: { partName: string; quantity: number }[];
 
   @Column({ default: 'created' })
-  status: string;
+  status: string; // created, confirmed, finished, closed
 
   @Column('json', { default: [] })
   versions: any[];
@@ -52,4 +52,13 @@ export class offer {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  closedAt?: Date;
+
+  @Column({ nullable: true })
+  closedBy?: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  finishedAt?: Date;
 }

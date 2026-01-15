@@ -1,10 +1,13 @@
-import { Controller, Post, Get, Param, Body, Req, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, Req, UploadedFile, UseInterceptors, Query } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { Request } from 'express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { FileInterceptor } from '@nestjs/platform-express';
+import * as jwt from 'jsonwebtoken';
+import getBearerToken from 'src/methods/getBearerToken';
+import { JwtPayload } from 'jsonwebtoken';
 
 interface UploadResponse {
   message: string;
@@ -39,6 +42,18 @@ export class OrderController {
   @Post('delete/:id')
   async deleteOrder(@Param('id') orderId: string) {
     return this.orderService.deleteOrder(orderId);
+  }
+
+  @Post(':id/close')
+  async closeOffer(@Param('id') id: string, @Req() req: Request) {
+    const token = getBearerToken(req);
+    const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+    return this.orderService.closeOffer(id, login.id);
+  }
+
+  @Get('offers/filter')
+  async getOffersWithFilter(@Req() req: Request, @Query('status') status?: string) {
+    return this.orderService.getOffersWithFilter(req, status);
   }
 
   @Post(':orderId/timer/start')
@@ -120,5 +135,4 @@ export class OrderController {
   ): Promise<{ message: string; code: number }> {
     return this.orderService.deleteFileFromOrder(orderId, fileUrl, tab);
   }
-
 }
