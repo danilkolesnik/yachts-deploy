@@ -29,7 +29,7 @@ const OffersHistoryPage = () => {
     useEffect(() => {
         const fetchAndSortHistory = async () => {
             await getOfferHistory();
-            setOfferHistory(prevHistory => prevHistory.sort((a, b) => new Date(b.changeDate) - new Date(a.changeDate)));
+            // setOfferHistory(prevHistory => prevHistory.sort((a, b) => new Date(b.changeDate) - new Date(a.changeDate)));
         };
         fetchAndSortHistory();
     }, []);
