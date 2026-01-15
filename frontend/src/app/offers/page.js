@@ -152,115 +152,6 @@ const OfferPage = () => {
         description: ''
     });
 
-    // Manual/Help content in English
-    const helpSections = {
-        overview: {
-            title: "Offer Management System User Manual",
-            content: [
-                "Welcome to the Offer Management System! This manual will help you effectively use all system features.",
-                "The system is designed for creating and managing yacht service offers, including parts inventory, services, and customer management.",
-                "Use the 'Help' button in the top right corner for quick access to this manual at any time."
-            ]
-        },
-        navigation: {
-            title: "Table Navigation Guide",
-            content: [
-                "• **ID** - Offer number, click to view details",
-                "• **Date** - Offer creation date",
-                "• **Customer** - Customer name",
-                "• **Yachts** - Yacht name and model",
-                "• **Boat Registration** - Boat registration number",
-                "• **Status** - Current offer status (color-coded)",
-                "• **Service Category** - Services included in the offer",
-                "• **Parts** - Parts included in the offer",
-                "• **Actions** - Edit/Delete (admin only)",
-                "• **Work Order** - Create work order from offer",
-                "• **Export PDF** - Export offer as PDF",
-                "• **Send Email** - Send offer via email"
-            ]
-        },
-        statuses: {
-            title: "Offer Statuses Explained",
-            content: [
-                "**created** 🟡 - Offer created but not sent to customer",
-                "**sent** 🔵 - Offer sent to customer via email",
-                "**confirmed** 🟢 - Customer confirmed the offer",
-                "**rejected** 🔴 - Customer rejected the offer",
-                "**in_progress** 🟠 - Work on the offer has started",
-                "**completed** ✅ - All work completed"
-            ]
-        },
-        filters: {
-            title: "Filtering and Search",
-            content: [
-                "**Search by** - Select search criteria (Yacht Name or Customer)",
-                "**Search...** - Enter text to search",
-                "**Date** - Select date to filter by creation date",
-                "Filters are applied automatically when values change"
-            ]
-        },
-        buttons: {
-            title: "Main Control Buttons",
-            content: [
-                "**Create** - Create new offer",
-                "**History** - View offer history",
-                "**Confirmed Offers** - View confirmed offers",
-                "**Export to Excel** - Export data to Excel",
-                "**Work Order** (in table) - Create work order from offer",
-                "**Export PDF** (in table) - Generate PDF document",
-                "**Send Email** (in table) - Send offer to customer"
-            ]
-        },
-        creatingOffer: {
-            title: "Creating an Offer - Step-by-Step Guide",
-            content: [
-                "1. **Select Customer** - from existing or create new",
-                "2. **Select Yacht** - yachts are filtered by selected customer",
-                "3. **Add Services** - choose from list or create new",
-                "4. **Add Parts** - three options:",
-                "   • Select from existing warehouse inventory",
-                "   • Create new part for this offer (specify quantity for warehouse and offer)",
-                "   • Add part to warehouse without linking to offer",
-                "5. **Add Comment** - additional information",
-                "6. **Click Create** - to save the offer"
-            ]
-        },
-        partsManagement: {
-            title: "Parts Management - Important Information",
-            content: [
-                "**Official Warehouse** - Parts with documents, warranty",
-                "**Unofficial Warehouse** - Parts without documents, used",
-                "**When creating part for offer:**",
-                "• Specify total quantity of received parts",
-                "• Specify how many are needed for this offer",
-                "• Remaining quantity stays in warehouse",
-                "**Example:** Received 10 parts, need 3 for offer → 3 in offer, 7 in warehouse"
-            ]
-        },
-        emailSending: {
-            title: "Sending Offer via Email",
-            content: [
-                "1. Click **Send Email** in the desired offer row",
-                "2. Enter recipient's email address",
-                "3. Click **Send**",
-                "System will generate PDF and send it as attachment",
-                "Email tracking available in offer history"
-            ]
-        },
-        workOrders: {
-            title: "Creating Work Orders",
-            content: [
-                "Work orders can only be created from **confirmed** offers",
-                "To create work order:",
-                "1. Find confirmed offer in table",
-                "2. Click **Work Order** button",
-                "3. Assign employees to the order",
-                "4. Click **Create**",
-                "Work order will be created and you'll be redirected to orders page"
-            ]
-        }
-    };
-
     // History table columns
     const historyColumns = [
         {
@@ -427,7 +318,6 @@ const OfferPage = () => {
                 if (Array.isArray(row.services) && row.services.length > 0) {
                     return row.services.map(service => service.label ?? service.serviceName ?? '').filter(Boolean).join('; ');
                 } else if (row.services && Object.keys(row.services).length > 0) {
-                    // Backward compatibility for single service object
                     return row.services.label ?? row.services.serviceName ?? 'N/A';
                 }
                 return 'N/A';
@@ -807,6 +697,13 @@ const OfferPage = () => {
         value: (currentYear - i).toString(),
         label: (currentYear - i).toString()
     }));
+
+    // Functions for Select dropdowns in history modal
+    const handleHistorySelectChange = (value, name) => {
+        const newFilters = { ...historyFilters, [name]: value };
+        setHistoryFilters(newFilters);
+        applyHistoryFilters(newFilters);
+    };
 
     // Rest of your existing functions remain the same...
     const getData = async () => {
@@ -1199,11 +1096,6 @@ const OfferPage = () => {
             toast.error("Error creating order");
         }
     };
-
-    // Remove or comment out the old handleHistoryClick function
-    // const handleHistoryClick = () => {
-    //     router.push('/offersHistory');
-    // };
 
     const handleExportPdf = async (offerId) => {
         setPdfExportLoading(prev => ({ ...prev, [offerId]: true }));
@@ -1728,177 +1620,6 @@ const OfferPage = () => {
                     </div>
                 )}
                 
-                {/* Help/Manual Modal */}
-                <Modal 
-                    isOpen={helpModalOpen} 
-                    onClose={() => setHelpModalOpen(false)} 
-                    title="System Help & User Manual"
-                    size="xl"
-                >
-                    <div className="max-h-[70vh] overflow-hidden flex flex-col">
-                        {/* Navigation Sidebar */}
-                        <div className="border-b pb-4 mb-4">
-                            <div className="flex space-x-2 overflow-x-auto pb-2">
-                                {Object.keys(helpSections).map(section => (
-                                    <button
-                                        key={section}
-                                        onClick={() => setActiveHelpSection(section)}
-                                        className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${
-                                            activeHelpSection === section
-                                                ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }`}
-                                    >
-                                        {helpSections[section].title.split(' ').slice(0, 3).join(' ')}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        
-                        {/* Content Area */}
-                        <div className="flex-1 overflow-y-auto pr-2">
-                            <div className="space-y-4">
-                                <h2 className="text-xl font-bold text-gray-800">
-                                    {helpSections[activeHelpSection].title}
-                                </h2>
-                                
-                                <div className="space-y-3 text-gray-600">
-                                    {helpSections[activeHelpSection].content.map((item, index) => {
-                                        // Check if item contains bold text (marked with **)
-                                        if (item.includes('**')) {
-                                            const parts = item.split(/(\*\*.*?\*\*)/g);
-                                            return (
-                                                <p key={index} className="text-sm leading-relaxed">
-                                                    {parts.map((part, i) => {
-                                                        if (part.startsWith('**') && part.endsWith('**')) {
-                                                            return (
-                                                                <span key={i} className="font-semibold text-gray-800">
-                                                                    {part.slice(2, -2)}
-                                                                </span>
-                                                            );
-                                                        }
-                                                        return part;
-                                                    })}
-                                                </p>
-                                            );
-                                        }
-                                        
-                                        // Regular bullet points
-                                        if (item.startsWith('•')) {
-                                            return (
-                                                <div key={index} className="flex items-start">
-                                                    <span className="mr-2 text-gray-400">•</span>
-                                                    <span className="text-sm leading-relaxed">{item.substring(1)}</span>
-                                                </div>
-                                            );
-                                        }
-                                        
-                                        // Regular paragraphs
-                                        return (
-                                            <p key={index} className="text-sm leading-relaxed">
-                                                {item}
-                                            </p>
-                                        );
-                                    })}
-                                </div>
-                                
-                                {/* Quick Tips Section */}
-                                {activeHelpSection === 'overview' && (
-                                    <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <InformationCircleIcon className="w-5 h-5 text-blue-500" />
-                                            <h3 className="font-semibold text-blue-700">Quick Tips</h3>
-                                        </div>
-                                        <ul className="space-y-2 text-sm text-blue-600">
-                                            <li className="flex items-center gap-2">
-                                                <span className="text-blue-500">•</span>
-                                                <span>Click on any offer ID to view detailed information</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <span className="text-blue-500">•</span>
-                                                <span>Use filters to quickly find specific offers</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <span className="text-blue-500">•</span>
-                                                <span>Export data regularly for backup purposes</span>
-                                            </li>
-                                            <li className="flex items-center gap-2">
-                                                <span className="text-blue-500">•</span>
-                                                <span>Update offer status as work progresses</span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        
-                        <div className="mt-6 pt-4 border-t flex justify-between items-center">
-                            <div className="text-sm text-gray-500">
-                                Need more help? Contact system administrator
-                            </div>
-                            <div className="flex space-x-2">
-                                <Button
-                                    variant="text"
-                                    color="gray"
-                                    onClick={() => setHelpModalOpen(false)}
-                                    className="text-sm"
-                                >
-                                    Close
-                                </Button>
-                                <Button
-                                    color="blue"
-                                    onClick={() => {
-                                        // Print functionality
-                                        const printContent = `
-                                            <html>
-                                                <head>
-                                                    <title>Offer System Manual - ${helpSections[activeHelpSection].title}</title>
-                                                    <style>
-                                                        body { font-family: Arial, sans-serif; padding: 20px; }
-                                                        h1 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
-                                                        h2 { color: #555; margin-top: 20px; }
-                                                        p { line-height: 1.6; }
-                                                        ul { margin-left: 20px; }
-                                                        li { margin-bottom: 5px; }
-                                                        .tip { background: #f0f8ff; padding: 10px; border-left: 4px solid #007bff; margin: 15px 0; }
-                                                    </style>
-                                                </head>
-                                                <body>
-                                                    <h1>${helpSections[activeHelpSection].title}</h1>
-                                                    ${helpSections[activeHelpSection].content.map(item => 
-                                                        item.startsWith('•') 
-                                                            ? `<p>${item}</p>`
-                                                            : `<p>${item}</p>`
-                                                    ).join('')}
-                                                    ${activeHelpSection === 'overview' ? `
-                                                        <div class="tip">
-                                                            <h3>Quick Tips</h3>
-                                                            <ul>
-                                                                <li>Click on any offer ID to view detailed information</li>
-                                                                <li>Use filters to quickly find specific offers</li>
-                                                                <li>Export data regularly for backup purposes</li>
-                                                                <li>Update offer status as work progresses</li>
-                                                            </ul>
-                                                        </div>
-                                                    ` : ''}
-                                                </body>
-                                            </html>
-                                        `;
-                                        
-                                        const printWindow = window.open('', '_blank');
-                                        printWindow.document.write(printContent);
-                                        printWindow.document.close();
-                                        printWindow.print();
-                                    }}
-                                    className="text-sm"
-                                >
-                                    Print This Section
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </Modal>
-
                 {/* History Modal */}
                 <Modal 
                     isOpen={historyModalOpen} 
@@ -1928,10 +1649,7 @@ const OfferPage = () => {
                                 </label>
                                 <Select
                                     value={historyFilters.year}
-                                    onChange={(value) => {
-                                        setHistoryFilters({...historyFilters, year: value});
-                                        applyHistoryFilters({...historyFilters, year: value});
-                                    }}
+                                    onChange={(value) => handleHistorySelectChange(value, 'year')}
                                     className="border-gray-300 rounded-md [&>div]:text-black"
                                     labelProps={{ className: 'hidden' }}
                                 >
@@ -1950,10 +1668,7 @@ const OfferPage = () => {
                                 </label>
                                 <Select
                                     value={historyFilters.month}
-                                    onChange={(value) => {
-                                        setHistoryFilters({...historyFilters, month: value});
-                                        applyHistoryFilters({...historyFilters, month: value});
-                                    }}
+                                    onChange={(value) => handleHistorySelectChange(value, 'month')}
                                     className="border-gray-300 rounded-md [&>div]:text-black"
                                     labelProps={{ className: 'hidden' }}
                                 >
@@ -2133,14 +1848,14 @@ const OfferPage = () => {
                             label="Service Name"
                             name="serviceName"
                             value={createServiceFormData.serviceName}
-                            onChange={handleSelectChange}
+                            onChange={(e) => setCreateServiceFormData({...createServiceFormData, serviceName: e.target.value})}
                             required
                         />
                         <Input
                             label="Price in Euro Without VAT"
                             name="priceInEuroWithoutVAT"
                             value={createServiceFormData.priceInEuroWithoutVAT}
-                            onChange={handleSelectChange}
+                            onChange={(e) => setCreateServiceFormData({...createServiceFormData, priceInEuroWithoutVAT: e.target.value})}
                             required
                         />
                         <div className="flex justify-end">
