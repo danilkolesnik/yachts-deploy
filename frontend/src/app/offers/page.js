@@ -1629,86 +1629,92 @@ const OfferPage = () => {
                 >
                     <div className="space-y-6">
                         {/* Filters Section */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-4 bg-gray-50 rounded-lg w-full">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Date
-                                </label>
-                                <input
-                                    type="date"
-                                    name="date"
-                                    value={historyFilters.date}
-                                    onChange={handleHistoryFilterChange}
-                                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-                                />
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Year
-                                </label>
-                                <Select
-                                    value={historyFilters.year}
-                                    onChange={(value) => handleHistorySelectChange(value, 'year')}
-                                    className="border-gray-300 rounded-md text-black"
-                                    labelProps={{ className: 'hidden' }}
-                                >
-                                    <Option value="">All Years</Option>
-                                    {years.map(year => (
-                                        <Option key={year.value} value={year.value}>
-                                            {year.label}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Month
-                                </label>
-                                <Select
-                                    value={historyFilters.month}
-                                    onChange={(value) => handleHistorySelectChange(value, 'month')}
-                                    className="border-gray-300 rounded-md [&>div]:text-black"
-                                    labelProps={{ className: 'hidden' }}
-                                >
-                                    <Option value="">All Months</Option>
-                                    {months.map(month => (
-                                        <Option key={month.value} value={month.value}>
-                                            {month.label}
-                                        </Option>
-                                    ))}
-                                </Select>
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Boat Name
-                                </label>
-                                <input
-                                    type="text"
-                                    name="boatName"
-                                    value={historyFilters.boatName}
-                                    onChange={handleHistoryFilterChange}
-                                    placeholder="Search by boat name..."
-                                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Owner Name
-                                </label>
-                                <input
-                                    type="text"
-                                    name="ownerName"
-                                    value={historyFilters.ownerName}
-                                    onChange={handleHistoryFilterChange}
-                                    placeholder="Search by owner name..."
-                                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                        </div>
+                        <div className="w-full">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-4 bg-gray-50 rounded-lg overflow-x-auto">
+        <div className="min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date
+            </label>
+            <input
+                type="date"
+                name="date"
+                value={historyFilters.date}
+                onChange={handleHistoryFilterChange}
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white"
+            />
+        </div>
+        
+        <div className="min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+                Year
+            </label>
+            <div className="text-black">
+                <Select
+                    value={historyFilters.year}
+                    onChange={(value) => handleHistorySelectChange(value, 'year')}
+                    className="border-gray-300 rounded-md bg-white"
+                    labelProps={{ className: 'hidden' }}
+                >
+                    <Option className="text-black" value="">All Years</Option>
+                    {years.map(year => (
+                        <Option key={year.value} value={year.value} className="text-black">
+                            {year.label}
+                        </Option>
+                    ))}
+                </Select>
+            </div>
+        </div>
+        
+        <div className="min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+                Month
+            </label>
+            <div className="text-black">
+                <Select
+                    value={historyFilters.month}
+                    onChange={(value) => handleHistorySelectChange(value, 'month')}
+                    className="border-gray-300 rounded-md bg-white"
+                    labelProps={{ className: 'hidden' }}
+                >
+                    <Option className="text-black" value="">All Months</Option>
+                    {months.map(month => (
+                        <Option key={month.value} value={month.value} className="text-black">
+                            {month.label}
+                        </Option>
+                    ))}
+                </Select>
+            </div>
+        </div>
+        
+        <div className="min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+                Boat Name
+            </label>
+            <input
+                type="text"
+                name="boatName"
+                value={historyFilters.boatName}
+                onChange={handleHistoryFilterChange}
+                placeholder="Search by boat name..."
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white"
+            />
+        </div>
+        
+        <div className="min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+                Owner Name
+            </label>
+            <input
+                type="text"
+                name="ownerName"
+                value={historyFilters.ownerName}
+                onChange={handleHistoryFilterChange}
+                placeholder="Search by owner name..."
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-black bg-white"
+            />
+        </div>
+    </div>
+</div>
                         
                         {/* Results Count */}
                         <div className="flex justify-between items-center">
