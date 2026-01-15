@@ -1770,7 +1770,6 @@ const OfferPage = () => {
             </div>
         </div>
         
-        <!-- Optional: Action Buttons -->
         <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
             <button
                 onClick={() => {/* Reset filter logic */}}
