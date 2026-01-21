@@ -13,6 +13,12 @@ services:
     depends_on:
       - backend
     restart: always
+    # Добавляем healthcheck для надежности
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   backend:
     build:
@@ -33,21 +39,23 @@ services:
       - ZOHO_APP_PASSWORD=fV3U2ZA#u4:6$Gg
       - ZOHO_EMAIL=kirill.hetman@zohomail.eu
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: always
     volumes:
       - uploads_data:/app/uploads
-    command: >
-      sh -c "mkdir -p /app/uploads/image /app/uploads/video /app/uploads/logo &&
-             chmod -R 777 /app/uploads &&
-             npm run start"
+    # Упрощенная команда
+    command: npm run start
+    # Добавляем healthcheck
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   db:
     image: postgres:15
     restart: always
-    # Убираем внешний доступ к БД - только внутренний доступ
-    # ports:
-    #   - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: Yachts2024!Secure#DB
@@ -56,14 +64,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./backups:/backups
-    # Добавляем лимиты ресурсов чтобы избежать крашей
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-        reservations:
-          memory: 512M
-    command: docker-entrypoint.sh postgres
+    # Убираем некорректный command
+    # Добавляем healthcheck
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
