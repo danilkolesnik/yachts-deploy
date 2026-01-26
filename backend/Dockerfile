@@ -3,7 +3,7 @@ FROM node:18
 
 # Устанавливаем необходимые зависимости для Puppeteer
 RUN apt-get update && apt-get install -y \
-    apparmor \
+    # Убрал apparmor - он не нужен для Puppeteer в контейнере
     libnss3 \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
     libnspr4 \
-    libnss3 \
+    # Убрал дублирование libnss3
     libxss1 \
     libx11-xcb1 \
     libxcb1 \
