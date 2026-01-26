@@ -9,7 +9,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_SERVER_URL=http://116.203.198.150:5000
+      - NEXT_PUBLIC_SERVER_URL=http://46.225.17.97:5000
     depends_on:
       - backend
     restart: always
@@ -34,8 +34,8 @@ services:
       - DATABASE_PASSWORD=Yachts2024!Secure#DB
       - DATABASE_NAME=yachts
       - DATABASE_PORT=5432
-      - SERVER_URL=http://116.203.198.150:5000
-      - CLIENT_URL=http://116.203.198.150:3000
+      - SERVER_URL=http://46.225.17.97:5000
+      - CLIENT_URL=http://46.225.17.97:3000
       - ZOHO_APP_PASSWORD=fV3U2ZA#u4:6$Gg
       - ZOHO_EMAIL=kirill.hetman@zohomail.eu
     depends_on:
