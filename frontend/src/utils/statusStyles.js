@@ -34,6 +34,11 @@ export const statusStyles = {
         color: 'white',
         border: '1px solid #455a64',
     },
+    finished: {
+        backgroundColor: '#ff9800', // оранжевый - как указано в требованиях
+        color: 'white',
+        border: '1px solid #e68900',
+    },
     canceled: {
         backgroundColor: '#f44336',
         color: 'white',
