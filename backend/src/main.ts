@@ -18,7 +18,7 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://g000l4c6-3000.euw.devtunnels.ms', 'http://116.203.198.150:3000'],
+    origin: ['http://localhost:3000', 'https://g000l4c6-3000.euw.devtunnels.ms', 'http://46.225.17.97:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
