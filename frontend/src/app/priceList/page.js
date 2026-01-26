@@ -369,20 +369,30 @@ const PriceListPage = () => {
 
     const handlePriceChange = (e) => {
         let value = e.target.value;
-        const digits = value.replace(/\D/g, '');
         
-        if (!digits) {
-            setPriceInputValue('');
-            setFormData({ ...formData, priceInEuroWithoutVAT: '' });
-            return;
+        // Разрешаем только цифры и запятую/точку
+        value = value.replace(/[^\d,.]/g, '');
+        
+        // Заменяем точку на запятую если пользователь ввел точку
+        value = value.replace('.', ',');
+        
+        // Проверяем на лишние запятые
+        const commaCount = value.split(',').length - 1;
+        if (commaCount > 1) {
+            // Оставляем только первую запятую
+            const parts = value.split(',');
+            value = parts[0] + ',' + parts.slice(1).join('');
         }
         
-        const formatted = digits.padStart(7, '0');
-        const displayValue = formatted.slice(0, -2) + ',' + formatted.slice(-2);
-        setPriceInputValue(displayValue);
+        setPriceInputValue(value);
         
-        const actualValue = (parseInt(digits, 10) / 100).toFixed(2);
-        setFormData({ ...formData, priceInEuroWithoutVAT: actualValue });
+        // Конвертируем в числовой формат для хранения
+        const numericValue = parseFloat(value.replace(',', '.'));
+        if (!isNaN(numericValue)) {
+            setFormData({ ...formData, priceInEuroWithoutVAT: numericValue.toFixed(2) });
+        } else {
+            setFormData({ ...formData, priceInEuroWithoutVAT: '' });
+        }
     };
 
     const handlePriceFocus = (e) => {
