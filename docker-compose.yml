@@ -13,12 +13,12 @@ services:
     depends_on:
       - backend
     restart: always
-    # Добавляем healthcheck для надежности
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 30s
 
   backend:
     build:
@@ -44,14 +44,13 @@ services:
     restart: always
     volumes:
       - uploads_data:/app/uploads
-    # Упрощенная команда
-    command: npm run start
-    # Добавляем healthcheck
+    command: ["npm", "run", "start"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5000/health || exit 1"]
       interval: 30s
-      timeout: 10s
-      retries: 3
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   db:
     image: postgres:15
@@ -64,8 +63,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./backups:/backups
-    # Убираем некорректный command
-    # Добавляем healthcheck
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
