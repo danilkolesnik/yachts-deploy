@@ -10,7 +10,7 @@ import DataTable from 'react-data-table-component';
 import Loader from '@/ui/loader';
 import Header from '@/component/header';
 import Link from 'next/link';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const ConfirmedOffersPage = () => {
     const router = useRouter();
@@ -243,8 +243,7 @@ const ConfirmedOffersPage = () => {
         );
     });
 
-    // --- SheetJS Export Function ---
-    const exportToExcel = () => {
+    const exportToExcel = async () => {
         const exportData = filteredData.map(row => ({
             ID: row.id,
             Date: new Date(row.createdAt).toLocaleString(),
@@ -256,10 +255,19 @@ const ConfirmedOffersPage = () => {
             'Service Category': row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A',
             Parts: Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : 'N/A'
         }));
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Offers');
-        XLSX.writeFile(workbook, 'offers_export.xlsx');
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Offers');
+        const headers = Object.keys(exportData[0] || {});
+        worksheet.columns = headers.map(h => ({ header: h, key: h, width: 18 }));
+        worksheet.addRows(exportData);
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'offers_export.xlsx';
+        a.click();
+        window.URL.revokeObjectURL(url);
     };
 
     useEffect(() => {

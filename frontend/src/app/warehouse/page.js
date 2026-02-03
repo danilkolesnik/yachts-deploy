@@ -11,7 +11,7 @@ import DataTable from 'react-data-table-component';
 import Loader from '@/ui/loader';
 import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import axios from 'axios';
 
 const WarehousePage = () => {
@@ -386,7 +386,7 @@ const WarehousePage = () => {
         router.push('/warehouseHistory');
     };
 
-    const exportToExcel = () => {
+    const exportToExcel = async () => {
         const exportData = filteredData.map(row => ({
             'Name': row.name || '',
             'Quantity': row.quantity || '',
@@ -394,10 +394,19 @@ const WarehousePage = () => {
             'Price': `${row.pricePerUnit || ''}€`,
             'Service Category': row.serviceCategory?.serviceName || ''
         }));
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Unofficial Warehouse');
-        XLSX.writeFile(workbook, 'unofficial_warehouse_export.xlsx');
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Unofficial Warehouse');
+        const headers = Object.keys(exportData[0] || {});
+        worksheet.columns = headers.map(h => ({ header: h, key: h, width: 18 }));
+        worksheet.addRows(exportData);
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'unofficial_warehouse_export.xlsx';
+        a.click();
+        window.URL.revokeObjectURL(url);
     };
 
     useEffect(() => {

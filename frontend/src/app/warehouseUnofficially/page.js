@@ -12,7 +12,7 @@ import Header from '@/component/header';
 import SearchInput from '@/component/search';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const WarehouseUnofficiallyPage = () => {
     const [data, setData] = useState([]);
@@ -390,7 +390,7 @@ const WarehouseUnofficiallyPage = () => {
         router.push('/warehouseHistory');
     };
 
-    const exportToExcel = () => {
+    const exportToExcel = async () => {
         const exportData = filteredData.map(row => ({
             'Name': row.name || '',
             'Quantity': row.quantity || '',
@@ -398,10 +398,19 @@ const WarehouseUnofficiallyPage = () => {
             'Price': `${row.pricePerUnit || ''}€`,
             'Service Category': row.serviceCategory?.serviceName || ''
         }));
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Official Warehouse');
-        XLSX.writeFile(workbook, 'official_warehouse_export.xlsx');
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Official Warehouse');
+        const headers = Object.keys(exportData[0] || {});
+        worksheet.columns = headers.map(h => ({ header: h, key: h, width: 18 }));
+        worksheet.addRows(exportData);
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'official_warehouse_export.xlsx';
+        a.click();
+        window.URL.revokeObjectURL(url);
     };
 
     useEffect(() => {

@@ -11,7 +11,7 @@ import { PencilIcon, TrashIcon, QuestionMarkCircleIcon } from '@heroicons/react/
 import { toast } from 'react-toastify';
 import Header from '@/component/header';
 import ReactSelect from 'react-select';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const PriceListPage = () => {
     const tableRef = useRef(null);
@@ -437,7 +437,7 @@ const PriceListPage = () => {
         setFormData({ ...formData, subServices: newSubServices });
     };
 
-    const exportToExcel = () => {
+    const exportToExcel = async () => {
         const exportData = filteredData.map(row => ({
             'Service Name': row.serviceName || '',
             'Sub-services': row.subServices && Array.isArray(row.subServices) && row.subServices.length > 0
@@ -446,10 +446,19 @@ const PriceListPage = () => {
             'Price in EURO without VAT': `${row.priceInEuroWithoutVAT || ''}€`,
             'Units of Measurement': row.unitsOfMeasurement || ''
         }));
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Price List');
-        XLSX.writeFile(workbook, 'price_list_export.xlsx');
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Price List');
+        const headers = Object.keys(exportData[0] || {});
+        worksheet.columns = headers.map(h => ({ header: h, key: h, width: 18 }));
+        worksheet.addRows(exportData);
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'price_list_export.xlsx';
+        a.click();
+        window.URL.revokeObjectURL(url);
     };
 
     return (
@@ -902,7 +911,7 @@ const PriceListPage = () => {
                                 )}
                                 {formData.subServices.length === 0 && (
                                     <div className="text-center py-4 text-gray-500 border-2 border-dashed border-gray-300 rounded">
-                                        No sub-services added. Click "Add Sub-service" to create detailed service components.
+                                        No sub-services added. Click &quot;Add Sub-service&quot; to create detailed service components.
                                     </div>
                                 )}
                             </div>
