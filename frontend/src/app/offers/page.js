@@ -95,7 +95,7 @@ const OfferPage = () => {
         comment: '',
         countryCode: '',
         pricePerUnit: '',
-        serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
+        serviceCategoryId: '',
     });
 
     const id = useAppSelector(state => state.userData?.id);
@@ -799,7 +799,11 @@ const OfferPage = () => {
 
     const createPart = async (e) => {
         e.preventDefault();
-        if (!createPartFormData.serviceCategory?.serviceName) {
+        const selectedServiceCategory = catagoryData.find(
+            (category) => category.id === createPartFormData.serviceCategoryId
+        );
+
+        if (!selectedServiceCategory) {
             toast.error("Error: Service category is required");
             return;
         }
@@ -827,7 +831,10 @@ const OfferPage = () => {
                 comment: createPartFormData.comment,
                 countryCode: createPartFormData.countryCode || '',
                 pricePerUnit: createPartFormData.pricePerUnit,
-                serviceCategory: createPartFormData.serviceCategory,
+                serviceCategory: {
+                    serviceName: selectedServiceCategory.serviceName,
+                    priceInEuroWithoutVAT: selectedServiceCategory.priceInEuroWithoutVAT,
+                },
                 unofficially: isUnofficialWarehouse
             };
 
@@ -865,7 +872,7 @@ const OfferPage = () => {
                 comment: '',
                 countryCode: '',
                 pricePerUnit: '',
-                serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
+                serviceCategoryId: '',
             });
             setPartWarehouseQuantity(0);
             setPartForOfferQuantity(1);
@@ -1064,7 +1071,7 @@ const OfferPage = () => {
             comment: '',
             countryCode: '',
             pricePerUnit: '',
-            serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
+            serviceCategoryId: '',
         });
         setPartWarehouseQuantity(0);
         setPartForOfferQuantity(1);
@@ -1953,17 +1960,17 @@ const OfferPage = () => {
 
                         <Select
                             label="Service Category"
-                            value={createPartFormData.serviceCategory}
-                            onChange={(value) => handleSelectChangePart(value, 'serviceCategory')}
+                            value={createPartFormData.serviceCategoryId}
+                            onChange={(value) => handleSelectChangePart(value, 'serviceCategoryId')}
                             required
                             className="text-black border-gray-300 rounded-xs [&>div]:text-black"
                             labelProps={{ className: 'text-black' }}
                         >
-                            <Option value={{ serviceName: '', priceInEuroWithoutVAT: '' }} className="text-black">
+                            <Option value="" className="text-black">
                                 Select a category...
                             </Option>
                             {catagoryData.map((category) => (
-                                <Option key={category.id} value={category} className="text-black">
+                                <Option key={category.id} value={category.id} className="text-black">
                                     {category.serviceName} - {category.priceInEuroWithoutVAT}€
                                 </Option>
                             ))}
