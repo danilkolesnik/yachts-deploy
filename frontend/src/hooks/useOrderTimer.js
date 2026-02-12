@@ -93,8 +93,10 @@ export const useOrderTimer = (orderId) => {
       if (data.totalDuration) {
         setElapsedTime(data.totalDuration);
       }
+      return true;
     } catch (error) {
       console.error('Ошибка при остановке таймера:', error);
+      return false;
     }
   };
 

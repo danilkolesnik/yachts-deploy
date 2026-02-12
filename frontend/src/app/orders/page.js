@@ -227,6 +227,7 @@ const OrderPage = () => {
         };
 
         return (
+            order.status !== 'finished' &&
             (filters.status ? order.status === filters.status : true) &&
             (filters.client ? order.offer && order.offer.customerFullName === filters.client : true) &&
             (filterDate ? orderDate.toDateString() === filterDate.toDateString() : true) &&
@@ -315,7 +316,7 @@ const OrderPage = () => {
             name: 'Timers',
             cell: row => (
                 <div className="flex justify-center">
-                    <WorkTimer orderId={row.id}/>
+                    <WorkTimer orderId={row.id} onStop={fetchOrders} />
                 </div>
             ),
             ignoreRowClick: true,

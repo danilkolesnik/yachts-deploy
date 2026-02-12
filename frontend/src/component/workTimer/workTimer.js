@@ -2,7 +2,7 @@ import React from 'react';
 import { useOrderTimer } from '@/hooks/useOrderTimer';
 import { PlayIcon, PauseIcon, StopIcon } from '@heroicons/react/24/solid';
 
-const OrderTimer = ({ orderId }) => {
+const OrderTimer = ({ orderId, onStop }) => {
   const { 
     isRunning, 
     isPaused,
@@ -14,6 +14,13 @@ const OrderTimer = ({ orderId }) => {
     formatTime, 
     status 
   } = useOrderTimer(orderId);
+
+  const handleStop = async () => {
+    const stopped = await stopTimer();
+    if (stopped && typeof onStop === 'function') {
+      onStop();
+    }
+  };
 
   return (
     <div className="gap-4 p-2 rounded-lg shadow-sm">
@@ -47,7 +54,7 @@ const OrderTimer = ({ orderId }) => {
           className={`w-7 h-7 rounded-md flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 shadow-sm ${
             isRunning ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-300'
           }`}
-          onClick={stopTimer}
+          onClick={handleStop}
           disabled={!isRunning}
           title="Завершить"
         >

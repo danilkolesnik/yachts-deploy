@@ -41,7 +41,7 @@ const OrdersHistoryPage = () => {
         }, 
         {
             name:'Status',
-            selector: row => row.status
+            selector: row => row.order?.status || row.status
         },
        {
         name:'Total Time',
@@ -62,8 +62,20 @@ const OrdersHistoryPage = () => {
         try {
             setLoading(true);
             const res = await axios.get(`${URL}/orders/timers/all`);
-            setOrdersHistory(res.data.data);
-            setFilteredHistory(res.data.data);
+            const timers = res.data.data || [];
+
+            // Keep only records related to finished orders and collapse duplicates by orderId
+            const finishedOrdersMap = new Map();
+            timers.forEach((timerItem) => {
+                if (timerItem.order?.status === 'finished' && !finishedOrdersMap.has(timerItem.orderId)) {
+                    finishedOrdersMap.set(timerItem.orderId, timerItem);
+                }
+            });
+
+            const finishedOrdersHistory = Array.from(finishedOrdersMap.values());
+
+            setOrdersHistory(finishedOrdersHistory);
+            setFilteredHistory(finishedOrdersHistory);
             setLoading(false);
         } catch (error) {
             console.log(error);
