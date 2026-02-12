@@ -1,6 +1,5 @@
 const generateRandomId = () => {
-    const characters =
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const characters = '0123456789';
     const idLength = 30;
   
     let result = '';
