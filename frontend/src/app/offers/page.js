@@ -162,9 +162,7 @@ const OfferPage = () => {
     const historyColumns = [
         {
             name: 'ID',
-            selector: row => {
-                row.id
-            },
+            selector: row => `#${row.id}`,
             sortable: true,
         },
         {
@@ -256,9 +254,14 @@ const OfferPage = () => {
     const columns = [
         {
             name: 'ID',
-            selector: row => {
-                row.id
-            },
+            selector: row => `#${row.id}`,
+            cell: row => (
+                <Link href={`/offers/${row.id}`} className="text-black">
+                    <div className="text-blue-500 hover:underline">
+                        #{row.id}
+                    </div>
+                </Link>
+            ),
             sortable: true,
         },
         {
