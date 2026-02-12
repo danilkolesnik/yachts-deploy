@@ -1962,7 +1962,6 @@ const OfferPage = () => {
                             <Option value="official" className="text-black">Official Warehouse</Option>
                             <Option value="unofficial" className="text-black">Unofficial Warehouse</Option>
                         </Select>
-
                         <div>
                             <label className="block text-sm font-medium text-black mb-1">
                                 Service Category
