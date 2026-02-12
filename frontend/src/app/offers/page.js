@@ -882,7 +882,7 @@ const OfferPage = () => {
 
         } catch (error) {
             console.error('Error creating part:', error);
-            toast.error("Error creating part");
+            toast.error(error);
         } finally {
             setLoadingCreatePart(false);
         }
