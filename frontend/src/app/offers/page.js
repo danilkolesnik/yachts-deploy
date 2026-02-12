@@ -838,10 +838,10 @@ const OfferPage = () => {
             (category) => String(category.id) === String(createPartFormData.serviceCategoryId)
         );
 
-        if (!selectedServiceCategory) {
-            toast.error("Error: Service category is required");
-            return;
-        }
+        // if (!selectedServiceCategory) {
+        //     toast.error("Error: Service category is required");
+        //     return;
+        // }
 
         let totalQuantity = 0;
         if (createPartForOffer) {
@@ -945,10 +945,10 @@ const OfferPage = () => {
                 toast.error("Error: At least one service is required");
                 setLoadingCreateOffer(false);
                 return;
-            case normalizedParts.length === 0:
-                toast.error("Error: Parts are required");
-                setLoadingCreateOffer(false);
-                return;
+            // case normalizedParts.length === 0:
+            //     toast.error("Error: Parts are required");
+            //     setLoadingCreateOffer(false);
+            //     return;
         }
         try {
             const token = localStorage.getItem('token');

@@ -284,9 +284,9 @@ const WarehousePage = () => {
                 toast.success("Warehouse updated successfully");
             } else {
                 switch (true) {
-                    case formData.serviceCategory.serviceName === '':
-                        toast.error("Error: Service category is required");
-                        return;
+                    // case formData.serviceCategory.serviceName === '':
+                    //     toast.error("Error: Service category is required");
+                    //     return;
                     case formData.pricePerUnit.trim() === '':
                         toast.error("Error: Price per unit is required");
                         return;
