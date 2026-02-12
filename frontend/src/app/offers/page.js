@@ -185,7 +185,7 @@ const OfferPage = () => {
                 } else if (row.yachtName) {
                     return row.yachtName;
                 }
-                return 'N/A';
+                return '';
             },
             sortable: true,
         },
@@ -194,9 +194,9 @@ const OfferPage = () => {
             selector: row => {
                 if (Array.isArray(row.yachts) && row.yachts.length > 0) {
                     const owners = row.yachts.map(yacht => yacht.userName).filter(Boolean);
-                    return owners.length > 0 ? owners.join(', ') : row.customerFullName || 'N/A';
+                    return owners.length > 0 ? owners.join(', ') : row.customerFullName || '';
                 }
-                return row.customerFullName || 'N/A';
+                return row.customerFullName || '';
             },
             sortable: true,
         },
@@ -288,7 +288,7 @@ const OfferPage = () => {
                 } else if (row.yachtName) {
                     return `${row.yachtName} - ${row.yachtModel}`;
                 }
-                return 'N/A';
+                return '';
             },
             sortable: true,
         },
@@ -300,7 +300,7 @@ const OfferPage = () => {
                 } else if (row.countryCode) {
                     return row.countryCode;
                 }
-                return 'N/A';
+                return '';
             },
             sortable: true,
         },
@@ -319,9 +319,9 @@ const OfferPage = () => {
                 if (Array.isArray(row.services) && row.services.length > 0) {
                     return row.services.map(service => service.label ?? service.serviceName ?? '').filter(Boolean).join('; ');
                 } else if (row.services && Object.keys(row.services).length > 0) {
-                    return row.services.label ?? row.services.serviceName ?? 'N/A';
+                    return row.services.label ?? row.services.serviceName ?? '';
                 }
-                return 'N/A';
+                return '';
             },
             sortable: true,
         },
@@ -329,7 +329,7 @@ const OfferPage = () => {
             name: 'Parts',
             selector: row => Array.isArray(row.parts) 
                 ? row.parts.map(part => part.label).join(', ') 
-                : 'N/A',
+                : '',
             sortable: true,
         },
         ...(role !== 'user' ? [{
@@ -570,7 +570,7 @@ const OfferPage = () => {
                         <h2>Basic Information</h2>
                         <p><strong>Offer ID:</strong> ${row.id}</p>
                         <p><strong>Date:</strong> ${new Date(row.createdAt).toLocaleString()}</p>
-                        <p><strong>Customer:</strong> ${row.customerFullName || 'N/A'}</p>
+                        <p><strong>Customer:</strong> ${row.customerFullName || ''}</p>
                         <p><strong>Status:</strong> <span class="status" style="${statusStyles[row.status]?.backgroundColor ? `background-color: ${statusStyles[row.status].backgroundColor}; color: ${statusStyles[row.status].color}` : ''}">${row.status}</span></p>
                     </div>
 
@@ -588,15 +588,15 @@ const OfferPage = () => {
                                 ${Array.isArray(row.yachts) && row.yachts.length > 0 ? 
                                     row.yachts.map(yacht => `
                                         <tr>
-                                            <td>${yacht.name || 'N/A'}</td>
-                                            <td>${yacht.model || 'N/A'}</td>
-                                            <td>${yacht.countryCode || 'N/A'}</td>
+                                            <td>${yacht.name || ''}</td>
+                                            <td>${yacht.model || ''}</td>
+                                            <td>${yacht.countryCode || ''}</td>
                                         </tr>
                                     `).join('') : `
                                     <tr>
-                                        <td>${row.yachtName || 'N/A'}</td>
-                                        <td>${row.yachtModel || 'N/A'}</td>
-                                        <td>${row.countryCode || 'N/A'}</td>
+                                        <td>${row.yachtName || ''}</td>
+                                        <td>${row.yachtModel || ''}</td>
+                                        <td>${row.countryCode || ''}</td>
                                     </tr>
                                 `}
                             </tbody>
@@ -616,12 +616,12 @@ const OfferPage = () => {
                                 ${Array.isArray(row.services) && row.services.length > 0 ? 
                                     row.services.map(service => `
                                         <tr>
-                                            <td>${service.serviceName || service.label || 'N/A'}</td>
+                                            <td>${service.serviceName || service.label || ''}</td>
                                             <td>${service.priceInEuroWithoutVAT || '0'} €</td>
                                         </tr>
                                     `).join('') : `
                                     <tr>
-                                        <td>${row.services?.serviceName || 'N/A'}</td>
+                                        <td>${row.services?.serviceName || ''}</td>
                                         <td>${row.services?.priceInEuroWithoutVAT || '0'} €</td>
                                     </tr>
                                 `}
@@ -643,7 +643,7 @@ const OfferPage = () => {
                                 ${Array.isArray(row.parts) && row.parts.length > 0 ? 
                                     row.parts.map(part => `
                                         <tr>
-                                            <td>${part.label || part.name || 'N/A'}</td>
+                                            <td>${part.label || part.name || ''}</td>
                                             <td>${part.quantity || 1}</td>
                                             <td>${part.pricePerUnit || '0'} €</td>
                                         </tr>
@@ -1345,15 +1345,15 @@ const OfferPage = () => {
             Customer: row.customerFullName || '',
             'Yachts': Array.isArray(row.yachts) && row.yachts.length > 0 
                 ? row.yachts.map(yacht => `${yacht.name} - ${yacht.model}`).join(', ')
-                : (row.yachtName ? `${row.yachtName} - ${row.yachtModel}` : 'N/A'),
+                : (row.yachtName ? `${row.yachtName} - ${row.yachtModel}` : ''),
             'Boat Registration': Array.isArray(row.yachts) && row.yachts.length > 0 
                 ? row.yachts.map(yacht => yacht.countryCode).join(', ')
-                : (row.countryCode || 'N/A'),
+                : (row.countryCode || ''),
             Status: row.status,
             'Service Category': Array.isArray(row.services) && row.services.length > 0 
                 ? row.services.map(service => `${service.serviceName}, ${service.priceInEuroWithoutVAT}€`).join('; ')
-                : (row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A'),
-            Parts: Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : 'N/A'
+                : (row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : ''),
+            Parts: Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : ''
         }));
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Offers');
@@ -1688,23 +1688,23 @@ const OfferPage = () => {
                                             <td>
                                                 {Array.isArray(row.yachts) && row.yachts.length > 0 
                                                     ? row.yachts.map(yacht => `${yacht.name} - ${yacht.model}`).join(', ')
-                                                    : (row.yachtName ? `${row.yachtName} - ${row.yachtModel}` : 'N/A')
+                                                    : (row.yachtName ? `${row.yachtName} - ${row.yachtModel}` : '')
                                                 }
                                             </td>
                                             <td>
                                                 {Array.isArray(row.yachts) && row.yachts.length > 0 
                                                     ? row.yachts.map(yacht => yacht.countryCode).join(', ')
-                                                    : (row.countryCode || 'N/A')
+                                                    : (row.countryCode || '')
                                                 }
                                             </td>
                                             <td>{row.status}</td>
                                             <td>
                                                 {Array.isArray(row.services) && row.services.length > 0 
                                                     ? row.services.map(service => `${service.serviceName}, ${service.priceInEuroWithoutVAT}€`).join('; ')
-                                                    : (row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : 'N/A')
+                                                    : (row.services && Object.keys(row.services).length > 0 ? `${row.services.serviceName}, ${row.services.priceInEuroWithoutVAT}€` : '')
                                                 }
                                             </td>
-                                            <td>{Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : 'N/A'}</td>
+                                            <td>{Array.isArray(row.parts) ? row.parts.map(part => part.label || part.name).join(', ') : ''}</td>
                                         </tr>
                                     ))}
                                 </tbody>
