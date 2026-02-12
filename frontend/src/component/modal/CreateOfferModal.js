@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button, Select, Option } from "@material-tailwind/react";
 import { ClipLoader } from 'react-spinners';
 import Modal from '@/ui/Modal';
@@ -164,7 +163,7 @@ const CreateOfferModal = ({
                     }}
                 />
             </div>
-            <Button onClick={openCreateServiceModal} color="blue">
+            <Button type="button" onClick={openCreateServiceModal} color="blue">
                 Add Service
             </Button>
             <div className="mb-4">
@@ -195,7 +194,7 @@ const CreateOfferModal = ({
                     }}
                 />
             </div>
-            <Button onClick={openCreatePartModal} color="blue">
+            <Button type="button" onClick={openCreatePartModal} color="blue">
                 Add Part
             </Button>
 
@@ -214,7 +213,7 @@ const CreateOfferModal = ({
                 <Option value="canceled" className="text-black">Canceled</Option>
             </Select>
             <div className="flex justify-end">
-                <Button variant="text" color="red" onClick={onClose} className="mr-1">
+                <Button type="button" variant="text" color="red" onClick={onClose} className="mr-1">
                     <span>Cancel</span>
                 </Button>
                 <Button color="green" type="submit" disabled={loading}>
