@@ -26,6 +26,24 @@ const CreateOfferModal = ({
         label: `${yacht.name} - ${yacht.model}`
     }));
 
+    const serviceOptions = catagoryData.map(category => ({
+        value: category,
+        label: `${category.serviceName} - ${category.priceInEuroWithoutVAT}€`
+    }));
+
+    const selectedServiceOptions = serviceOptions.filter(option =>
+        Array.isArray(formData.services) && formData.services.some(service => {
+            const serviceId = service?.id ?? service?.value?.id;
+            const optionId = option.value?.id;
+
+            if (serviceId && optionId) {
+                return serviceId === optionId;
+            }
+
+            return (service?.serviceName ?? service?.value?.serviceName) === option.value?.serviceName;
+        })
+    );
+
     const combinedParts = partOptions.map(part => ({
         ...part,
         color: part.unofficially ? 'green' : 'red'
@@ -143,12 +161,9 @@ const CreateOfferModal = ({
                 <ReactSelect
                     id="services-select"
                     isMulti
-                    options={catagoryData.map(category => ({
-                        value: category,
-                        label: `${category.serviceName} - ${category.priceInEuroWithoutVAT}€`
-                    }))}
-                    value={formData.services}
-                    onChange={(selectedOptions) => handleSelectChange(selectedOptions, 'services')}
+                    options={serviceOptions}
+                    value={selectedServiceOptions}
+                    onChange={(selectedOptions) => handleSelectChange((selectedOptions || []).map(option => option.value), 'services')}
                     placeholder="Select services..."
                     className="mt-1"
                     styles={{

@@ -18,6 +18,7 @@ import Link from 'next/link';
 import CreateOfferModal from '@/component/modal/CreateOfferModal';
 import EditOfferModal from '@/component/modal/EditOfferModal';
 import ExcelJS from 'exceljs';
+import { ClipLoader } from 'react-spinners';
 
 const OfferPage = () => {
     const router = useRouter();
@@ -42,6 +43,8 @@ const OfferPage = () => {
     const [selectedOfferId, setSelectedOfferId] = useState(null);
     const [emailSendingLoading, setEmailSendingLoading] = useState({});
     const [loadingCreateOffer, setLoadingCreateOffer] = useState(false);
+    const [loadingCreateService, setLoadingCreateService] = useState(false);
+    const [loadingCreatePart, setLoadingCreatePart] = useState(false);
     
     // New states for part creation
     const [createPartForOffer, setCreatePartForOffer] = useState(false);
@@ -92,6 +95,7 @@ const OfferPage = () => {
         comment: '',
         countryCode: '',
         pricePerUnit: '',
+        serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
     });
 
     const id = useAppSelector(state => state.userData?.id);
@@ -773,26 +777,48 @@ const OfferPage = () => {
 
     const createService = async (e) => {
         e.preventDefault();
+        setLoadingCreateService(true);
         try {
             await axios.post(`${URL}/priceList/create`, createServiceFormData);
-            getDataCatagory()
-                .then((res) => {
-                    setCatagoryData(res);
-                });
+            const updatedCategories = await getDataCatagory();
+            setCatagoryData(updatedCategories || []);
+            setCreateServiceFormData({
+                serviceName: '',
+                priceInEuroWithoutVAT: '',
+                unitsOfMeasurement: '',
+            });
+            setCreateServiceModalIsOpen(false);
+            toast.success("Service created successfully");
         } catch (error) {
             console.error(error);
+            toast.error("Error creating service");
+        } finally {
+            setLoadingCreateService(false);
         }
     };
 
     const createPart = async (e) => {
         e.preventDefault();
+        if (!createPartFormData.serviceCategory?.serviceName) {
+            toast.error("Error: Service category is required");
+            return;
+        }
+
+        let totalQuantity = 0;
+        if (createPartForOffer) {
+            totalQuantity = parseInt(partWarehouseQuantity || 0) + parseInt(partForOfferQuantity || 1);
+        } else {
+            totalQuantity = parseInt(createPartFormData.quantity || 0);
+        }
+
+        if (Number.isNaN(totalQuantity) || totalQuantity <= 0) {
+            toast.error("Error: Quantity must be greater than 0");
+            return;
+        }
+
+        setLoadingCreatePart(true);
         try {
-            let totalQuantity = 0;
-            if (createPartForOffer) {
-                totalQuantity = parseInt(partWarehouseQuantity || 0) + parseInt(partForOfferQuantity || 1);
-            } else {
-                totalQuantity = parseInt(createPartFormData.quantity || 0);
-            }
+            const isUnofficialWarehouse = createPartFormData.warehouse === 'unofficial';
 
             const partData = {
                 name: createPartFormData.name,
@@ -800,7 +826,9 @@ const OfferPage = () => {
                 warehouse: createPartFormData.warehouse,
                 comment: createPartFormData.comment,
                 countryCode: createPartFormData.countryCode || '',
-                pricePerUnit: createPartFormData.pricePerUnit
+                pricePerUnit: createPartFormData.pricePerUnit,
+                serviceCategory: createPartFormData.serviceCategory,
+                unofficially: isUnofficialWarehouse
             };
 
             const response = await axios.post(`${URL}/warehouse/create`, partData);
@@ -812,7 +840,7 @@ const OfferPage = () => {
                     label: createdPart.name,
                     pricePerUnit: createdPart.pricePerUnit,
                     quantity: partForOfferQuantity || 1,
-                    unofficially: createPartFormData.warehouse === 'unofficial'
+                    unofficially: isUnofficialWarehouse
                 };
 
                 setFormData(prev => ({
@@ -836,7 +864,8 @@ const OfferPage = () => {
                 warehouse: 'official',
                 comment: '',
                 countryCode: '',
-                pricePerUnit: ''
+                pricePerUnit: '',
+                serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
             });
             setPartWarehouseQuantity(0);
             setPartForOfferQuantity(1);
@@ -847,6 +876,8 @@ const OfferPage = () => {
         } catch (error) {
             console.error('Error creating part:', error);
             toast.error("Error creating part");
+        } finally {
+            setLoadingCreatePart(false);
         }
     };
     
@@ -854,15 +885,24 @@ const OfferPage = () => {
         e.preventDefault();
         setLoadingCreateOffer(true);
 
+        const normalizedServices = Array.isArray(formData.services)
+            ? formData.services.map(service => service?.value ?? service).filter(Boolean)
+            : [];
+
+        const normalizedParts = Array.isArray(formData.parts) ? formData.parts : [];
+
         switch (true) {
             case !Array.isArray(formData.yachts) || formData.yachts.length === 0:
                 toast.error("Error: At least one yacht is required");
+                setLoadingCreateOffer(false);
                 return;
-            case !Array.isArray(formData.services) || formData.services.length === 0:
+            case normalizedServices.length === 0:
                 toast.error("Error: At least one service is required");
+                setLoadingCreateOffer(false);
                 return;
-            case formData.parts.length === 0:
+            case normalizedParts.length === 0:
                 toast.error("Error: Parts are required");
+                setLoadingCreateOffer(false);
                 return;
         }
         try {
@@ -871,8 +911,8 @@ const OfferPage = () => {
                 ...formData, 
                 userId: id,
                 customerId: id,
-                services: formData.services || {},
-                parts: formData.parts || [],
+                services: normalizedServices,
+                parts: normalizedParts,
                 price: 0,
                 description: formData.comment || ''
             };
@@ -912,11 +952,11 @@ const OfferPage = () => {
             setModalIsOpen(false);
             setEditMode(false);
             setEditId(null);
-            setLoadingCreateOffer(false);
-            toast.success("Offer created successfully");
+            toast.success(editMode ? "Offer updated successfully" : "Offer created successfully");
         } catch (error) {
             console.error('Error creating offer:', error);
             toast.error("Error creating offer");
+        } finally {
             setLoadingCreateOffer(false);
         }
     };
@@ -1023,7 +1063,8 @@ const OfferPage = () => {
             warehouse: 'official',
             comment: '',
             countryCode: '',
-            pricePerUnit: ''
+            pricePerUnit: '',
+            serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
         });
         setPartWarehouseQuantity(0);
         setPartForOfferQuantity(1);
@@ -1861,12 +1902,24 @@ const OfferPage = () => {
                             onChange={(e) => setCreateServiceFormData({...createServiceFormData, priceInEuroWithoutVAT: e.target.value})}
                             required
                         />
+                        <Select
+                            label="Units of Measurement"
+                            value={createServiceFormData.unitsOfMeasurement}
+                            onChange={(value) => setCreateServiceFormData({ ...createServiceFormData, unitsOfMeasurement: value })}
+                            className="text-black border-gray-300 rounded-xs [&>div]:text-black"
+                            labelProps={{ className: 'text-black' }}
+                            required
+                        >
+                            <Option className="text-black" value="">Select...</Option>
+                            <Option className="text-black" value="pcs.">pcs. (pieces)</Option>
+                            <Option className="text-black" value="hrs.">hrs. (hours)</Option>
+                        </Select>
                         <div className="flex justify-end">
-                            <Button variant="text" color="red" onClick={closeCreateServiceModal} className="mr-1">
+                            <Button type="button" variant="text" color="red" onClick={closeCreateServiceModal} className="mr-1">
                                 <span>Cancel</span>
                             </Button>
-                            <Button color="green" type="submit">
-                                <span>Create</span>
+                            <Button color="green" type="submit" disabled={loadingCreateService}>
+                                {loadingCreateService ? <ClipLoader size={13} color={"#123abc"} /> : <span>Create</span>}
                             </Button>
                         </div>
                     </form>
@@ -1896,6 +1949,24 @@ const OfferPage = () => {
                         >
                             <Option value="official">Official Warehouse</Option>
                             <Option value="unofficial">Unofficial Warehouse</Option>
+                        </Select>
+
+                        <Select
+                            label="Service Category"
+                            value={createPartFormData.serviceCategory}
+                            onChange={(value) => handleSelectChangePart(value, 'serviceCategory')}
+                            required
+                            className="text-black border-gray-300 rounded-xs [&>div]:text-black"
+                            labelProps={{ className: 'text-black' }}
+                        >
+                            <Option value={{ serviceName: '', priceInEuroWithoutVAT: '' }} className="text-black">
+                                Select a category...
+                            </Option>
+                            {catagoryData.map((category) => (
+                                <Option key={category.id} value={category} className="text-black">
+                                    {category.serviceName} - {category.priceInEuroWithoutVAT}€
+                                </Option>
+                            ))}
                         </Select>
                         
                         {createPartForOffer && (
@@ -1956,11 +2027,11 @@ const OfferPage = () => {
                         />
                         
                         <div className="flex justify-end">
-                            <Button variant="text" color="red" onClick={closeCreatePartModal} className="mr-1">
+                            <Button type="button" variant="text" color="red" onClick={closeCreatePartModal} className="mr-1">
                                 <span>Cancel</span>
                             </Button>
-                            <Button color="green" type="submit">
-                                {createPartForOffer ? "Create & Add to Offer" : "Add to Warehouse"}
+                            <Button color="green" type="submit" disabled={loadingCreatePart}>
+                                {loadingCreatePart ? <ClipLoader size={13} color={"#123abc"} /> : (createPartForOffer ? "Create & Add to Offer" : "Add to Warehouse")}
                             </Button>
                         </div>
                     </form>
