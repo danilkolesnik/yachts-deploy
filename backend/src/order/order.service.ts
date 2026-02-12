@@ -656,7 +656,7 @@ export class OrderService {
   async getAllTimers() {
     const timers = await this.orderTimerRepository.find({
       order: { startTime: 'DESC' },
-      where: { status: In(['Completed', 'Paused']) }
+      where: { status: In(['Completed', 'Paused', "finished"]) }
     });
 
     const assignedWorkers = await this.usersRepository.find({
