@@ -1220,6 +1220,11 @@ const OfferPage = () => {
         unofficially: part.unofficially || false
     }));
 
+    const serviceCategoryOptions = catagoryData.map((category) => ({
+        value: String(category.id),
+        label: `${category.serviceName} - ${category.priceInEuroWithoutVAT}€`,
+    }));
+
     const closeEditModal = () => {
         setEditModalIsOpen(false);
         setFilteredYachts([]);
@@ -1958,23 +1963,40 @@ const OfferPage = () => {
                             <Option value="unofficial">Unofficial Warehouse</Option>
                         </Select>
 
-                        <Select
-                            label="Service Category"
-                            value={String(createPartFormData.serviceCategoryId || '')}
-                            onChange={(value) => handleSelectChangePart(value, 'serviceCategoryId')}
-                            required
-                            className="text-black border-gray-300 rounded-xs [&>div]:text-black"
-                            labelProps={{ className: 'text-black' }}
-                        >
-                            <Option value="" className="text-black">
-                                Select a category...
-                            </Option>
-                            {catagoryData.map((category) => (
-                                <Option key={category.id} value={String(category.id)} className="text-black">
-                                    {category.serviceName} - {category.priceInEuroWithoutVAT}€
-                                </Option>
-                            ))}
-                        </Select>
+                        <div>
+                            <label className="block text-sm font-medium text-black mb-1">
+                                Service Category
+                            </label>
+                            <ReactSelect
+                                options={serviceCategoryOptions}
+                                value={
+                                    serviceCategoryOptions.find(
+                                        (option) => option.value === String(createPartFormData.serviceCategoryId || '')
+                                    ) || null
+                                }
+                                onChange={(selectedOption) =>
+                                    handleSelectChangePart(selectedOption?.value || '', 'serviceCategoryId')
+                                }
+                                placeholder="Select a category..."
+                                isClearable
+                                isSearchable
+                                className="mt-1"
+                                styles={{
+                                    control: (provided) => ({
+                                        ...provided,
+                                    }),
+                                    singleValue: (provided) => ({
+                                        ...provided,
+                                        color: 'black',
+                                    }),
+                                    option: (provided, state) => ({
+                                        ...provided,
+                                        color: 'black',
+                                        backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                                    }),
+                                }}
+                            />
+                        </div>
                         
                         {createPartForOffer && (
                             <>
