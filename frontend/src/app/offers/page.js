@@ -420,8 +420,9 @@ const OfferPage = () => {
                     'Authorization': `Bearer ${token}`
                 }   
             });
-            setHistoryData(res.data.data || []);
-            setFilteredHistoryData(res.data.data || []);
+            const finishedOffers = (res.data.data || []).filter(offer => offer.status === 'finished');
+            setHistoryData(finishedOffers);
+            setFilteredHistoryData(finishedOffers);
         } catch (error) {
             console.error('Error loading history:', error);
             toast.error("Error loading history data");
@@ -1333,6 +1334,7 @@ const OfferPage = () => {
         };
 
         return (
+            offer.status !== 'finished' &&
             (filters.searchValue ? matchesSearch() : true) &&
             (filterDate ? offerDate.toDateString() === filterDate.toDateString() : true)
         );
