@@ -941,10 +941,10 @@ const OfferPage = () => {
                 toast.error("Error: At least one yacht is required");
                 setLoadingCreateOffer(false);
                 return;
-            case normalizedServices.length === 0:
-                toast.error("Error: At least one service is required");
-                setLoadingCreateOffer(false);
-                return;
+            // case normalizedServices.length === 0:
+            //     toast.error("Error: At least one service is required");
+            //     setLoadingCreateOffer(false);
+            //     return;
             // case normalizedParts.length === 0:
             //     toast.error("Error: Parts are required");
             //     setLoadingCreateOffer(false);
