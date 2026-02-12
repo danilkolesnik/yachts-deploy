@@ -800,7 +800,7 @@ const OfferPage = () => {
     const createPart = async (e) => {
         e.preventDefault();
         const selectedServiceCategory = catagoryData.find(
-            (category) => category.id === createPartFormData.serviceCategoryId
+            (category) => String(category.id) === String(createPartFormData.serviceCategoryId)
         );
 
         if (!selectedServiceCategory) {
@@ -1960,7 +1960,7 @@ const OfferPage = () => {
 
                         <Select
                             label="Service Category"
-                            value={createPartFormData.serviceCategoryId}
+                            value={String(createPartFormData.serviceCategoryId || '')}
                             onChange={(value) => handleSelectChangePart(value, 'serviceCategoryId')}
                             required
                             className="text-black border-gray-300 rounded-xs [&>div]:text-black"
@@ -1970,7 +1970,7 @@ const OfferPage = () => {
                                 Select a category...
                             </Option>
                             {catagoryData.map((category) => (
-                                <Option key={category.id} value={category.id} className="text-black">
+                                <Option key={category.id} value={String(category.id)} className="text-black">
                                     {category.serviceName} - {category.priceInEuroWithoutVAT}€
                                 </Option>
                             ))}
