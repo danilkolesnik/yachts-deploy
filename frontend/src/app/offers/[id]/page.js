@@ -11,6 +11,9 @@ import Image from 'next/image';
 import ReactPlayer from 'react-player';
 import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
+import { jsPDF } from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
+import { statusStyles } from '@/utils/statusStyles';
 
 const OfferDetail = ({ params }) => {
     const { id } = use(params);
@@ -96,24 +99,96 @@ const OfferDetail = ({ params }) => {
         setShowGallery(true);
     };
 
-    const handleExportPdf = async () => {
+    const generateOfferPdf = (offerData) => {
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        let y = 14;
+        const margin = 14;
+        const lineHeight = 7;
+
+        doc.setFontSize(18);
+        doc.text('Offer Details', margin, y);
+        y += lineHeight + 4;
+
+        doc.setFontSize(11);
+        doc.text(`Offer ID: ${offerData.id}`, margin, y);
+        y += lineHeight;
+        doc.text(`Date: ${new Date(offerData.createdAt).toLocaleString()}`, margin, y);
+        y += lineHeight;
+        doc.text(`Customer: ${offerData.customerFullName || ''}`, margin, y);
+        y += lineHeight;
+        doc.text(`Status: ${offerData.status || ''}`, margin, y);
+        y += lineHeight;
+        if (offerData.location) {
+            doc.text(`Location: ${offerData.location}`, margin, y);
+            y += lineHeight;
+        }
+        if (offerData.language) {
+            doc.text(`Language: ${offerData.language}`, margin, y);
+            y += lineHeight;
+        }
+        y += lineHeight + 6;
+
+        const yachtsData = Array.isArray(offerData.yachts) && offerData.yachts.length > 0
+            ? offerData.yachts.map(yacht => [yacht.name || '', yacht.model || '', yacht.countryCode || ''])
+            : [[offerData.yachtName || '', offerData.yachtModel || '', offerData.countryCode || '']];
+        autoTable(doc, {
+            startY: y,
+            head: [['Yacht Name', 'Model', 'Boat Registration']],
+            body: yachtsData,
+            margin: { left: margin },
+            theme: 'grid',
+        });
+        y = doc.lastAutoTable.finalY + 10;
+
+        const servicesData = Array.isArray(offerData.services) && offerData.services.length > 0
+            ? offerData.services.map(s => [s.serviceName || s.label || '', String(s.priceInEuroWithoutVAT ?? '0') + ' €'])
+            : (offerData.services && typeof offerData.services === 'object' ? [[offerData.services.serviceName || offerData.services.label || '', String(offerData.services.priceInEuroWithoutVAT ?? '0') + ' €']] : []);
+        if (servicesData.length > 0) {
+            if (y > 250) { doc.addPage(); y = 14; }
+            autoTable(doc, {
+                startY: y,
+                head: [['Service Name', 'Price (€)']],
+                body: servicesData,
+                margin: { left: margin },
+                theme: 'grid',
+            });
+            y = doc.lastAutoTable.finalY + 10;
+        }
+
+        const partsData = Array.isArray(offerData.parts) && offerData.parts.length > 0
+            ? offerData.parts.map(p => [p.label || p.name || p.partName || '', String(p.quantity ?? 1), String(p.pricePerUnit ?? '0') + ' €'])
+            : [];
+        if (partsData.length > 0) {
+            if (y > 240) { doc.addPage(); y = 14; }
+            autoTable(doc, {
+                startY: y,
+                head: [['Part Name', 'Quantity', 'Price per Unit (€)']],
+                body: partsData,
+                margin: { left: margin },
+                theme: 'grid',
+            });
+            y = doc.lastAutoTable.finalY + 10;
+        }
+
+        if (offerData.comment && String(offerData.comment).trim()) {
+            if (y > 260) { doc.addPage(); y = 14; }
+            doc.setFontSize(12);
+            doc.text('Comments', margin, y);
+            y += lineHeight;
+            doc.setFontSize(10);
+            const commentLines = doc.splitTextToSize(offerData.comment, pageWidth - 2 * margin);
+            doc.text(commentLines, margin, y);
+        }
+
+        doc.save(`offer-${offerData.id}.pdf`);
+    };
+
+    const handleExportPdf = () => {
+        if (!offer) return;
         setPdfExportLoading(true);
         try {
-            const response = await axios.get(`${URL}/offer/${id}/export-pdf`, {
-                responseType: 'blob',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = `${url}?${new Date().getTime()}`; // Добавление уникального параметра
-            link.setAttribute('download', `offer-${id}.pdf`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
+            generateOfferPdf(offer);
         } catch (error) {
             console.error('Error exporting PDF:', error);
         } finally {
@@ -195,20 +270,166 @@ const OfferDetail = ({ params }) => {
                     )}
                 </div>
                 <h1 className="text-4xl font-extrabold mb-6 text-black pt-4">Offer Details</h1>
-                <div className="space-y-6">
-                    <div className="flex items-center">
-                        <span className="font-semibold text-gray-800 pr-2">ID:</span>
-                        <span className="text-black">{offer.id}</span>
-                    </div>
-                    <div className="flex items-center">
-                        <span className="font-semibold text-gray-800 pr-2">Customer:</span>
-                        <span className="text-black">{offer.customerFullName}</span>
-                    </div>
-                    <div className="flex items-center">
-                        <span className="font-semibold text-gray-800 pr-2">Yacht Name:</span>
-                        <span className="text-black">{offer.yachtName}</span>
+                
+                {/* Basic Information */}
+                <div className="bg-gray-50 p-6 rounded-lg mb-6">
+                    <h2 className="text-2xl font-bold mb-4 text-black">Basic Information</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-start">
+                            <span className="font-semibold text-gray-800 pr-2 min-w-[120px]">ID:</span>
+                            <span className="text-black">#{offer.id}</span>
+                        </div>
+                        <div className="flex items-start">
+                            <span className="font-semibold text-gray-800 pr-2 min-w-[120px]">Date:</span>
+                            <span className="text-black">{new Date(offer.createdAt).toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-start">
+                            <span className="font-semibold text-gray-800 pr-2 min-w-[120px]">Customer:</span>
+                            <span className="text-black">{offer.customerFullName || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-start">
+                            <span className="font-semibold text-gray-800 pr-2 min-w-[120px]">Status:</span>
+                            <span 
+                                className="text-black px-3 py-1 rounded"
+                                style={{
+                                    ...statusStyles[offer.status],
+                                    padding: '5px 10px',
+                                    borderRadius: '5px',
+                                    display: 'inline-block'
+                                }}
+                            >
+                                {offer.status || 'N/A'}
+                            </span>
+                        </div>
+                        {offer.location && (
+                            <div className="flex items-start">
+                                <span className="font-semibold text-gray-800 pr-2 min-w-[120px]">Location:</span>
+                                <span className="text-black">{offer.location}</span>
+                            </div>
+                        )}
+                        {offer.language && (
+                            <div className="flex items-start">
+                                <span className="font-semibold text-gray-800 pr-2 min-w-[120px]">Language:</span>
+                                <span className="text-black">{offer.language.toUpperCase()}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
+
+                {/* Yachts Information */}
+                <div className="bg-gray-50 p-6 rounded-lg mb-6">
+                    <h2 className="text-2xl font-bold mb-4 text-black">Yacht Information</h2>
+                    {Array.isArray(offer.yachts) && offer.yachts.length > 0 ? (
+                        <div className="space-y-4">
+                            {offer.yachts.map((yacht, index) => (
+                                <div key={index} className="border-b pb-4 last:border-b-0">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <span className="font-semibold text-gray-800">Yacht Name:</span>
+                                            <span className="text-black ml-2">{yacht.name || 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                            <span className="font-semibold text-gray-800">Model:</span>
+                                            <span className="text-black ml-2">{yacht.model || 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                            <span className="font-semibold text-gray-800">Boat Registration:</span>
+                                            <span className="text-black ml-2">{yacht.countryCode || 'N/A'}</span>
+                                        </div>
+                                        {yacht.userName && (
+                                            <div>
+                                                <span className="font-semibold text-gray-800">Owner:</span>
+                                                <span className="text-black ml-2">{yacht.userName}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <span className="font-semibold text-gray-800">Yacht Name:</span>
+                                <span className="text-black ml-2">{offer.yachtName || 'N/A'}</span>
+                            </div>
+                            <div>
+                                <span className="font-semibold text-gray-800">Model:</span>
+                                <span className="text-black ml-2">{offer.yachtModel || 'N/A'}</span>
+                            </div>
+                            <div>
+                                <span className="font-semibold text-gray-800">Boat Registration:</span>
+                                <span className="text-black ml-2">{offer.countryCode || 'N/A'}</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Services */}
+                {(Array.isArray(offer.services) && offer.services.length > 0) || (offer.services && typeof offer.services === 'object' && Object.keys(offer.services).length > 0) ? (
+                    <div className="bg-gray-50 p-6 rounded-lg mb-6">
+                        <h2 className="text-2xl font-bold mb-4 text-black">Services</h2>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full border-collapse border border-gray-300">
+                                <thead>
+                                    <tr className="bg-gray-200">
+                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Service Name</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Price (€)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {Array.isArray(offer.services) ? (
+                                        offer.services.map((service, index) => (
+                                            <tr key={index}>
+                                                <td className="border border-gray-300 px-4 py-2 text-black">{service.serviceName || service.label || 'N/A'}</td>
+                                                <td className="border border-gray-300 px-4 py-2 text-black">{service.priceInEuroWithoutVAT || '0'} €</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td className="border border-gray-300 px-4 py-2 text-black">{offer.services.serviceName || offer.services.label || 'N/A'}</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-black">{offer.services.priceInEuroWithoutVAT || '0'} €</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                ) : null}
+
+                {/* Parts */}
+                {Array.isArray(offer.parts) && offer.parts.length > 0 ? (
+                    <div className="bg-gray-50 p-6 rounded-lg mb-6">
+                        <h2 className="text-2xl font-bold mb-4 text-black">Parts</h2>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full border-collapse border border-gray-300">
+                                <thead>
+                                    <tr className="bg-gray-200">
+                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Part Name</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Quantity</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Price per Unit (€)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {offer.parts.map((part, index) => (
+                                        <tr key={index}>
+                                            <td className="border border-gray-300 px-4 py-2 text-black">{part.label || part.name || part.partName || 'N/A'}</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-black">{part.quantity || 1}</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-black">{part.pricePerUnit || '0'} €</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                ) : null}
+
+                {/* Comment */}
+                {offer.comment && String(offer.comment).trim() ? (
+                    <div className="bg-gray-50 p-6 rounded-lg mb-6">
+                        <h2 className="text-2xl font-bold mb-4 text-black">Comments</h2>
+                        <p className="text-black whitespace-pre-wrap">{offer.comment}</p>
+                    </div>
+                ) : null}
                 {offer.imageUrls.length > 0 && (
                     <div className="mt-10">
                         <h2 className="text-3xl font-bold mb-6 text-black">Images</h2>
