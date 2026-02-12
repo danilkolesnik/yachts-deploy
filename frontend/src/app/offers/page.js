@@ -1959,8 +1959,8 @@ const OfferPage = () => {
                             className="text-black border-gray-300 rounded-xs [&>div]:text-black"
                             labelProps={{ className: 'text-black' }}
                         >
-                            <Option value="official">Official Warehouse</Option>
-                            <Option value="unofficial">Unofficial Warehouse</Option>
+                            <Option value="official" className="text-black">Official Warehouse</Option>
+                            <Option value="unofficial" className="text-black">Unofficial Warehouse</Option>
                         </Select>
 
                         <div>
