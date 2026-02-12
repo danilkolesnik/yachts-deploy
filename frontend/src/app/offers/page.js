@@ -706,6 +706,38 @@ const OfferPage = () => {
         applyHistoryFilters(newFilters);
     };
 
+    const getServerMessage = (payload, fallback) => {
+        const message = payload?.message;
+        if (Array.isArray(message)) {
+            return message.join(', ');
+        }
+        if (typeof message === 'string' && message.trim() !== '') {
+            return message;
+        }
+        return fallback;
+    };
+
+    const hasServerBusinessError = (response, fallbackMessage) => {
+        const responseCode = response?.data?.code;
+        if (typeof responseCode === 'number' && responseCode >= 400) {
+            toast.error(getServerMessage(response?.data, fallbackMessage));
+            return true;
+        }
+        return false;
+    };
+
+    const showServerError = (error, fallbackMessage) => {
+        if (error?.response?.status === 400) {
+            toast.error(getServerMessage(error.response.data, fallbackMessage));
+            return;
+        }
+        if (error?.response?.data?.code === 400) {
+            toast.error(getServerMessage(error.response.data, fallbackMessage));
+            return;
+        }
+        toast.error(getServerMessage(error?.response?.data, error?.message || fallbackMessage));
+    };
+
     // Rest of your existing functions remain the same...
     const getData = async () => {
         const token = localStorage.getItem('token');
@@ -779,7 +811,10 @@ const OfferPage = () => {
         e.preventDefault();
         setLoadingCreateService(true);
         try {
-            await axios.post(`${URL}/priceList/create`, createServiceFormData);
+            const response = await axios.post(`${URL}/priceList/create`, createServiceFormData);
+            if (hasServerBusinessError(response, "Error creating service")) {
+                return;
+            }
             const updatedCategories = await getDataCatagory();
             setCatagoryData(updatedCategories || []);
             setCreateServiceFormData({
@@ -791,7 +826,7 @@ const OfferPage = () => {
             toast.success("Service created successfully");
         } catch (error) {
             console.error(error);
-            toast.error("Error creating service");
+            showServerError(error, "Error creating service");
         } finally {
             setLoadingCreateService(false);
         }
@@ -839,6 +874,9 @@ const OfferPage = () => {
             };
 
             const response = await axios.post(`${URL}/warehouse/create`, partData);
+            if (hasServerBusinessError(response, "Error creating part")) {
+                return;
+            }
             const createdPart = response.data.data;
 
             if (createPartForOffer && isCreatingPartForCurrentOffer) {
@@ -882,7 +920,7 @@ const OfferPage = () => {
 
         } catch (error) {
             console.error('Error creating part:', error);
-            toast.error(error);
+            showServerError(error, "Error creating part");
         } finally {
             setLoadingCreatePart(false);
         }
@@ -925,19 +963,25 @@ const OfferPage = () => {
             };
 
             if (editMode) {
-                await axios.put(`${URL}/offer/${editId}`, offerData, {
+                const response = await axios.put(`${URL}/offer/${editId}`, offerData, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 });
+                if (hasServerBusinessError(response, "Error updating offer")) {
+                    return;
+                }
             } else {
-                await axios.post(`${URL}/offer`, offerData, {
+                const response = await axios.post(`${URL}/offer`, offerData, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 });
+                if (hasServerBusinessError(response, "Error creating offer")) {
+                    return;
+                }
                 setFormData({
                     customerFullName: '',
                     yachtName: '',
@@ -962,7 +1006,7 @@ const OfferPage = () => {
             toast.success(editMode ? "Offer updated successfully" : "Offer created successfully");
         } catch (error) {
             console.error('Error creating offer:', error);
-            toast.error("Error creating offer");
+            showServerError(error, "Error creating offer");
         } finally {
             setLoadingCreateOffer(false);
         }
