@@ -8,6 +8,7 @@ import DataTable from 'react-data-table-component';
 import Loader from '@/ui/loader';
 import Header from '@/component/header';
 import axios from 'axios';
+import { statusStyles } from '@/utils/statusStyles';
 
 const OrdersHistoryPage = () => {
     const router = useRouter();
@@ -40,8 +41,24 @@ const OrdersHistoryPage = () => {
             selector: row => row.worker ? row.worker.fullName : '-'
         }, 
         {
-            name:'Status',
-            selector: row => row.order?.status || row.status
+            name: 'Status',
+            selector: row => row.order?.status || row.status,
+            cell: row => {
+                const status = row.order?.status || row.status;
+                const style = statusStyles[status];
+                return style ? (
+                    <span style={{
+                        ...style,
+                        padding: '5px 10px',
+                        borderRadius: '5px',
+                        display: 'inline-block'
+                    }}>
+                        {status || '-'}
+                    </span>
+                ) : (
+                    <span>{status || '-'}</span>
+                );
+            }
         },
        {
         name:'Total Time',

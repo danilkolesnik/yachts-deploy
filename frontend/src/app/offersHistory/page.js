@@ -7,6 +7,7 @@ import Header from '@/component/header';
 import axios from 'axios';
 import DataTable from 'react-data-table-component';
 import Loader from '@/ui/loader';
+import { statusStyles } from '@/utils/statusStyles';
 
 
 const OffersHistoryPage = () => {
@@ -26,13 +27,9 @@ const OffersHistoryPage = () => {
         }
     };
 
-    // useEffect(() => {
-    //     const fetchAndSortHistory = async () => {
-    //         await getOfferHistory();
-    //         // setOfferHistory(prevHistory => prevHistory.sort((a, b) => new Date(b.changeDate) - new Date(a.changeDate)));
-    //     };
-    //     fetchAndSortHistory();
-    // }, []);
+    useEffect(() => {
+        getOfferHistory();
+    }, []);
 
     const formatKey = (key) => {
         return key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, str => str.toUpperCase());
@@ -69,7 +66,10 @@ const OffersHistoryPage = () => {
         },
         {
             name: 'Offer ID',
-            selector: row => row.offerId,
+            selector: row => `#${row.offerId}`,
+            cell: row => (
+                <span className="text-blue-500 font-semibold">#{row.offerId}</span>
+            ),
             sortable: true,
         },
         {
@@ -84,10 +84,42 @@ const OffersHistoryPage = () => {
         {
             name: 'Old',
             selector: row => row.oldValue,
+            cell: row => {
+                const isStatus = row.changedField === 'Status';
+                if (isStatus && statusStyles[row.oldValue]) {
+                    return (
+                        <span style={{
+                            ...statusStyles[row.oldValue],
+                            padding: '5px 10px',
+                            borderRadius: '5px',
+                            display: 'inline-block'
+                        }}>
+                            {row.oldValue}
+                        </span>
+                    );
+                }
+                return <span className="text-black">{row.oldValue}</span>;
+            },
         },
         {
-            name: 'New ',
+            name: 'New',
             selector: row => row.newValue,
+            cell: row => {
+                const isStatus = row.changedField === 'Status';
+                if (isStatus && statusStyles[row.newValue]) {
+                    return (
+                        <span style={{
+                            ...statusStyles[row.newValue],
+                            padding: '5px 10px',
+                            borderRadius: '5px',
+                            display: 'inline-block'
+                        }}>
+                            {row.newValue}
+                        </span>
+                    );
+                }
+                return <span className="text-black">{row.newValue}</span>;
+            },
         },
     ];
 
