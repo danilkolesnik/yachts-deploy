@@ -436,7 +436,7 @@ const ConfirmedOffersPage = () => {
                             placeholder="Enter email address"
                             value={emailAddress}
                             onChange={(e) => setEmailAddress(e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded mb-4"
+                            className="w-full p-2 border border-gray-300 rounded mb-4 text-black"
                         />
                         <div className="flex justify-end gap-2">
                             <Button 
