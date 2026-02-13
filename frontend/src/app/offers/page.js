@@ -351,7 +351,7 @@ const OfferPage = () => {
             name: '',
             cell: row => (
                 <button
-                    onClick={() => row.status !== 'confirmed' && openCreateOrderModal(row)}
+                    onClick={() => row.status !== 'confirmed' || row.status !== 'finished' && openCreateOrderModal(row)}
                     disabled={row.status === 'confirmed'}
                     className={`px-2 py-2 text-white rounded transition-all duration-200 ${
                         row.status === 'confirmed' 
@@ -414,7 +414,7 @@ const OfferPage = () => {
                     'Authorization': `Bearer ${token}`
                 }   
             });
-            const finishedOffers = (res.data.data || []).filter(offer => offer.status === 'finished');
+            const finishedOffers = (res.data.data || []).filter(offer => offer.status === 'finished' || offer.status === 'confirmed');
             setHistoryData(finishedOffers);
             setFilteredHistoryData(finishedOffers);
         } catch (error) {
@@ -1377,7 +1377,7 @@ const OfferPage = () => {
         };
 
         return (
-            offer.status !== 'finished' &&
+
             (filters.searchValue ? matchesSearch() : true) &&
             (filterDate ? offerDate.toDateString() === filterDate.toDateString() : true)
         );
