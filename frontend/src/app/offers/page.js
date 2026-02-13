@@ -47,6 +47,9 @@ const OfferPage = () => {
     const [loadingCreateOffer, setLoadingCreateOffer] = useState(false);
     const [loadingCreateService, setLoadingCreateService] = useState(false);
     const [loadingCreatePart, setLoadingCreatePart] = useState(false);
+    const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+    const [offerToDelete, setOfferToDelete] = useState(null);
+    const [deleting, setDeleting] = useState(false);
     
     // New states for part creation
     const [createPartForOffer, setCreatePartForOffer] = useState(false);
@@ -354,7 +357,7 @@ const OfferPage = () => {
                     onClick={() => row.status !== 'confirmed' || row.status !== 'finished' && openCreateOrderModal(row)}
                     disabled={row.status === 'confirmed'}
                     className={`px-2 py-2 text-white rounded transition-all duration-200 ${
-                        row.status === 'confirmed' 
+                        row.status === 'confirmed' || row.status === 'finished'
                             ? 'bg-[#dd3333] opacity-50 cursor-not-allowed' 
                             : 'bg-[#dd3333] hover:bg-[#c42d2d] cursor-pointer'
                     }`}
@@ -1115,16 +1118,35 @@ const OfferPage = () => {
         setEditModalIsOpen(true);
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = (id) => {
+        setOfferToDelete(id);
+        setDeleteConfirmModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!offerToDelete) return;
+        
+        setDeleting(true);
         try {
-            await axios.post(`${URL}/offer/delete/${id}`);
+            await axios.post(`${URL}/offer/delete/${offerToDelete}`);
             getData()
                 .then((res) => {
                     setData(res);
                 });
+            toast.success("Offer deleted successfully");
+            setDeleteConfirmModalOpen(false);
+            setOfferToDelete(null);
         } catch (error) {
             console.error(error);
+            toast.error("Error deleting offer");
+        } finally {
+            setDeleting(false);
         }
+    };
+
+    const cancelDelete = () => {
+        setDeleteConfirmModalOpen(false);
+        setOfferToDelete(null);
     };
 
     const openCreateModal = () => {
@@ -2168,6 +2190,38 @@ const OfferPage = () => {
                             </Button>
                             <Button color="green" onClick={handleEmailSubmit}>
                                 <span>Send</span>
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+                <Modal isOpen={deleteConfirmModalOpen} onClose={cancelDelete} title="Confirm Deletion">
+                    <div className="space-y-4">
+                        <p className="text-gray-700">
+                            Are you sure you want to delete offer <strong>#{offerToDelete}</strong>? This action cannot be undone.
+                        </p>
+                        <div className="flex justify-end space-x-2 pt-4">
+                            <Button 
+                                variant="text" 
+                                color="gray" 
+                                onClick={cancelDelete}
+                                disabled={deleting}
+                                className="mr-2"
+                            >
+                                <span>No, Cancel</span>
+                            </Button>
+                            <Button 
+                                color="red" 
+                                onClick={confirmDelete}
+                                disabled={deleting}
+                            >
+                                {deleting ? (
+                                    <div className="flex items-center gap-2">
+                                        <ClipLoader size={13} color={"#ffffff"} />
+                                        <span>Deleting...</span>
+                                    </div>
+                                ) : (
+                                    <span>Yes, Delete</span>
+                                )}
                             </Button>
                         </div>
                     </div>

@@ -227,7 +227,7 @@ const WarehousePage = () => {
         },
         {
             name: 'Service Category',
-            selector: row => row.serviceCategory?.serviceName || 'N/A',
+            selector: row => row.serviceCategory?.serviceName || '',
             sortable: true,
         },
         {

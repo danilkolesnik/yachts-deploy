@@ -11,6 +11,7 @@ import Modal from '@/ui/Modal';
 import ReactSelect from 'react-select';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-toastify';
+import { ClipLoader } from 'react-spinners';
 
 const UsersPage = () => {
     const [users, setUsers] = useState([]);
@@ -21,6 +22,9 @@ const UsersPage = () => {
     const [userOptions, setUserOptions] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
+    const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState(null);
+    const [deleting, setDeleting] = useState(false);
 
     const roles = [
         { value: 'admin', label: 'Admin' },
@@ -106,18 +110,28 @@ const UsersPage = () => {
         }
     };
 
-    const deleteUser = async (userId) => {
+    const deleteUser = (userId) => {
+        setUserToDelete(userId);
+        setDeleteConfirmModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!userToDelete) return;
+        
+        setDeleting(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.delete(`${URL}/users/${userId}`, {
+            const response = await axios.delete(`${URL}/users/${userToDelete}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
 
             if (response.data.code === 200) {
-                setUsers(users.filter(user => user.id !== userId));
+                setUsers(users.filter(user => user.id !== userToDelete));
                 toast.success("User deleted successfully");
+                setDeleteConfirmModalOpen(false);
+                setUserToDelete(null);
             } else {
                 console.error('Failed to delete user:', response.data.message);
                 toast.error("Failed to delete user");
@@ -125,7 +139,14 @@ const UsersPage = () => {
         } catch (error) {
             console.error('Error deleting user:', error);
             toast.error("Error deleting user");
+        } finally {
+            setDeleting(false);
         }
+    };
+
+    const cancelDelete = () => {
+        setDeleteConfirmModalOpen(false);
+        setUserToDelete(null);
     };
 
     const handleUserChange = (selectedOption) => {
@@ -254,6 +275,45 @@ const UsersPage = () => {
                             </Button>
                             <Button color="green" onClick={updateRole} className="w-full md:w-auto">
                                 <span>Update</span>
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+
+                {/* Delete Confirmation Modal */}
+                <Modal isOpen={deleteConfirmModalOpen} onClose={cancelDelete} title="Confirm Deletion">
+                    <div className="space-y-4">
+                        {userToDelete && (() => {
+                            const user = users.find(u => u.id === userToDelete);
+                            return (
+                                <p className="text-gray-700">
+                                    Are you sure you want to delete user <strong>"{user?.fullName || `#${userToDelete}`}"</strong>? This action cannot be undone.
+                                </p>
+                            );
+                        })()}
+                        <div className="flex justify-end space-x-2 pt-4">
+                            <Button 
+                                variant="text" 
+                                color="gray" 
+                                onClick={cancelDelete}
+                                disabled={deleting}
+                                className="mr-2"
+                            >
+                                <span>No, Cancel</span>
+                            </Button>
+                            <Button 
+                                color="red" 
+                                onClick={confirmDelete}
+                                disabled={deleting}
+                            >
+                                {deleting ? (
+                                    <div className="flex items-center gap-2">
+                                        <ClipLoader size={13} color={"#ffffff"} />
+                                        <span>Deleting...</span>
+                                    </div>
+                                ) : (
+                                    <span>Yes, Delete</span>
+                                )}
                             </Button>
                         </div>
                     </div>

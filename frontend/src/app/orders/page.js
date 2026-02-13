@@ -15,6 +15,7 @@ import WorkTimer from '@/component/workTimer/workTimer';
 import { statusStyles } from '@/utils/statusStyles';
 import { useRouter } from 'next/navigation';
 import ExcelJS from 'exceljs';
+import { toast } from 'react-toastify';
 
 const OrderPage = () => {
     const router = useRouter();
@@ -39,6 +40,9 @@ const OrderPage = () => {
     const [role, setRole] = useState(null);
     const [helpModalOpen, setHelpModalOpen] = useState(false);
     const [activeHelpSection, setActiveHelpSection] = useState('overview');
+    const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+    const [orderToDelete, setOrderToDelete] = useState(null);
+    const [deleting, setDeleting] = useState(false);
     const tableRef = useRef(null);
 
     // Manual/Help content in English
@@ -278,15 +282,32 @@ const OrderPage = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm("Are you sure you want to delete this order? This action cannot be undone.")) {
-            try {
-                await axios.post(`${URL}/orders/delete/${id}`);
-                fetchOrders();
-            } catch (error) {
-                console.error(error);
-            }
+    const handleDelete = (id) => {
+        setOrderToDelete(id);
+        setDeleteConfirmModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!orderToDelete) return;
+        
+        setDeleting(true);
+        try {
+            await axios.post(`${URL}/orders/delete/${orderToDelete}`);
+            fetchOrders();
+            toast.success("Order deleted successfully");
+            setDeleteConfirmModalOpen(false);
+            setOrderToDelete(null);
+        } catch (error) {
+            console.error(error);
+            toast.error("Error deleting order");
+        } finally {
+            setDeleting(false);
         }
+    };
+
+    const cancelDelete = () => {
+        setDeleteConfirmModalOpen(false);
+        setOrderToDelete(null);
     };
 
     const columns = [
@@ -790,6 +811,40 @@ const OrderPage = () => {
                             </Button>
                             <Button color="green" onClick={() => updateOrderStatus(selectedOrder.id)} disabled={loadingUpdate} className="w-full md:w-auto">
                                 {loadingUpdate ? <ClipLoader size={13} color={"#123abc"} /> : <span>Update</span>}
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+
+                {/* Delete Confirmation Modal */}
+                <Modal isOpen={deleteConfirmModalOpen} onClose={cancelDelete} title="Confirm Deletion">
+                    <div className="space-y-4">
+                        <p className="text-gray-700">
+                            Are you sure you want to delete order <strong>#{orderToDelete}</strong>? This action cannot be undone.
+                        </p>
+                        <div className="flex justify-end space-x-2 pt-4">
+                            <Button 
+                                variant="text" 
+                                color="gray" 
+                                onClick={cancelDelete}
+                                disabled={deleting}
+                                className="mr-2"
+                            >
+                                <span>No, Cancel</span>
+                            </Button>
+                            <Button 
+                                color="red" 
+                                onClick={confirmDelete}
+                                disabled={deleting}
+                            >
+                                {deleting ? (
+                                    <div className="flex items-center gap-2">
+                                        <ClipLoader size={13} color={"#ffffff"} />
+                                        <span>Deleting...</span>
+                                    </div>
+                                ) : (
+                                    <span>Yes, Delete</span>
+                                )}
                             </Button>
                         </div>
                     </div>

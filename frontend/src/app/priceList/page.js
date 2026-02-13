@@ -12,6 +12,7 @@ import { toast } from 'react-toastify';
 import Header from '@/component/header';
 import ReactSelect from 'react-select';
 import ExcelJS from 'exceljs';
+import { ClipLoader } from 'react-spinners';
 
 const PriceListPage = () => {
     const tableRef = useRef(null);
@@ -32,6 +33,9 @@ const PriceListPage = () => {
     const [priceInputValue, setPriceInputValue] = useState('');
     const [helpModalOpen, setHelpModalOpen] = useState(false);
     const [activeHelpSection, setActiveHelpSection] = useState('overview');
+    const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+    const [serviceToDelete, setServiceToDelete] = useState(null);
+    const [deleting, setDeleting] = useState(false);
 
     // Manual/Help content in English
     const helpSections = {
@@ -199,7 +203,7 @@ const PriceListPage = () => {
                 if (row.subServices && Array.isArray(row.subServices) && row.subServices.length > 0) {
                     return row.subServices.map(sub => `${sub.name} (${sub.size})`).join(', ');
                 }
-                return 'N/A';
+                return '';
             },
             sortable: false,
         },
@@ -308,17 +312,32 @@ const PriceListPage = () => {
         setModalIsOpen(true);
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm("Are you sure you want to delete this service? This action cannot be undone.")) {
-            try {
-                await axios.post(`${URL}/pricelist/delete/${id}`);
-                getData();
-                toast.success("Price list deleted successfully");
-            } catch (error) {
-                console.log(error);
-                toast.error("Error deleting price list");
-            }
+    const handleDelete = (id) => {
+        setServiceToDelete(id);
+        setDeleteConfirmModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!serviceToDelete) return;
+        
+        setDeleting(true);
+        try {
+            await axios.post(`${URL}/pricelist/delete/${serviceToDelete}`);
+            getData();
+            toast.success("Price list deleted successfully");
+            setDeleteConfirmModalOpen(false);
+            setServiceToDelete(null);
+        } catch (error) {
+            console.log(error);
+            toast.error("Error deleting price list");
+        } finally {
+            setDeleting(false);
         }
+    };
+
+    const cancelDelete = () => {
+        setDeleteConfirmModalOpen(false);
+        setServiceToDelete(null);
     };
 
     useEffect(() => {
@@ -442,7 +461,7 @@ const PriceListPage = () => {
             'Service Name': row.serviceName || '',
             'Sub-services': row.subServices && Array.isArray(row.subServices) && row.subServices.length > 0
                 ? row.subServices.map(sub => `${sub.name} (${sub.size})`).join(', ')
-                : 'N/A',
+                : '',
             'Price in EURO without VAT': `${row.priceInEuroWithoutVAT || ''}€`,
             'Units of Measurement': row.unitsOfMeasurement || ''
         }));
@@ -536,7 +555,7 @@ const PriceListPage = () => {
                                             <td>
                                                 {row.subServices && Array.isArray(row.subServices) && row.subServices.length > 0
                                                     ? row.subServices.map(sub => `${sub.name} (${sub.size})`).join(', ')
-                                                    : 'N/A'
+                                                    : ''
                                                 }
                                             </td>
                                             <td>{`${row.priceInEuroWithoutVAT || ''}€`}</td>
@@ -925,6 +944,45 @@ const PriceListPage = () => {
                                 </Button>
                             </div>
                         </form>
+                    </div>
+                </Modal>
+
+                {/* Delete Confirmation Modal */}
+                <Modal isOpen={deleteConfirmModalOpen} onClose={cancelDelete} title="Confirm Deletion">
+                    <div className="space-y-4">
+                        {serviceToDelete && (() => {
+                            const service = data.find(s => s.id === serviceToDelete);
+                            return (
+                                <p className="text-gray-700">
+                                    Are you sure you want to delete service <strong>"{service?.serviceName || `#${serviceToDelete}`}"</strong>? This action cannot be undone.
+                                </p>
+                            );
+                        })()}
+                        <div className="flex justify-end space-x-2 pt-4">
+                            <Button 
+                                variant="text" 
+                                color="gray" 
+                                onClick={cancelDelete}
+                                disabled={deleting}
+                                className="mr-2"
+                            >
+                                <span>No, Cancel</span>
+                            </Button>
+                            <Button 
+                                color="red" 
+                                onClick={confirmDelete}
+                                disabled={deleting}
+                            >
+                                {deleting ? (
+                                    <div className="flex items-center gap-2">
+                                        <ClipLoader size={13} color={"#ffffff"} />
+                                        <span>Deleting...</span>
+                                    </div>
+                                ) : (
+                                    <span>Yes, Delete</span>
+                                )}
+                            </Button>
+                        </div>
                     </div>
                 </Modal>
             </div>
