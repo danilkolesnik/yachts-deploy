@@ -954,7 +954,7 @@ const PriceListPage = () => {
                             const service = data.find(s => s.id === serviceToDelete);
                             return (
                                 <p className="text-gray-700">
-                                    Are you sure you want to delete service <strong>"{service?.serviceName || `#${serviceToDelete}`}"</strong>? This action cannot be undone.
+                                    Are you sure you want to delete service <strong>&quot;{service?.serviceName || `#${serviceToDelete}`}&quot;</strong>? This action cannot be undone.
                                 </p>
                             );
                         })()}

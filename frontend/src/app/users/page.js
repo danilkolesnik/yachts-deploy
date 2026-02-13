@@ -287,7 +287,7 @@ const UsersPage = () => {
                             const user = users.find(u => u.id === userToDelete);
                             return (
                                 <p className="text-gray-700">
-                                    Are you sure you want to delete user <strong>"{user?.fullName || `#${userToDelete}`}"</strong>? This action cannot be undone.
+                                    Are you sure you want to delete user <strong>&quot;{user?.fullName || `#${userToDelete}`}&quot;</strong>? This action cannot be undone.
                                 </p>
                             );
                         })()}
