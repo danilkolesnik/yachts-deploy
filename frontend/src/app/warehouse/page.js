@@ -13,6 +13,7 @@ import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import ExcelJS from 'exceljs';
 import axios from 'axios';
+import { ClipLoader } from 'react-spinners';
 
 const WarehousePage = () => {
     const [data, setData] = useState([]);
@@ -34,6 +35,9 @@ const WarehousePage = () => {
     const [editId, setEditId] = useState(null);
     const [helpModalOpen, setHelpModalOpen] = useState(false);
     const [activeHelpSection, setActiveHelpSection] = useState('overview');
+    const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+    const [partToDelete, setPartToDelete] = useState(null);
+    const [deleting, setDeleting] = useState(false);
     const router = useRouter();
     const tableRef = useRef(null);
 
@@ -331,20 +335,35 @@ const WarehousePage = () => {
         setModalIsOpen(true);
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm("Are you sure you want to delete this part? This action cannot be undone.")) {
-            try {
-                await axios.post(`${URL}/warehouse/delete/${id}`);
-                getData().then((res) => {
-                    setData(res);
-                    setFilteredData(res);
-                })
-                toast.success("Warehouse deleted successfully");
-            } catch (error) {
-                console.log(error);
-                toast.error("Error deleting warehouse");
-            }
+    const handleDelete = (id) => {
+        setPartToDelete(id);
+        setDeleteConfirmModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!partToDelete) return;
+        
+        setDeleting(true);
+        try {
+            await axios.post(`${URL}/warehouse/delete/${partToDelete}`);
+            getData().then((res) => {
+                setData(res);
+                setFilteredData(res);
+            })
+            toast.success("Warehouse deleted successfully");
+            setDeleteConfirmModalOpen(false);
+            setPartToDelete(null);
+        } catch (error) {
+            console.log(error);
+            toast.error("Error deleting warehouse");
+        } finally {
+            setDeleting(false);
         }
+    };
+
+    const cancelDelete = () => {
+        setDeleteConfirmModalOpen(false);
+        setPartToDelete(null);
     };
 
     const openModal = () => {
@@ -793,6 +812,45 @@ const WarehousePage = () => {
                         </Button>
                     </div>
                 </form>
+            </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <Modal isOpen={deleteConfirmModalOpen} onClose={cancelDelete} title="Confirm Deletion">
+                <div className="space-y-4">
+                    {partToDelete && (() => {
+                        const part = data.find(p => p.id === partToDelete);
+                        return (
+                            <p className="text-gray-700">
+                                Are you sure you want to delete part <strong>&quot;{part?.name || `#${partToDelete}`}&quot;</strong>? This action cannot be undone.
+                            </p>
+                        );
+                    })()}
+                    <div className="flex justify-end space-x-2 pt-4">
+                        <Button 
+                            variant="text" 
+                            color="gray" 
+                            onClick={cancelDelete}
+                            disabled={deleting}
+                            className="mr-2"
+                        >
+                            <span>No, Cancel</span>
+                        </Button>
+                        <Button 
+                            color="red" 
+                            onClick={confirmDelete}
+                            disabled={deleting}
+                        >
+                            {deleting ? (
+                                <div className="flex items-center gap-2">
+                                    <ClipLoader size={13} color={"#ffffff"} />
+                                    <span>Deleting...</span>
+                                </div>
+                            ) : (
+                                <span>Yes, Delete</span>
+                            )}
+                        </Button>
+                    </div>
+                </div>
             </Modal>
         </div>
         </>

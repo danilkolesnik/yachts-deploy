@@ -10,6 +10,7 @@ import { toast } from 'react-toastify';
 import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import Loader from '@/ui/loader';
+import { ClipLoader } from 'react-spinners';
 
 const YachtsPage = () => {
     const [yachts, setYachts] = useState([]);
@@ -23,6 +24,9 @@ const YachtsPage = () => {
     });
     const [helpModalOpen, setHelpModalOpen] = useState(false);
     const [activeHelpSection, setActiveHelpSection] = useState('overview');
+    const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
+    const [yachtToDelete, setYachtToDelete] = useState(null);
+    const [deleting, setDeleting] = useState(false);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -338,19 +342,36 @@ const YachtsPage = () => {
         }
     };
 
-    const handleDelete = async (id) => {
-        if (window.confirm("Are you sure you want to delete this yacht? This action cannot be undone.")) {
-            try {
-                const response = await axios.delete(`${URL}/yachts/${id}`);
-                if (response.data.code === 200) {
-                    fetchYachts();
-                    toast.success("Yacht deleted successfully");
-                }
-            } catch (error) {
-                console.error('Error deleting yacht:', error);
-                toast.error("Error deleting yacht");
+    const handleDelete = (id) => {
+        setYachtToDelete(id);
+        setDeleteConfirmModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!yachtToDelete) return;
+        
+        setDeleting(true);
+        try {
+            const response = await axios.delete(`${URL}/yachts/${yachtToDelete}`);
+            if (response.data.code === 200) {
+                fetchYachts();
+                toast.success("Yacht deleted successfully");
+                setDeleteConfirmModalOpen(false);
+                setYachtToDelete(null);
+            } else {
+                toast.error("Failed to delete yacht");
             }
+        } catch (error) {
+            console.error('Error deleting yacht:', error);
+            toast.error("Error deleting yacht");
+        } finally {
+            setDeleting(false);
         }
+    };
+
+    const cancelDelete = () => {
+        setDeleteConfirmModalOpen(false);
+        setYachtToDelete(null);
     };
 
     const handleChange = (e) => {
@@ -1218,6 +1239,45 @@ const YachtsPage = () => {
                             </Button>
                         </div>
                     </form>
+                    </div>
+                </Modal>
+
+                {/* Delete Confirmation Modal */}
+                <Modal isOpen={deleteConfirmModalOpen} onClose={cancelDelete} title="Confirm Deletion">
+                    <div className="space-y-4">
+                        {yachtToDelete && (() => {
+                            const yacht = yachts.find(y => y.id === yachtToDelete);
+                            return (
+                                <p className="text-gray-700">
+                                    Are you sure you want to delete yacht <strong>&quot;{yacht?.name || `#${yachtToDelete}`}&quot;</strong>? This action cannot be undone.
+                                </p>
+                            );
+                        })()}
+                        <div className="flex justify-end space-x-2 pt-4">
+                            <Button 
+                                variant="text" 
+                                color="gray" 
+                                onClick={cancelDelete}
+                                disabled={deleting}
+                                className="mr-2"
+                            >
+                                <span>No, Cancel</span>
+                            </Button>
+                            <Button 
+                                color="red" 
+                                onClick={confirmDelete}
+                                disabled={deleting}
+                            >
+                                {deleting ? (
+                                    <div className="flex items-center gap-2">
+                                        <ClipLoader size={13} color={"#ffffff"} />
+                                        <span>Deleting...</span>
+                                    </div>
+                                ) : (
+                                    <span>Yes, Delete</span>
+                                )}
+                            </Button>
+                        </div>
                     </div>
                 </Modal>
             </div>
