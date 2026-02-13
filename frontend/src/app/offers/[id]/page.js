@@ -484,14 +484,14 @@ const OfferDetail = ({ params }) => {
                                     {Array.isArray(offer.services) ? (
                                         offer.services.map((service, index) => (
                                             <tr key={index}>
-                                                <td className="border border-gray-300 px-4 py-2 text-black">{service.serviceName || service.label || 'N/A'}</td>
-                                                <td className="border border-gray-300 px-4 py-2 text-black">{service.priceInEuroWithoutVAT || '0'} €</td>
+                                                <td className="border border-gray-300 px-4 py-2 text-black">{service.value?.serviceName  || ''}</td>
+                                                <td className="border border-gray-300 px-4 py-2 text-black">{service.value?.priceInEuroWithoutVAT || '0'} €</td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td className="border border-gray-300 px-4 py-2 text-black">{offer.services.serviceName || offer.services.label || 'N/A'}</td>
-                                            <td className="border border-gray-300 px-4 py-2 text-black">{offer.services.priceInEuroWithoutVAT || '0'} €</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-black">{offer.services.value?.serviceName || ''}</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-black">{offer.services.value?.priceInEuroWithoutVAT || '0'} €</td>
                                         </tr>
                                     )}
                                 </tbody>
