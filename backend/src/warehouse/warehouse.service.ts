@@ -16,7 +16,7 @@ export class WarehouseService {
     ){}
 
     async create(data: CreateWareHourehDto) {
-        if (!data.name || !data.quantity || !data.serviceCategory) {
+        if (!data.name || !data.quantity) {
           return {
             code: 400,
             message: 'Not all arguments',
@@ -40,11 +40,9 @@ export class WarehouseService {
               id: generateId,
               name: data.name,
               quantity: data.quantity,
-              inventory: data.inventory,
+              pricePerUnit: data.pricePerUnit,
               comment: data.comment,
               countryCode: data.countryCode,
-              serviceCategory: data.serviceCategory,
-              pricePerUnit: data.pricePerUnit,
               unofficially: data.unofficially,
             })
           );

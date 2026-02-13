@@ -287,8 +287,9 @@ const WarehouseUnofficiallyPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const { serviceCategory, ...partData } = formData;
             if (editMode) {
-                await axios.put(`${URL}/warehouse/${editId}`, formData);
+                await axios.put(`${URL}/warehouse/${editId}`, partData);
                 toast.success("Official warehouse updated successfully");
             } else {
                 switch (true) {
@@ -306,7 +307,7 @@ const WarehouseUnofficiallyPage = () => {
                         return;
                 }
                 await axios.post(`${URL}/warehouse/create`, {
-                    ...formData,
+                    ...partData,
                     unofficially: false
                 });
                 toast.success("Official part added to warehouse successfully");
@@ -331,7 +332,7 @@ const WarehouseUnofficiallyPage = () => {
             inventory: row.inventory,
             comment: row.comment,
             countryCode: row.countryCode,
-            serviceCategory: row.serviceCategory,
+            serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' }, // Initialized as empty
             pricePerUnit: row.pricePerUnit
         });
         setEditMode(true);
@@ -397,7 +398,8 @@ const WarehouseUnofficiallyPage = () => {
     };
 
     const handleSelectChange = (value) => {
-        setFormData({ ...formData, serviceCategory: value });
+        // Commented out: serviceCategory is no longer used for creation/update
+        // setFormData({ ...formData, serviceCategory: value });
     };
 
     const handleSearchSelect = (item) => {
@@ -445,7 +447,7 @@ const WarehouseUnofficiallyPage = () => {
         const result = data.filter(item => 
             (item.name && item.name.toLowerCase().includes(search.toLowerCase())) ||
             (item.countryCode && item.countryCode.toLowerCase().includes(search.toLowerCase())) ||
-            (item.serviceCategory.serviceName && item.serviceCategory.serviceName.toLowerCase().includes(search.toLowerCase()))
+            (item.serviceCategory?.serviceName && item.serviceCategory.serviceName.toLowerCase().includes(search.toLowerCase()))
         );
         setFilteredData(result);
     }, [search, data])
@@ -794,23 +796,6 @@ const WarehouseUnofficiallyPage = () => {
                         onChange={handleChange}
                         placeholder="Certification numbers, specifications"
                     />
-                    <Select
-                        label="Service Category *"
-                        value={formData.serviceCategory}
-                        onChange={handleSelectChange}
-                        required
-                        className="text-black"
-                        labelProps={{ className: "text-black" }}
-                    >
-                        <Option value={{ serviceName: '', priceInEuroWithoutVAT: '' }} className="text-black">
-                            Select a certified service category...
-                        </Option>
-                        {catagoryData.map((category) => (
-                            <Option key={category.id} value={category} className="text-black">
-                                {category.serviceName} - Certified
-                            </Option>
-                        ))}
-                    </Select>
                     
                     <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                         <p className="text-sm text-blue-700">

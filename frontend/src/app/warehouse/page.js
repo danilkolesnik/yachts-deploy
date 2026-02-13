@@ -284,7 +284,8 @@ const WarehousePage = () => {
         e.preventDefault();
         try {
             if (editMode) {
-                await axios.put(`${URL}/warehouse/${editId}`, formData);
+                const { serviceCategory, ...partData } = formData;
+                await axios.put(`${URL}/warehouse/${editId}`, partData);
                 toast.success("Warehouse updated successfully");
             } else {
                 switch (true) {
@@ -301,8 +302,9 @@ const WarehousePage = () => {
                         toast.error("Error: Quantity is required");
                         return;
                 }
+                const { serviceCategory, ...partData } = formData;
                 await axios.post(`${URL}/warehouse/create`, {
-                    ...formData,
+                    ...partData,
                     unofficially: true
                 });
                 toast.success("Warehouse created successfully");
@@ -327,7 +329,7 @@ const WarehousePage = () => {
             inventory: row.inventory,
             comment: row.comment,
             countryCode: "",
-            serviceCategory: row.serviceCategory,
+            serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
             pricePerUnit: row.pricePerUnit
         });
         setEditMode(true);
@@ -393,7 +395,8 @@ const WarehousePage = () => {
     };
 
     const handleSelectChange = (value) => {
-        setFormData({ ...formData, serviceCategory: value });
+        // Service category removed - keeping function for compatibility
+        // setFormData({ ...formData, serviceCategory: value });
     };
 
     const handleSearchSelect = (item) => {
@@ -441,7 +444,7 @@ const WarehousePage = () => {
         const result = data.filter(item => 
             (item.name && item.name.toLowerCase().includes(search.toLowerCase())) ||
             (item.countryCode && item.countryCode.toLowerCase().includes(search.toLowerCase())) ||
-            (item.serviceCategory.serviceName && item.serviceCategory.serviceName.toLowerCase().includes(search.toLowerCase()))
+            (item.serviceCategory?.serviceName && item.serviceCategory.serviceName.toLowerCase().includes(search.toLowerCase()))
         );
         setFilteredData(result);
     }, [search, data])
@@ -779,23 +782,6 @@ const WarehousePage = () => {
                         onChange={handleChange}
                         placeholder="Condition, specifications, notes"
                     />
-                    <Select
-                        label="Service Category *"
-                        value={formData.serviceCategory}
-                        onChange={handleSelectChange}
-                        required
-                        className="text-black"
-                        labelProps={{ className: "text-black" }}
-                    >
-                        <Option value={{ serviceName: '', priceInEuroWithoutVAT: '' }} className="text-black">
-                            Select a category...
-                        </Option>
-                        {catagoryData.map((category) => (
-                            <Option key={category.id} value={category} className="text-black">
-                                {category.serviceName} - {category.priceInEuroWithoutVAT}€
-                            </Option>
-                        ))}
-                    </Select>
                     
                     <div className="mt-4 p-3 bg-yellow-50 rounded border border-yellow-200">
                         <p className="text-sm text-yellow-700">

@@ -26,9 +26,4 @@ export class warehouse {
   @Column({ default: true })
   unofficially: boolean;
 
-  @Column('json', { default: {} })
-  serviceCategory: {
-    serviceName: string;
-    priceInEuroWithoutVAT: number;
-  };
 }

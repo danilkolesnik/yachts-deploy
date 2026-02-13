@@ -894,9 +894,10 @@ const OfferPage = () => {
 
     const createPart = async (e) => {
         e.preventDefault();
-        const selectedServiceCategory = catagoryData.find(
-            (category) => String(category.id) === String(createPartFormData.serviceCategoryId)
-        );
+        // Commented out: serviceCategory is no longer used for part creation
+        // const selectedServiceCategory = catagoryData.find(
+        //     (category) => String(category.id) === String(createPartFormData.serviceCategoryId)
+        // );
 
         // if (!selectedServiceCategory) {
         //     toast.error("Error: Service category is required");
@@ -926,10 +927,6 @@ const OfferPage = () => {
                 comment: createPartFormData.comment,
                 countryCode: createPartFormData.countryCode || '',
                 pricePerUnit: createPartFormData.pricePerUnit,
-                serviceCategory: {
-                    serviceName: selectedServiceCategory.serviceName,
-                    priceInEuroWithoutVAT: selectedServiceCategory.priceInEuroWithoutVAT,
-                },
                 unofficially: isUnofficialWarehouse
             };
 
@@ -2073,40 +2070,6 @@ const OfferPage = () => {
                             <Option value="official" className="text-black">Official Warehouse</Option>
                             <Option value="unofficial" className="text-black">Unofficial Warehouse</Option>
                         </Select>
-                        <div>
-                            <label className="block text-sm font-medium text-black mb-1">
-                                Service Category
-                            </label>
-                            <ReactSelect
-                                options={serviceCategoryOptions}
-                                value={
-                                    serviceCategoryOptions.find(
-                                        (option) => option.value === String(createPartFormData.serviceCategoryId || '')
-                                    ) || null
-                                }
-                                onChange={(selectedOption) =>
-                                    handleSelectChangePart(selectedOption?.value || '', 'serviceCategoryId')
-                                }
-                                placeholder="Select a category..."
-                                isClearable
-                                isSearchable
-                                className="mt-1"
-                                styles={{
-                                    control: (provided) => ({
-                                        ...provided,
-                                    }),
-                                    singleValue: (provided) => ({
-                                        ...provided,
-                                        color: 'black',
-                                    }),
-                                    option: (provided, state) => ({
-                                        ...provided,
-                                        color: 'black',
-                                        backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
-                                    }),
-                                }}
-                            />
-                        </div>
                         
                         {createPartForOffer && (
                             <>
