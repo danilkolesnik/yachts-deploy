@@ -101,23 +101,191 @@ const OfferDetail = ({ params }) => {
         if (!offer || !id) return;
         setPdfExportLoading(true);
         try {
-            const response = await axios.get(`${URL}/offer/${id}/export-pdf`, {
-                responseType: 'blob',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+            // Load HTML template
+            const templateResponse = await fetch('/offer-export-template.html');
+            let templateHtml = await templateResponse.text();
+
+            // Calculate totals
+            const parts = Array.isArray(offer.parts) ? offer.parts : [];
+            const totalPrice = parts.reduce((acc, part) => {
+                const quantity = Number(part.quantity || 1);
+                const pricePerUnit = Number(part.pricePerUnit || 0);
+                return acc + (quantity * pricePerUnit);
+            }, 0);
+
+            const services = Array.isArray(offer.services) ? offer.services : 
+                           (offer.services && typeof offer.services === 'object' ? [offer.services] : []);
+            const totalPriceAllServices = services.reduce((acc, service) => {
+                return acc + Number(service.priceInEuroWithoutVAT || 0);
+            }, 0);
+
+            const totalPriceAll = totalPrice + totalPriceAllServices;
+
+            // Generate parts table rows
+            const partsTableRows = parts.map((part, index) => {
+                const quantity = Number(part.quantity || 1);
+                const pricePerUnit = Number(part.pricePerUnit || 0);
+                const total = quantity * pricePerUnit;
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${part.label || part.name || part.partName || ''}</td>
+                        <td>${quantity}</td>
+                        <td>${pricePerUnit.toFixed(2)}</td>
+                        <td>${total.toFixed(2)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Generate services table rows
+            const servicesTableRows = services.map((service, index) => {
+                const price = Number(service.priceInEuroWithoutVAT || 0);
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${service.serviceName || service.label || ''}</td>
+                        <td>1</td>
+                        <td>${price.toFixed(2)}</td>
+                        <td>${price.toFixed(2)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Generate images section
+            const imagesHtml = offer.imageUrls && offer.imageUrls.length > 0 ? `
+                <div style="margin-top: 30px; page-break-before: always;">
+                    <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center;">Images</h2>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+                        ${offer.imageUrls.map((url, index) => `
+                            <div style="text-align: center;">
+                                <img src="${url}" alt="Image ${index + 1}" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 5px;">
+                                <p style="font-size: 12px; margin-top: 5px;">Image ${index + 1}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '';
+
+            // Generate videos section
+            const videosHtml = offer.videoUrls && offer.videoUrls.length > 0 ? `
+                <div style="margin-top: 30px; page-break-before: always;">
+                    <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center;">Videos</h2>
+                    <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 15px; margin-bottom: 20px;">
+                        ${offer.videoUrls.map((url, index) => `
+                            <div style="text-align: center;">
+                                <div style="border: 1px solid #ccc; border-radius: 5px; padding: 10px; background-color: #f5f5f5;">
+                                    <p style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">Video ${index + 1}</p>
+                                    <p style="font-size: 12px; color: #666; margin-bottom: 5px;">Video file available</p>
+                                    <a href="${url}" style="font-size: 11px; color: #0066cc; text-decoration: underline; word-break: break-all;">${url}</a>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '';
+
+            // Format date
+            const createdAt = offer.createdAt ? new Date(offer.createdAt) : new Date();
+            const createdAtString = createdAt.toLocaleString();
+
+            // Replace placeholders
+            templateHtml = templateHtml
+                .replace('{{offerId}}', String(offer.id))
+                .replace('{{customerFullName}}', String(offer.customerFullName || ''))
+                .replace('{{yachtName}}', String(offer.yachtName || ''))
+                .replace('{{yachtModel}}', String(offer.yachtModel || ''))
+                .replace('{{countryCode}}', String(offer.countryCode || ''))
+                .replace('{{location}}', String(offer.location || ''))
+                .replace('{{createdAt}}', createdAtString)
+                .replace('{{partsTableRows}}', partsTableRows || '<tr><td colspan="5" style="text-align: center;">No parts</td></tr>')
+                .replace('{{servicesTableRows}}', servicesTableRows || '<tr><td colspan="5" style="text-align: center;">No services</td></tr>')
+                .replace('{{totalPrice}}', totalPrice.toFixed(2))
+                .replace('{{totalPriceAllServices}}', totalPriceAllServices.toFixed(2))
+                .replace('{{totalPriceAll}}', totalPriceAll.toFixed(2))
+                .replace('{{imagesSection}}', imagesHtml)
+                .replace('{{videosSection}}', videosHtml);
+
+            // Create temporary container for HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.width = '600px';
+            tempDiv.innerHTML = templateHtml;
+            document.body.appendChild(tempDiv);
+
+            // Wait for images to load
+            await new Promise((resolve) => {
+                const images = tempDiv.querySelectorAll('img');
+                if (images.length === 0) {
+                    resolve();
+                    return;
                 }
+                let loaded = 0;
+                images.forEach((img) => {
+                    if (img.complete) {
+                        loaded++;
+                        if (loaded === images.length) resolve();
+                    } else {
+                        img.onload = () => {
+                            loaded++;
+                            if (loaded === images.length) resolve();
+                        };
+                        img.onerror = () => {
+                            loaded++;
+                            if (loaded === images.length) resolve();
+                        };
+                    }
+                });
             });
-            
-            // Create a blob URL and trigger download
-            const blob = new Blob([response.data], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `offer-${id}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+
+            // Import html2canvas and jsPDF dynamically
+            const html2canvas = (await import('html2canvas')).default;
+            const { jsPDF } = await import('jspdf');
+
+            // Convert HTML to canvas
+            const canvas = await html2canvas(tempDiv, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                width: 600,
+                windowWidth: 600
+            });
+
+            // Remove temporary div
+            document.body.removeChild(tempDiv);
+
+            // Create PDF from canvas
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+            const imgScaledWidth = imgWidth * ratio;
+            const imgScaledHeight = imgHeight * ratio;
+
+            // Add first page
+            pdf.addImage(imgData, 'PNG', 0, 0, imgScaledWidth, imgScaledHeight);
+
+            // Add additional pages if content is taller than one page
+            let heightLeft = imgScaledHeight;
+            let position = 0;
+
+            while (heightLeft > 0) {
+                position = heightLeft - pdfHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgScaledWidth, imgScaledHeight);
+                heightLeft -= pdfHeight;
+            }
+
+            // Save PDF
+            pdf.save(`offer-${id}.pdf`);
         } catch (error) {
             console.error('Error exporting PDF:', error);
             alert('Error exporting PDF. Please try again.');
