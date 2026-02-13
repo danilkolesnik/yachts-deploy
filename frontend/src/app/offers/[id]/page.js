@@ -264,24 +264,30 @@ const OfferDetail = ({ params }) => {
 
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
+            
+            // Calculate scale to fit width
             const imgWidth = canvas.width;
             const imgHeight = canvas.height;
-            const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-            const imgScaledWidth = imgWidth * ratio;
-            const imgScaledHeight = imgHeight * ratio;
+            const widthRatio = pdfWidth / imgWidth;
+            const imgScaledWidth = pdfWidth;
+            const imgScaledHeight = imgHeight * widthRatio;
 
-            // Add first page
+            // Add image to first page
             pdf.addImage(imgData, 'PNG', 0, 0, imgScaledWidth, imgScaledHeight);
 
-            // Add additional pages if content is taller than one page
-            let heightLeft = imgScaledHeight;
-            let position = 0;
+            // Add additional pages only if content is taller than one page
+            if (imgScaledHeight > pdfHeight) {
+                let heightLeft = imgScaledHeight - pdfHeight;
+                let pageNum = 1;
 
-            while (heightLeft > 0) {
-                position = heightLeft - pdfHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, imgScaledWidth, imgScaledHeight);
-                heightLeft -= pdfHeight;
+                while (heightLeft > 0) {
+                    pdf.addPage();
+                    // Use negative Y position to show the next portion of the image
+                    const yPosition = -(pdfHeight * pageNum);
+                    pdf.addImage(imgData, 'PNG', 0, yPosition, imgScaledWidth, imgScaledHeight);
+                    heightLeft -= pdfHeight;
+                    pageNum++;
+                }
             }
 
             // Save PDF
