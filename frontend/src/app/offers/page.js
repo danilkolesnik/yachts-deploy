@@ -586,11 +586,11 @@ const OfferPage = () => {
         }).join('');
 
         const servicesTableRows = services.map((service, index) => {
-            const price = Number(service.priceInEuroWithoutVAT || 0);
+            const price = Number(service.value?.priceInEuroWithoutVAT || 0);
             return `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>${service.serviceName || service.label || ''}</td>
+                    <td>${service.value?.serviceName|| ''}</td>
                     <td>1</td>
                     <td>${price.toFixed(2)}</td>
                     <td>${price.toFixed(2)}</td>
