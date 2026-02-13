@@ -160,6 +160,54 @@ const OfferPage = () => {
         description: ''
     });
 
+    // Help/Manual content in English
+    const helpSections = {
+        overview: {
+            title: "Offers Management - User Manual",
+            content: [
+                "Welcome to the Offers Management System. Create and manage offers for yacht services and parts.",
+                "Each offer links a customer, yacht(s), services, and parts. Use filters to find offers by date, customer, or yacht name.",
+                "Use the Help button anytime to open this manual."
+            ]
+        },
+        creating: {
+            title: "Creating an Offer",
+            content: [
+                "**Required:** At least one yacht must be selected.",
+                "**Step-by-Step:**",
+                "• Select customer (full name) to load their yachts",
+                "• Select one or more yachts",
+                "• Add services from the price list (optional)",
+                "• Add parts from official or unofficial warehouse (optional)",
+                "• Add comment if needed, then click Create",
+                "",
+                "You can create new services or parts from the modal via the links."
+            ]
+        },
+        table: {
+            title: "Understanding the Offers Table",
+            content: [
+                "**ID** - Click to open offer details",
+                "**Date** - When the offer was created",
+                "**Customer** - Customer full name",
+                "**Yachts** - Yacht name and model",
+                "**Boat Registration** - Country/registration code",
+                "**Status** - created, confirmed, finished, etc.",
+                "**Service Category** - Services in the offer",
+                "**Parts** - Parts in the offer",
+                "**Actions** - Edit, Delete, Work Order, Export PDF, Send Email"
+            ]
+        },
+        history: {
+            title: "History and Confirmed Offers",
+            content: [
+                "**History** - Shows finished and confirmed offers. Filter by date, year, month, boat name, or owner. Export PDF or send email from the table.",
+                "**Confirmed Offers** - Opens the list of confirmed offers.",
+                "**Export to Excel** - Downloads the current filtered list of offers."
+            ]
+        }
+    };
+
     // History table columns
     const historyColumns = [
         {
@@ -1785,6 +1833,93 @@ const OfferPage = () => {
                         </div>
                     </div>
                 )}
+                {/* Help/Manual Modal */}
+                <Modal 
+                    isOpen={helpModalOpen} 
+                    onClose={() => setHelpModalOpen(false)} 
+                    title="Offers Management Help & User Manual"
+                    size="xl"
+                >
+                    <div className="max-h-[70vh] overflow-hidden flex flex-col">
+                        <div className="border-b pb-4 mb-4">
+                            <div className="flex space-x-2 overflow-x-auto pb-2">
+                                {Object.keys(helpSections).map(section => (
+                                    <button
+                                        key={section}
+                                        onClick={() => setActiveHelpSection(section)}
+                                        className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap ${
+                                            activeHelpSection === section
+                                                ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {helpSections[section].title.split(' ').slice(0, 3).join(' ')}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto pr-2">
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-bold text-gray-800">
+                                    {helpSections[activeHelpSection].title}
+                                </h2>
+                                <div className="space-y-3 text-gray-600">
+                                    {helpSections[activeHelpSection].content.map((item, index) => {
+                                        if (item.includes('**')) {
+                                            const parts = item.split(/(\*\*.*?\*\*)/g);
+                                            return (
+                                                <p key={index} className="text-sm leading-relaxed">
+                                                    {parts.map((part, i) => {
+                                                        if (part.startsWith('**') && part.endsWith('**')) {
+                                                            return (
+                                                                <span key={i} className="font-semibold text-gray-800">
+                                                                    {part.slice(2, -2)}
+                                                                </span>
+                                                            );
+                                                        }
+                                                        return part;
+                                                    })}
+                                                </p>
+                                            );
+                                        }
+                                        if (item.startsWith('•')) {
+                                            return (
+                                                <div key={index} className="flex items-start">
+                                                    <span className="mr-2 text-gray-400">•</span>
+                                                    <span className="text-sm leading-relaxed">{item.substring(1)}</span>
+                                                </div>
+                                            );
+                                        }
+                                        if (item === '') {
+                                            return <div key={index} className="h-3" />;
+                                        }
+                                        return (
+                                            <p key={index} className="text-sm leading-relaxed">
+                                                {item}
+                                            </p>
+                                        );
+                                    })}
+                                </div>
+                                {activeHelpSection === 'overview' && (
+                                    <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                        <h3 className="font-semibold text-blue-700 mb-2">Quick Start</h3>
+                                        <ul className="space-y-2 text-sm text-blue-600">
+                                            <li>Use <strong>Search</strong> and <strong>Date</strong> to filter offers</li>
+                                            <li>Click <strong>Create</strong> to add a new offer</li>
+                                            <li>Use <strong>History</strong> for finished/confirmed offers</li>
+                                            <li>Use <strong>Export to Excel</strong> to download the list</li>
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="mt-4 pt-4 border-t flex justify-end">
+                            <Button variant="text" color="gray" onClick={() => setHelpModalOpen(false)}>
+                                Close
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
                 <Modal 
                     isOpen={historyModalOpen} 
                     onClose={closeHistoryModal} 
