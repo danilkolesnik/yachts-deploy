@@ -430,7 +430,7 @@ const ConfirmedOffersPage = () => {
             {emailModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg w-96">
-                        <h3 className="text-lg font-bold mb-4">Send Offer PDF to Email</h3>
+                        <h3 className="text-lg font-bold mb-4 text-black">Send Offer PDF to Email</h3>
                         <input
                             type="email"
                             placeholder="Enter email address"

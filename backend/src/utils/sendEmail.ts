@@ -5,21 +5,28 @@ export async function sendEmail(to: string, data: any, type: string, subject: st
   try {
     const pdfBuffer = await createPdfBuffer(data,type);
     
+    const emailUser = process.env.ZOHO_EMAIL || 'kirill.hetman@zohomail.eu';
+    const emailPassword = process.env.ZOHO_APP_PASSWORD || '';
+    
     console.log('Email configuration:', {
       host: "smtp.zoho.eu",
       port: 465,
       secure: true,
-      user: process.env.ZOHO_EMAIL,
-      hasPassword: !!process.env.ZOHO_APP_PASSWORD
+      user: emailUser,
+      hasPassword: !!emailPassword
     });
+    
+    if (!emailPassword) {
+      throw new Error('ZOHO_APP_PASSWORD environment variable is not set');
+    }
     
     const transporter = nodemailer.createTransport({
       host: "smtp.zoho.eu", 
       port: 465, 
       secure: true,
       auth: {
-        user: 'kirill.hetman@zohomail.eu',
-        pass: 'fV3U2ZA#u4:6$Gg',
+        user: emailUser,
+        pass: emailPassword,
       },
     });
 
@@ -28,7 +35,7 @@ export async function sendEmail(to: string, data: any, type: string, subject: st
     console.log('SMTP connection verified successfully');
 
     const mailOptions: nodemailer.SendMailOptions = {
-      from: `"kirill.hetman@zohomail.eu"`,
+      from: `"${emailUser}"`,
       to,
       subject,
       text: 'Offer created',
@@ -55,9 +62,17 @@ export async function sendEmail(to: string, data: any, type: string, subject: st
       response: error.response,
       responseCode: error.responseCode
     });
+    
+    let errorMessage = 'Failed to send email';
+    if (error.code === 'EAUTH') {
+      errorMessage = 'Email authentication failed. Please check ZOHO_EMAIL and ZOHO_APP_PASSWORD environment variables. Make sure you are using an App Password, not your regular account password.';
+    } else if (error.message && error.message.includes('ZOHO_APP_PASSWORD')) {
+      errorMessage = error.message;
+    }
+    
     return {
       code: 500,
-      message: 'Failed to send email',
+      message: errorMessage,
     };
   }
 }

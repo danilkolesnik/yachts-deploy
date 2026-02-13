@@ -237,13 +237,20 @@ export class AuthService {
             message: 'User not found',
           };
         }
+      const emailUser = process.env.ZOHO_EMAIL || 'kirill.hetman@zohomail.eu';
+      const emailPassword = process.env.ZOHO_APP_PASSWORD || '';
+      
+      if (!emailPassword) {
+        throw new Error('ZOHO_APP_PASSWORD environment variable is not set');
+      }
+      
       const transporter = nodemailer.createTransport({
         host: "smtp.zoho.eu", 
         port: 465, 
         secure: true,
         auth: {
-          user: 'kirill.hetman@zohomail.eu',
-          pass: 'fV3U2ZA#u4:6$Gg',
+          user: emailUser,
+          pass: emailPassword,
         },
       });
 
@@ -253,7 +260,7 @@ export class AuthService {
       `
 
       const mailOptions: nodemailer.SendMailOptions = {
-        from: 'kirill.hetman@zohomail.eu',
+        from: emailUser,
         to: email,
         subject: 'Reset Password',
         text: 'Reset Password',
@@ -267,9 +274,16 @@ export class AuthService {
         message: 'Email sent successfully',
       };
     } catch (err) {
+      console.error('Error sending password reset email:', err);
+      let errorMessage = 'Failed to send email';
+      if (err.code === 'EAUTH') {
+        errorMessage = 'Email authentication failed. Please check ZOHO_EMAIL and ZOHO_APP_PASSWORD environment variables. Make sure you are using an App Password, not your regular account password.';
+      } else if (err.message && err.message.includes('ZOHO_APP_PASSWORD')) {
+        errorMessage = err.message;
+      }
       return {
         code: 500,
-        message: err,
+        message: errorMessage,
       };
     }
   }
