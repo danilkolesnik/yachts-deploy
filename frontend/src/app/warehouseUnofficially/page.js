@@ -58,7 +58,6 @@ const WarehouseUnofficiallyPage = () => {
                 "**Quantity** - Current stock of certified parts",
                 "**Comment** - Technical specifications or special notes",
                 "**Price** - Official price per unit including documentation",
-                "**Service Category** - Service category this certified part belongs to",
                 "**Actions** - Edit or delete official warehouse records",
                 "",
                 "**Important:** This is the official warehouse - all parts here have full documentation and warranty"
@@ -94,7 +93,6 @@ const WarehouseUnofficiallyPage = () => {
                 "• Name - Official manufacturer part name",
                 "• Quantity - Number of certified units in stock",
                 "• Price - Official price including documentation",
-                "• Service Category - Must select a category",
                 "",
                 "**Documentation Requirements:**",
                 "• Warranty certificates must be filed separately",
@@ -104,8 +102,7 @@ const WarehouseUnofficiallyPage = () => {
                 "**Step-by-Step Creation:**",
                 "1. Click 'Create' button",
                 "2. Fill in all required fields",
-                "3. Select appropriate service category",
-                "4. Click 'Add' to save certified part",
+                "3. Click 'Add' to save certified part",
                 "",
                 "**Verification:** Always verify part numbers match manufacturer specifications"
             ]
@@ -147,11 +144,6 @@ const WarehouseUnofficiallyPage = () => {
                 "• Factor in warranty administration",
                 "• Consider market position and value",
                 "",
-                "**Service Category Assignment:**",
-                "• Assign to correct service categories",
-                "• Ensures parts appear in appropriate offers",
-                "• Multiple parts can share same category",
-                "",
                 "**Comment Usage:**",
                 "• Document certification details",
                 "• Note warranty terms",
@@ -162,7 +154,7 @@ const WarehouseUnofficiallyPage = () => {
             title: "Searching and Exporting Official Inventory",
             content: [
                 "**Search Function:**",
-                "• Search by part name, service category, or comments",
+                "• Search by part name, or comments",
                 "• Real-time filtering as you type",
                 "• Select from dropdown for precise matching",
                 "",
@@ -235,11 +227,6 @@ const WarehouseUnofficiallyPage = () => {
             sortable: true,
         },
         {
-            name: 'Service Category',
-            selector: row => row.serviceCategory?.serviceName || '',
-            sortable: true,
-        },
-        {
             name: 'Actions',
             cell: row => (
                 <div className="flex space-x-2">
@@ -286,16 +273,12 @@ const WarehouseUnofficiallyPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        try {
-            const { serviceCategory, ...partData } = formData;
+        try {   
             if (editMode) {
                 await axios.put(`${URL}/warehouse/${editId}`, partData);
                 toast.success("Official warehouse updated successfully");
             } else {
                 switch (true) {
-                    // case formData.serviceCategory.serviceName === '':
-                    //     toast.error("Error: Service category is required");
-                    //     return;
                     case formData.pricePerUnit.trim() === '':
                         toast.error("Error: Price per unit is required");
                         return;
@@ -417,7 +400,6 @@ const WarehouseUnofficiallyPage = () => {
             'Quantity': row.quantity || '',
             'Comment': row.comment || '',
             'Price': `${row.pricePerUnit || ''}€`,
-            'Service Category': row.serviceCategory?.serviceName || ''
         }));
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Official Warehouse');
@@ -495,7 +477,6 @@ const WarehouseUnofficiallyPage = () => {
                                     <th>Quantity</th>
                                     <th>Comment</th>
                                     <th>Price</th>
-                                    <th>Service Category</th>
                                 </tr>
                             </thead>
                             <tbody>

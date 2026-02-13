@@ -5,9 +5,5 @@ export class CreateWareHourehDto {
     comment: string;
     countryCode: string;
     pricePerUnit: string;
-    serviceCategory: {
-      serviceName: string;
-      priceInEuroWithoutVAT: number;
-    };
     unofficially: boolean;
   }

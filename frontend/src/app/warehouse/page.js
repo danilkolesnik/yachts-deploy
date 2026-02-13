@@ -16,8 +16,7 @@ import axios from 'axios';
 import { ClipLoader } from 'react-spinners';
 
 const WarehousePage = () => {
-    const [data, setData] = useState([]);
-    const [catagoryData, setCatagoryData] = useState([]);
+    const [data, setData] = useState([]);   
     const [loading, setLoading] = useState(true);
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [formData, setFormData] = useState({
@@ -26,7 +25,6 @@ const WarehousePage = () => {
         inventory: '',
         comment: '',
         countryCode: '',
-        serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
         pricePerUnit: ''
     });
     const [filteredData, setFilteredData] = useState([]);
@@ -58,7 +56,6 @@ const WarehousePage = () => {
                 "**Quantity** - Current stock quantity available",
                 "**Comment** - Additional notes or specifications",
                 "**Price** - Price per unit in Euros (€)",
-                "**Service Category** - Which service category this part belongs to",
                 "**Actions** - Edit or delete warehouse records",
                 "",
                 "**Important:** This is the unofficial warehouse - parts here do not have formal documentation"
@@ -93,7 +90,6 @@ const WarehousePage = () => {
                 "• Name - Descriptive name of the part",
                 "• Quantity - How many units in stock",
                 "• Price - Price per unit in Euros",
-                "• Service Category - Must select a category",
                 "",
                 "**Optional Fields:**",
                 "• Comment - Additional details or specifications",
@@ -101,10 +97,8 @@ const WarehousePage = () => {
                 "**Step-by-Step Creation:**",
                 "1. Click 'Create' button",
                 "2. Fill in all required fields",
-                "3. Select appropriate service category",
                 "4. Click 'Add' to save",
                 "",
-                "**Service Categories:** Linked to price list services for proper categorization"
             ]
         },
         inventoryManagement: {
@@ -120,11 +114,6 @@ const WarehousePage = () => {
                 "• Consider market prices for similar parts",
                 "• Document price changes",
                 "",
-                "**Service Category Assignment:**",
-                "• Assign parts to correct service categories",
-                "• This ensures parts appear in relevant offers",
-                "• Multiple parts can share same category",
-                "",
                 "**Comment Usage:**",
                 "• Document part condition",
                 "• Note any special requirements",
@@ -136,7 +125,7 @@ const WarehousePage = () => {
             title: "Searching and Exporting Warehouse Data",
             content: [
                 "**Search Function:**",
-                "• Search by part name, service category, or comments",
+                "• Search by part name, or comments",
                 "• Real-time filtering as you type",
                 "• Select from dropdown for precise matching",
                 "",
@@ -230,11 +219,6 @@ const WarehousePage = () => {
             sortable: true,
         },
         {
-            name: 'Service Category',
-            selector: row => row.serviceCategory?.serviceName || '',
-            sortable: true,
-        },
-        {
             name: 'Actions',
             cell: row => (
                 <div className="flex space-x-2">
@@ -271,20 +255,10 @@ const WarehousePage = () => {
         }
     };
 
-    const getDataCatagory = async () => {
-        try {
-            const res = await axios.get(`${URL}/priceList`);
-            return res.data.data;
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             if (editMode) {
-                const { serviceCategory, ...partData } = formData;
                 await axios.put(`${URL}/warehouse/${editId}`, partData);
                 toast.success("Warehouse updated successfully");
             } else {
@@ -302,7 +276,6 @@ const WarehousePage = () => {
                         toast.error("Error: Quantity is required");
                         return;
                 }
-                const { serviceCategory, ...partData } = formData;
                 await axios.post(`${URL}/warehouse/create`, {
                     ...partData,
                     unofficially: true
@@ -335,7 +308,8 @@ const WarehousePage = () => {
         setEditMode(true);
         setEditId(row.id);
         setModalIsOpen(true);
-    };
+};
+
 
     const handleDelete = (id) => {
         setPartToDelete(id);
@@ -394,10 +368,6 @@ const WarehousePage = () => {
         setFormData({ ...formData, [name]: value });
     };
 
-    const handleSelectChange = (value) => {
-        // Service category removed - keeping function for compatibility
-        // setFormData({ ...formData, serviceCategory: value });
-    };
 
     const handleSearchSelect = (item) => {
         setSearch(item.name);
@@ -414,7 +384,6 @@ const WarehousePage = () => {
             'Quantity': row.quantity || '',
             'Comment': row.comment || '',
             'Price': `${row.pricePerUnit || ''}€`,
-            'Service Category': row.serviceCategory?.serviceName || ''
         }));
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Unofficial Warehouse');
@@ -432,19 +401,17 @@ const WarehousePage = () => {
     };
 
     useEffect(() => {
-        Promise.all([getData(), getDataCatagory()])
-            .then(([res1, res2]) => {
+        Promise.all([getData()])
+            .then(([res1]) => {
                 setData(res1);
                 setFilteredData(res1);
-                setCatagoryData(res2);
             });
     }, []);
 
     useEffect(() => {
         const result = data.filter(item => 
             (item.name && item.name.toLowerCase().includes(search.toLowerCase())) ||
-            (item.countryCode && item.countryCode.toLowerCase().includes(search.toLowerCase())) ||
-            (item.serviceCategory?.serviceName && item.serviceCategory.serviceName.toLowerCase().includes(search.toLowerCase()))
+            (item.countryCode && item.countryCode.toLowerCase().includes(search.toLowerCase()))
         );
         setFilteredData(result);
     }, [search, data])
@@ -492,7 +459,6 @@ const WarehousePage = () => {
                                     <th>Quantity</th>
                                     <th>Comment</th>
                                     <th>Price</th>
-                                    <th>Service Category</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -501,8 +467,7 @@ const WarehousePage = () => {
                                         <td>{row.name || ''}</td>
                                         <td>{row.quantity || ''}</td>
                                         <td>{row.comment || ''}</td>
-                                        <td>{`${row.pricePerUnit || ''}€`}</td>
-                                        <td>{row.serviceCategory?.serviceName || ''}</td>
+                                        <td>{`${row.pricePerUnit || ''}€`}</td> 
                                     </tr>
                                 ))}
                             </tbody>

@@ -134,7 +134,6 @@ const OfferPage = () => {
 
     const tableRef = useRef(null);
 
-    // Customer creation modal state
     const [createCustomerModalIsOpen, setCreateCustomerModalIsOpen] = useState(false);
     const [createCustomerLoading, setCreateCustomerLoading] = useState(false);
     const [createCustomerFormData, setCreateCustomerFormData] = useState({
