@@ -587,7 +587,7 @@ const OfferPage = () => {
 
         const servicesTableRows = services.map((service, index) => {
             console.log(service);
-            const price = Number(service.value?.priceInEuroWithoutVAT || 0);
+            const price = Number(service.value?.priceInEuroWithoutVAT);
             return `
                 <tr>
                     <td>${index + 1}</td>
