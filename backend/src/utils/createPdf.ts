@@ -117,7 +117,7 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       totalPriceAllServices = totalPriceServices;
     }
 
-    const createdAt = new Date();
+    const createdAt = exportData.createdAt ? new Date(exportData.createdAt) : new Date();
     const createdAtString = isNaN(createdAt.getTime()) ? 'Invalid Date' : createdAt.toLocaleString();
 
     const totalPriceAll = totalPrice + totalPriceServices;
@@ -137,6 +137,7 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
       .replace('{{yachtModelOffer}}', String(exportData.offer?.yachtModel))
       .replace('{{yachtNameOffer}}', String(exportData.offer?.yachtName))
       .replace('{{countryCode}}', String(exportData.countryCode))
+      .replace('{{location}}', String(exportData.location || ''))
       .replace('{{serviceName}}', Array.isArray(exportData.services) && exportData.services.length > 0 
         ? exportData.services.map(s => s.serviceName).join(', ')
         : String(exportData.services?.serviceName || ''))

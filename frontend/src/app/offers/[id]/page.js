@@ -11,8 +11,6 @@ import Image from 'next/image';
 import ReactPlayer from 'react-player';
 import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
-import { jsPDF } from 'jspdf';
-import { autoTable } from 'jspdf-autotable';
 import { statusStyles } from '@/utils/statusStyles';
 
 const OfferDetail = ({ params }) => {
@@ -99,98 +97,30 @@ const OfferDetail = ({ params }) => {
         setShowGallery(true);
     };
 
-    const generateOfferPdf = (offerData) => {
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pageWidth = doc.internal.pageSize.getWidth();
-        let y = 14;
-        const margin = 14;
-        const lineHeight = 7;
-
-        doc.setFontSize(18);
-        doc.text('Offer Details', margin, y);
-        y += lineHeight + 4;
-
-        doc.setFontSize(11);
-        doc.text(`Offer ID: ${offerData.id}`, margin, y);
-        y += lineHeight;
-        doc.text(`Date: ${new Date(offerData.createdAt).toLocaleString()}`, margin, y);
-        y += lineHeight;
-        doc.text(`Customer: ${offerData.customerFullName || ''}`, margin, y);
-        y += lineHeight;
-        doc.text(`Status: ${offerData.status || ''}`, margin, y);
-        y += lineHeight;
-        if (offerData.location) {
-            doc.text(`Location: ${offerData.location}`, margin, y);
-            y += lineHeight;
-        }
-        if (offerData.language) {
-            doc.text(`Language: ${offerData.language}`, margin, y);
-            y += lineHeight;
-        }
-        y += lineHeight + 6;
-
-        const yachtsData = Array.isArray(offerData.yachts) && offerData.yachts.length > 0
-            ? offerData.yachts.map(yacht => [yacht.name || '', yacht.model || '', yacht.countryCode || ''])
-            : [[offerData.yachtName || '', offerData.yachtModel || '', offerData.countryCode || '']];
-        autoTable(doc, {
-            startY: y,
-            head: [['Yacht Name', 'Model', 'Boat Registration']],
-            body: yachtsData,
-            margin: { left: margin },
-            theme: 'grid',
-        });
-        y = doc.lastAutoTable.finalY + 10;
-
-        const servicesData = Array.isArray(offerData.services) && offerData.services.length > 0
-            ? offerData.services.map(s => [s.serviceName || s.label || '', String(s.priceInEuroWithoutVAT ?? '0') + ' €'])
-            : (offerData.services && typeof offerData.services === 'object' ? [[offerData.services.serviceName || offerData.services.label || '', String(offerData.services.priceInEuroWithoutVAT ?? '0') + ' €']] : []);
-        if (servicesData.length > 0) {
-            if (y > 250) { doc.addPage(); y = 14; }
-            autoTable(doc, {
-                startY: y,
-                head: [['Service Name', 'Price (€)']],
-                body: servicesData,
-                margin: { left: margin },
-                theme: 'grid',
-            });
-            y = doc.lastAutoTable.finalY + 10;
-        }
-
-        const partsData = Array.isArray(offerData.parts) && offerData.parts.length > 0
-            ? offerData.parts.map(p => [p.label || p.name || p.partName || '', String(p.quantity ?? 1), String(p.pricePerUnit ?? '0') + ' €'])
-            : [];
-        if (partsData.length > 0) {
-            if (y > 240) { doc.addPage(); y = 14; }
-            autoTable(doc, {
-                startY: y,
-                head: [['Part Name', 'Quantity', 'Price per Unit (€)']],
-                body: partsData,
-                margin: { left: margin },
-                theme: 'grid',
-            });
-            y = doc.lastAutoTable.finalY + 10;
-        }
-
-        if (offerData.comment && String(offerData.comment).trim()) {
-            if (y > 260) { doc.addPage(); y = 14; }
-            doc.setFontSize(12);
-            doc.text('Comments', margin, y);
-            y += lineHeight;
-            doc.setFontSize(10);
-            const commentLines = doc.splitTextToSize(offerData.comment, pageWidth - 2 * margin);
-            doc.text(commentLines, margin, y);
-        }
-
-        doc.save(`offer-${offerData.id}.pdf`);
-    };
-
-    const handleExportPdf = () => {
-        if (!offer) return;
+    const handleExportPdf = async () => {
+        if (!offer || !id) return;
         setPdfExportLoading(true);
         try {
-            generateOfferPdf(offer);
+            const response = await axios.get(`${URL}/offer/${id}/export-pdf`, {
+                responseType: 'blob',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            // Create a blob URL and trigger download
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `offer-${id}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Error exporting PDF:', error);
+            alert('Error exporting PDF. Please try again.');
         } finally {
             setPdfExportLoading(false);
         }
