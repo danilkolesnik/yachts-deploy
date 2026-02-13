@@ -19,8 +19,6 @@ import CreateOfferModal from '@/component/modal/CreateOfferModal';
 import EditOfferModal from '@/component/modal/EditOfferModal';
 import ExcelJS from 'exceljs';
 import { ClipLoader } from 'react-spinners';
-import { jsPDF } from 'jspdf';
-import { autoTable } from 'jspdf-autotable';
 
 const OfferPage = () => {
     const router = useRouter();
@@ -556,86 +554,175 @@ const OfferPage = () => {
         setFilteredHistoryData(filtered);
     };
 
-    const generateOfferPdf = (row) => {
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pageWidth = doc.internal.pageSize.getWidth();
-        let y = 14;
-        const margin = 14;
-        const lineHeight = 7;
+    const generateOfferPdfFromTemplate = async (row) => {
+        const templateResponse = await fetch('/offer-export-template.html');
+        let templateHtml = await templateResponse.text();
 
-        doc.setFontSize(18);
-        doc.text('Offer Details', margin, y);
-        y += lineHeight + 4;
+        const parts = Array.isArray(row.parts) ? row.parts : [];
+        const totalPrice = parts.reduce((acc, part) => {
+            const quantity = Number(part.quantity || 1);
+            const pricePerUnit = Number(part.pricePerUnit || 0);
+            return acc + (quantity * pricePerUnit);
+        }, 0);
 
-        doc.setFontSize(11);
-        doc.text(`Offer ID: ${row.id}`, margin, y);
-        y += lineHeight;
-        doc.text(`Date: ${new Date(row.createdAt).toLocaleString()}`, margin, y);
-        y += lineHeight;
-        doc.text(`Customer: ${row.customerFullName || ''}`, margin, y);
-        y += lineHeight;
-        doc.text(`Status: ${row.status || ''}`, margin, y);
-        y += lineHeight + 6;
+        const services = Array.isArray(row.services) ? row.services :
+            (row.services && typeof row.services === 'object' ? [row.services] : []);
+        const totalPriceAllServices = services.reduce((acc, service) => acc + Number(service.priceInEuroWithoutVAT || 0), 0);
+        const totalPriceAll = totalPrice + totalPriceAllServices;
 
-        const yachtsData = Array.isArray(row.yachts) && row.yachts.length > 0
-            ? row.yachts.map(yacht => [yacht.name || '', yacht.model || '', yacht.countryCode || ''])
-            : [[row.yachtName || '', row.yachtModel || '', row.countryCode || '']];
-        autoTable(doc, {
-            startY: y,
-            head: [['Yacht Name', 'Model', 'Boat Registration']],
-            body: yachtsData,
-            margin: { left: margin },
-            theme: 'grid',
+        const partsTableRows = parts.map((part, index) => {
+            const quantity = Number(part.quantity || 1);
+            const pricePerUnit = Number(part.pricePerUnit || 0);
+            const total = quantity * pricePerUnit;
+            return `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${part.label || part.name || part.partName || ''}</td>
+                    <td>${quantity}</td>
+                    <td>${pricePerUnit.toFixed(2)}</td>
+                    <td>${total.toFixed(2)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        const servicesTableRows = services.map((service, index) => {
+            const price = Number(service.priceInEuroWithoutVAT || 0);
+            return `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${service.serviceName || service.label || ''}</td>
+                    <td>1</td>
+                    <td>${price.toFixed(2)}</td>
+                    <td>${price.toFixed(2)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        const yachtName = (Array.isArray(row.yachts) && row.yachts.length > 0 ? row.yachts[0].name : row.yachtName) || '';
+        const yachtModel = (Array.isArray(row.yachts) && row.yachts.length > 0 ? row.yachts[0].model : row.yachtModel) || '';
+        const countryCode = (Array.isArray(row.yachts) && row.yachts.length > 0 ? row.yachts[0].countryCode : row.countryCode) || '';
+
+        const imagesHtml = row.imageUrls && row.imageUrls.length > 0 ? `
+            <div style="margin-top: 30px; page-break-before: always;">
+                <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center;">Images</h2>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+                    ${row.imageUrls.map((url, index) => `
+                        <div style="text-align: center;">
+                            <img src="${url}" alt="Image ${index + 1}" style="max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 5px;">
+                            <p style="font-size: 12px; margin-top: 5px;">Image ${index + 1}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
+
+        const videosHtml = row.videoUrls && row.videoUrls.length > 0 ? `
+            <div style="margin-top: 30px; page-break-before: always;">
+                <h2 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; text-align: center;">Videos</h2>
+                <div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 15px; margin-bottom: 20px;">
+                    ${row.videoUrls.map((url, index) => `
+                        <div style="text-align: center;">
+                            <div style="border: 1px solid #ccc; border-radius: 5px; padding: 10px; background-color: #f5f5f5;">
+                                <p style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">Video ${index + 1}</p>
+                                <p style="font-size: 12px; color: #666; margin-bottom: 5px;">Video file available</p>
+                                <a href="${url}" style="font-size: 11px; color: #0066cc; text-decoration: underline; word-break: break-all;">${url}</a>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
+
+        const createdAt = row.createdAt ? new Date(row.createdAt) : new Date();
+        const createdAtString = createdAt.toLocaleString();
+
+        templateHtml = templateHtml
+            .replace('{{offerId}}', String(row.id))
+            .replace('{{customerFullName}}', String(row.customerFullName || ''))
+            .replace('{{yachtName}}', String(yachtName))
+            .replace('{{yachtModel}}', String(yachtModel))
+            .replace('{{countryCode}}', String(countryCode))
+            .replace('{{location}}', String(row.location || ''))
+            .replace('{{createdAt}}', createdAtString)
+            .replace('{{partsTableRows}}', partsTableRows || '<tr><td colspan="5" style="text-align: center;">No parts</td></tr>')
+            .replace('{{servicesTableRows}}', servicesTableRows || '<tr><td colspan="5" style="text-align: center;">No services</td></tr>')
+            .replace('{{totalPrice}}', totalPrice.toFixed(2))
+            .replace('{{totalPriceAllServices}}', totalPriceAllServices.toFixed(2))
+            .replace('{{totalPriceAll}}', totalPriceAll.toFixed(2))
+            .replace('{{imagesSection}}', imagesHtml)
+            .replace('{{videosSection}}', videosHtml);
+
+        const tempDiv = document.createElement('div');
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.width = '600px';
+        tempDiv.innerHTML = templateHtml;
+        document.body.appendChild(tempDiv);
+
+        await new Promise((resolve) => {
+            const images = tempDiv.querySelectorAll('img');
+            if (images.length === 0) {
+                resolve();
+                return;
+            }
+            let loaded = 0;
+            images.forEach((img) => {
+                if (img.complete) {
+                    loaded++;
+                    if (loaded === images.length) resolve();
+                } else {
+                    img.onload = () => { loaded++; if (loaded === images.length) resolve(); };
+                    img.onerror = () => { loaded++; if (loaded === images.length) resolve(); };
+                }
+            });
         });
-        y = doc.lastAutoTable.finalY + 10;
 
-        const servicesData = Array.isArray(row.services) && row.services.length > 0
-            ? row.services.map(s => [s.serviceName || s.label || '', String(s.priceInEuroWithoutVAT ?? '0') + ' €'])
-            : (row.services && typeof row.services === 'object' ? [[row.services.serviceName || row.services.label || '', String(row.services.priceInEuroWithoutVAT ?? '0') + ' €']] : []);
-        if (servicesData.length > 0) {
-            if (y > 250) { doc.addPage(); y = 14; }
-            autoTable(doc, {
-                startY: y,
-                head: [['Service Name', 'Price (€)']],
-                body: servicesData,
-                margin: { left: margin },
-                theme: 'grid',
-            });
-            y = doc.lastAutoTable.finalY + 10;
+        const html2canvas = (await import('html2canvas')).default;
+        const { jsPDF } = await import('jspdf');
+
+        const canvas = await html2canvas(tempDiv, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            width: 600,
+            windowWidth: 600
+        });
+
+        document.body.removeChild(tempDiv);
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const widthRatio = pdfWidth / imgWidth;
+        const imgScaledWidth = pdfWidth;
+        const imgScaledHeight = imgHeight * widthRatio;
+
+        pdf.addImage(imgData, 'PNG', 0, 0, imgScaledWidth, imgScaledHeight);
+
+        if (imgScaledHeight > pdfHeight) {
+            let heightLeft = imgScaledHeight - pdfHeight;
+            let pageNum = 1;
+            while (heightLeft > 0) {
+                pdf.addPage();
+                const yPosition = -(pdfHeight * pageNum);
+                pdf.addImage(imgData, 'PNG', 0, yPosition, imgScaledWidth, imgScaledHeight);
+                heightLeft -= pdfHeight;
+                pageNum++;
+            }
         }
 
-        const partsData = Array.isArray(row.parts) && row.parts.length > 0
-            ? row.parts.map(p => [p.label || p.name || '', String(p.quantity ?? 1), String(p.pricePerUnit ?? '0') + ' €'])
-            : [];
-        if (partsData.length > 0) {
-            if (y > 240) { doc.addPage(); y = 14; }
-            autoTable(doc, {
-                startY: y,
-                head: [['Part Name', 'Quantity', 'Price per Unit (€)']],
-                body: partsData,
-                margin: { left: margin },
-                theme: 'grid',
-            });
-            y = doc.lastAutoTable.finalY + 10;
-        }
-
-        if (row.comment && String(row.comment).trim()) {
-            if (y > 260) { doc.addPage(); y = 14; }
-            doc.setFontSize(12);
-            doc.text('Comments', margin, y);
-            y += lineHeight;
-            doc.setFontSize(10);
-            const commentLines = doc.splitTextToSize(row.comment, pageWidth - 2 * margin);
-            doc.text(commentLines, margin, y);
-        }
-
-        doc.save(`offer-${row.id}.pdf`);
+        pdf.save(`offer-${row.id}.pdf`);
     };
 
-    const handleHistoryExportPdf = (row) => {
+    const handleHistoryExportPdf = async (row) => {
         setPdfExportLoading(prev => ({ ...prev, [row.id]: true }));
         try {
-            generateOfferPdf(row);
+            const { data } = await axios.get(`${URL}/offer/${row.id}`);
+            const fullOffer = data?.data || row;
+            await generateOfferPdfFromTemplate(fullOffer);
         } catch (error) {
             console.error('Error exporting PDF:', error);
             toast.error("Error exporting PDF");
@@ -1309,10 +1396,12 @@ const OfferPage = () => {
         }
     };
 
-    const handleExportPdf = (row) => {
+    const handleExportPdf = async (row) => {
         setPdfExportLoading(prev => ({ ...prev, [row.id]: true }));
         try {
-            generateOfferPdf(row);
+            const { data } = await axios.get(`${URL}/offer/${row.id}`);
+            const fullOffer = data?.data || row;
+            await generateOfferPdfFromTemplate(fullOffer);
         } catch (error) {
             console.error('Error exporting PDF:', error);
             toast.error("Error exporting PDF");
