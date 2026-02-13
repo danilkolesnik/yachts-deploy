@@ -10,7 +10,6 @@ export async function sendEmail(to: string, data: any, type: string, subject: st
       port: 465,
       secure: true,
       user: process.env.ZOHO_EMAIL,
-      // Don't log the actual password
       hasPassword: !!process.env.ZOHO_APP_PASSWORD
     });
     

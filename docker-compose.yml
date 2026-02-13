@@ -36,7 +36,7 @@ services:
       - DATABASE_PORT=5432
       - SERVER_URL=http://46.225.17.97:5000
       - CLIENT_URL=http://46.225.17.97:3000
-      - ZOHO_APP_PASSWORD=fV3U2ZA#u4:6$Gg
+      - ZOHO_APP_PASSWORD=3sgDM9uNhg0E
       - ZOHO_EMAIL=kirill.hetman@zohomail.eu
     depends_on:
       db:
