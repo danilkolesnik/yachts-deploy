@@ -139,11 +139,12 @@ const OfferDetail = ({ params }) => {
 
             // Generate services table rows
             const servicesTableRows = services.map((service, index) => {
-                const price = Number(service.priceInEuroWithoutVAT || 0);
+                console.log(service);
+                const price = Number(service.value?.priceInEuroWithoutVAT);
                 return `
                     <tr>
                         <td>${index + 1}</td>
-                        <td>${service.serviceName || service.label || ''}</td>
+                        <td>${service.value?.serviceName|| ''}</td>
                         <td>1</td>
                         <td>${price.toFixed(2)}</td>
                         <td>${price.toFixed(2)}</td>
