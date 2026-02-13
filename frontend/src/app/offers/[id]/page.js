@@ -116,7 +116,7 @@ const OfferDetail = ({ params }) => {
             const services = Array.isArray(offer.services) ? offer.services : 
                            (offer.services && typeof offer.services === 'object' ? [offer.services] : []);
             const totalPriceAllServices = services.reduce((acc, service) => {
-                return acc + Number(service.priceInEuroWithoutVAT || 0);
+                return acc + Number(service.value?.priceInEuroWithoutVAT);
             }, 0);
 
             const totalPriceAll = totalPrice + totalPriceAllServices;

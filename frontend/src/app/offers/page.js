@@ -567,7 +567,7 @@ const OfferPage = () => {
 
         const services = Array.isArray(row.services) ? row.services :
             (row.services && typeof row.services === 'object' ? [row.services] : []);
-        const totalPriceAllServices = services.reduce((acc, service) => acc + Number(service.priceInEuroWithoutVAT || 0), 0);
+        const totalPriceAllServices = services.reduce((acc, service) => acc + Number(service.value?.priceInEuroWithoutVAT), 0);
         const totalPriceAll = totalPrice + totalPriceAllServices;
 
         const partsTableRows = parts.map((part, index) => {
