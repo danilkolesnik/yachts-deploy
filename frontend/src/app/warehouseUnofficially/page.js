@@ -27,7 +27,8 @@ const WarehouseUnofficiallyPage = () => {
         comment: '',
         countryCode: '',
         serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
-        pricePerUnit: ''
+        pricePerUnit: '',
+        articleNumber: ''
     });
     const [filteredData, setFilteredData] = useState([]);
     const [search, setSearch] = useState('');
@@ -212,6 +213,11 @@ const WarehouseUnofficiallyPage = () => {
             sortable: true,
         },
         {
+            name: 'Article Number',
+            selector: row => row.articleNumber || '',
+            sortable: true,
+        },
+        {
             name: 'Quantity',
             selector: row => row.quantity,
             sortable: true,
@@ -275,7 +281,7 @@ const WarehouseUnofficiallyPage = () => {
         e.preventDefault();
         try {   
             if (editMode) {
-                await axios.put(`${URL}/warehouse/${editId}`, partData);
+                await axios.put(`${URL}/warehouse/${editId}`, formData);
                 toast.success("Official warehouse updated successfully");
             } else {
                 switch (true) {
@@ -290,7 +296,7 @@ const WarehouseUnofficiallyPage = () => {
                         return;
                 }
                 await axios.post(`${URL}/warehouse/create`, {
-                    ...partData,
+                    ...formData,
                     unofficially: false
                 });
                 toast.success("Official part added to warehouse successfully");
@@ -316,7 +322,8 @@ const WarehouseUnofficiallyPage = () => {
             comment: row.comment,
             countryCode: row.countryCode,
             serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' }, // Initialized as empty
-            pricePerUnit: row.pricePerUnit
+            pricePerUnit: row.pricePerUnit,
+            articleNumber: row.articleNumber || ''
         });
         setEditMode(true);
         setEditId(row.id);
@@ -362,7 +369,8 @@ const WarehouseUnofficiallyPage = () => {
             comment: '',
             countryCode: '',
             serviceCategory: { serviceName: '', priceInEuroWithoutVAT: '' },
-            pricePerUnit: ''
+            pricePerUnit: '',
+            articleNumber: ''
         });
         setEditMode(false);
         setEditId(null);
@@ -397,6 +405,7 @@ const WarehouseUnofficiallyPage = () => {
     const exportToExcel = async () => {
         const exportData = filteredData.map(row => ({
             'Name': row.name || '',
+            'Article Number': row.articleNumber || '',
             'Quantity': row.quantity || '',
             'Comment': row.comment || '',
             'Price': `${row.pricePerUnit || ''}€`,
@@ -474,6 +483,7 @@ const WarehouseUnofficiallyPage = () => {
                             <thead>
                                 <tr>
                                     <th>Name</th>
+                                    <th>Article Number</th>
                                     <th>Quantity</th>
                                     <th>Comment</th>
                                     <th>Price</th>
@@ -483,6 +493,7 @@ const WarehouseUnofficiallyPage = () => {
                                 {filteredData.map((row) => (
                                     <tr key={row.id}>
                                         <td>{row.name || ''}</td>
+                                        <td>{row.articleNumber || ''}</td>
                                         <td>{row.quantity || ''}</td>
                                         <td>{row.comment || ''}</td>
                                         <td>{`${row.pricePerUnit || ''}€`}</td>
@@ -751,6 +762,13 @@ const WarehouseUnofficiallyPage = () => {
                         onChange={handleChange}
                         required
                         placeholder="Official manufacturer part name"
+                    />
+                    <Input
+                        label="Article Number"
+                        name="articleNumber"
+                        value={formData.articleNumber}
+                        onChange={handleChange}
+                        placeholder="e.g., ART-12345"
                     />
                     <Input
                         label="Certified Quantity *"

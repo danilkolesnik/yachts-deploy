@@ -99,6 +99,7 @@ const OfferPage = () => {
         countryCode: '',
         pricePerUnit: '',
         serviceCategoryId: '',
+        articleNumber: '',
     });
 
     const id = useAppSelector(state => state.userData?.id);
@@ -578,6 +579,7 @@ const OfferPage = () => {
                 <tr>
                     <td>${index + 1}</td>
                     <td>${part.label || part.name || part.partName || ''}</td>
+                    <td>${part.articleNumber || '-'}</td>
                     <td>${quantity}</td>
                     <td>${pricePerUnit.toFixed(2)}</td>
                     <td>${total.toFixed(2)}</td>
@@ -1062,6 +1064,7 @@ const OfferPage = () => {
                 comment: createPartFormData.comment,
                 countryCode: createPartFormData.countryCode || '',
                 pricePerUnit: createPartFormData.pricePerUnit,
+                articleNumber: createPartFormData.articleNumber || '',
                 unofficially: isUnofficialWarehouse
             };
 
@@ -1103,6 +1106,7 @@ const OfferPage = () => {
                 countryCode: '',
                 pricePerUnit: '',
                 serviceCategoryId: '',
+                articleNumber: '',
             });
             setPartWarehouseQuantity(0);
             setPartForOfferQuantity(1);
@@ -2280,6 +2284,13 @@ const OfferPage = () => {
                             value={createPartFormData.name}
                             onChange={handlePartChange}
                             required
+                        />
+                        <Input
+                            label="Article Number"
+                            name="articleNumber"
+                            value={createPartFormData.articleNumber}
+                            onChange={handlePartChange}
+                            placeholder="e.g., ART-12345"
                         />
                         
                         <Select

@@ -130,6 +130,7 @@ const OfferDetail = ({ params }) => {
                     <tr>
                         <td>${index + 1}</td>
                         <td>${part.label || part.name || part.partName || ''}</td>
+                        <td>${part.articleNumber || '-'}</td>
                         <td>${quantity}</td>
                         <td>${pricePerUnit.toFixed(2)}</td>
                         <td>${total.toFixed(2)}</td>
@@ -510,6 +511,7 @@ const OfferDetail = ({ params }) => {
                                 <thead>
                                     <tr className="bg-gray-200">
                                         <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Part Name</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Article Number</th>
                                         <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Quantity</th>
                                         <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Price per Unit (€)</th>
                                     </tr>
@@ -518,6 +520,7 @@ const OfferDetail = ({ params }) => {
                                     {offer.parts.map((part, index) => (
                                         <tr key={index}>
                                             <td className="border border-gray-300 px-4 py-2 text-black">{part.label || part.name || part.partName || 'N/A'}</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-black">{part.articleNumber || '-'}</td>
                                             <td className="border border-gray-300 px-4 py-2 text-black">{part.quantity || 1}</td>
                                             <td className="border border-gray-300 px-4 py-2 text-black">{part.pricePerUnit || '0'} €</td>
                                         </tr>
