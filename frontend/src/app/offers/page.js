@@ -2046,12 +2046,12 @@ const OfferPage = () => {
                                 <Select
                                     value={historyFilters.year}
                                     onChange={(value) => handleHistorySelectChange(value, 'year')}
-                                    className="border-gray-300 rounded-md text-black"
+                                    className="border-gray-300 rounded-md [&>div]:text-black [&>div>span]:text-black"
                                     labelProps={{ className: 'hidden' }}
                                 >
-                                    <Option value="">All Years</Option>
+                                    <Option value="" className="text-black">All Years</Option>
                                     {years.map(year => (
-                                        <Option key={year.value} value={year.value}>
+                                        <Option key={year.value} value={year.value} className="text-black">
                                             {year.label}
                                         </Option>
                                     ))}
@@ -2065,12 +2065,12 @@ const OfferPage = () => {
                                 <Select
                                     value={historyFilters.month}
                                     onChange={(value) => handleHistorySelectChange(value, 'month')}
-                                    className="border-gray-300 rounded-md [&>div]:text-black"
+                                    className="border-gray-300 rounded-md [&>div]:text-black [&>div>span]:text-black"
                                     labelProps={{ className: 'hidden' }}
                                 >
-                                    <Option value="">All Months</Option>
+                                    <Option value="" className="text-black">All Months</Option>
                                     {months.map(month => (
-                                        <Option key={month.value} value={month.value}>
+                                        <Option key={month.value} value={month.value} className="text-black">
                                             {month.label}
                                         </Option>
                                     ))}
