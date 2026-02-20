@@ -400,17 +400,8 @@ const OfferPage = () => {
             name: '',
             cell: row => (
                 <button
-                    onClick={() => {
-                        if (row.status !== 'confirmed' && row.status !== 'finished') {
-                            openCreateOrderModal(row);
-                        }
-                    }}
-                    disabled={row.status === 'confirmed' || row.status === 'finished'}
-                    className={`px-2 py-2 text-white rounded transition-all duration-200 ${
-                        row.status === 'confirmed' || row.status === 'finished'
-                            ? 'bg-[#dd3333] opacity-50 cursor-not-allowed' 
-                            : 'bg-[#dd3333] hover:bg-[#c42d2d] cursor-pointer'
-                    }`}
+                    onClick={() => openCreateOrderModal(row)}
+                    className="px-2 py-2 text-white rounded transition-all duration-200 bg-[#dd3333] hover:bg-[#c42d2d] cursor-pointer"
                 >
                     Work Order
                 </button>
