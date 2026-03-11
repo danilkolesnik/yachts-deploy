@@ -9,7 +9,7 @@ export class OrderStatusHistory {
   orderId: string;
 
   @Column({ nullable: true })
-  oldStatus: string;
+  oldStatus?: string;
 
   @Column()
   newStatus: string;

@@ -54,7 +54,7 @@ export class OrderService {
     }
     const history = this.orderStatusHistoryRepository.create({
       orderId,
-      oldStatus: oldStatus ?? null,
+      oldStatus: oldStatus ?? undefined,
       newStatus,
     });
     await this.orderStatusHistoryRepository.save(history);
