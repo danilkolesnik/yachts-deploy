@@ -24,6 +24,15 @@ export class OrderController {
     return this.orderService.create(createOrderDto);
   }
 
+  @Post(':id/workers')
+  async updateOrderWorkers(
+    @Param('id') orderId: string,
+    @Body('userIds') userIds: string[],
+    @Req() request: Request,
+  ) {
+    return this.orderService.updateOrderWorkers(orderId, userIds, request);
+  }
+
   @Get(':id')
   async getOrderById(@Param('id') orderId: string) {
     return this.orderService.getOrderById(orderId);

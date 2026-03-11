@@ -400,8 +400,14 @@ const OfferPage = () => {
             name: '',
             cell: row => (
                 <button
-                    onClick={() => openCreateOrderModal(row)}
-                    className="px-2 py-2 text-white rounded transition-all duration-200 bg-[#dd3333] hover:bg-[#c42d2d] cursor-pointer"
+                    onClick={() => row.status === 'confirmed' && openCreateOrderModal(row)}
+                    disabled={row.status !== 'confirmed'}
+                    title={row.status !== 'confirmed' ? 'Work Order can be created only from a confirmed offer' : ''}
+                    className={`px-2 py-2 text-white rounded transition-all duration-200 cursor-pointer ${
+                        row.status === 'confirmed'
+                            ? 'bg-[#dd3333] hover:bg-[#c42d2d]'
+                            : 'bg-gray-400 cursor-not-allowed'
+                    }`}
                 >
                     Work Order
                 </button>
@@ -2198,33 +2204,127 @@ const OfferPage = () => {
                     yachts={editFormData.customerFullName ? filteredYachts : []}
                     handleYachtSelect={handleYachtSelect}
                 />
-                <Modal isOpen={createOrderModalIsOpen} onClose={closeCreateOrderModal} title="Create Order">
-                    <div className="space-y-4">
-                        <ReactSelect
-                            options={workerOptions}
-                            onChange={selectedOptions => setCreateOrderFormData(selectedOptions || [])}
-                            placeholder="Assign Employees..."
-                            isClearable
-                            isSearchable
-                            isMulti
-                            className="mb-4"
-                            styles={{
-                                control: (provided) => ({
-                                    ...provided,
-                                }),
-                                option: (provided, state) => ({
-                                    ...provided,
-                                    color: 'black',
-                                    backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
-                                }),
-                            }}
-                        />
-                        <div className="flex justify-end space-x-2">
-                            <Button variant="text" color="red" onClick={closeCreateOrderModal} className="mr-1">
-                                <span>Cancel</span>
+                <Modal isOpen={createOrderModalIsOpen} onClose={closeCreateOrderModal} title="Create Work Order">
+                    <div className="space-y-6 text-black">
+                        {selectedRow && (
+                            <>
+                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <h3 className="text-lg font-semibold mb-2">Offer Preview</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                        <div>
+                                            <span className="font-medium">Offer ID: </span>
+                                            <span>#{selectedRow.id}</span>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Status: </span>
+                                            <span>{selectedRow.status}</span>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Customer: </span>
+                                            <span>{selectedRow.customerFullName || '-'}</span>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Boat Registration: </span>
+                                            <span>{selectedRow.countryCode || '-'}</span>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Yacht Name: </span>
+                                            <span>{selectedRow.yachtName || '-'}</span>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Yacht Model: </span>
+                                            <span>{selectedRow.yachtModel || '-'}</span>
+                                        </div>
+                                        {selectedRow.comment && (
+                                            <div className="md:col-span-2">
+                                                <span className="font-medium">Comment: </span>
+                                                <span>{selectedRow.comment}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                        <h4 className="text-md font-semibold mb-2">Works (Services)</h4>
+                                        {Array.isArray(selectedRow.services) && selectedRow.services.length > 0 ? (
+                                            <ul className="space-y-1 max-h-40 overflow-y-auto text-sm">
+                                                {selectedRow.services.map((service, index) => (
+                                                    <li key={index} className="flex justify-between">
+                                                        <span>{service.serviceName || service.label || `Service ${index + 1}`}</span>
+                                                        {/* Prices are intentionally hidden in work order preview */}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="text-sm text-gray-500">No services in this offer.</p>
+                                        )}
+                                    </div>
+                                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                        <h4 className="text-md font-semibold mb-2">Materials (Parts)</h4>
+                                        {Array.isArray(selectedRow.parts) && selectedRow.parts.length > 0 ? (
+                                            <ul className="space-y-1 max-h-40 overflow-y-auto text-sm">
+                                                {selectedRow.parts.map((part, index) => (
+                                                    <li key={index} className="flex justify-between">
+                                                        <span>{part.partName || part.label || part.name || `Part ${index + 1}`}</span>
+                                                        <span className="ml-2 text-gray-700">
+                                                            x{part.quantity ?? 1}
+                                                        </span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="text-sm text-gray-500">No parts in this offer.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        <div className="bg-white p-4 rounded-lg border border-gray-200">
+                            <h4 className="text-md font-semibold mb-2">Assign employees to Work Order</h4>
+                            <p className="text-xs text-gray-500 mb-2">
+                                This step only assigns responsible workers. All works and materials from the offer will be included in the work order without prices.
+                            </p>
+                            <ReactSelect
+                                options={workerOptions}
+                                onChange={selectedOptions => setCreateOrderFormData(selectedOptions || [])}
+                                placeholder="Assign Employees..."
+                                isClearable
+                                isSearchable
+                                isMulti
+                                className="mb-2"
+                                styles={{
+                                    control: (provided) => ({
+                                        ...provided,
+                                    }),
+                                    option: (provided, state) => ({
+                                        ...provided,
+                                        color: 'black',
+                                        backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
+                                    }),
+                                }}
+                            />
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+                            <Button
+                                variant="outlined"
+                                color="blue"
+                                onClick={() => {
+                                    closeCreateOrderModal();
+                                    if (selectedRow) {
+                                        handleEdit(selectedRow);
+                                    }
+                                }}
+                            >
+                                Back to edit Offer
+                            </Button>
+                            <Button variant="text" color="red" onClick={closeCreateOrderModal}>
+                                Cancel
                             </Button>
                             <Button color="green" onClick={createOrder}>
-                                <span>Create</span>
+                                Confirm and create Work Order
                             </Button>
                         </div>
                     </div>

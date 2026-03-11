@@ -28,4 +28,17 @@ export class UsersController {
   ) {
     return this.usersService.updateUserRole(id, newRole);
   }
+
+  @Put(':id/profile')
+  async upsertEmployeeProfile(
+    @Param('id') id: string,
+    @Body() body: any,
+  ) {
+    return this.usersService.upsertEmployeeProfile(id, body);
+  }
+
+  @Get(':id/profile')
+  async getEmployeeProfile(@Param('id') id: string) {
+    return this.usersService.getEmployeeProfile(id);
+  }
 }

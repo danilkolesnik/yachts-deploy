@@ -5,9 +5,9 @@ export const statusStyles = {
         border: '1px solid #dcdcdc',
     },
     'in-progress': {
-        backgroundColor: '#ff9800',
+        backgroundColor: '#f44336', // red - "in work"
         color: 'white',
-        border: '1px solid #e68900',
+        border: '1px solid #d32f2f',
     },
     waiting: {
         backgroundColor: '#ffeb3b',

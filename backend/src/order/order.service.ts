@@ -12,6 +12,8 @@ import { warehouse } from 'src/warehouse/entities/warehouse.entity';
 import { WarehouseHistory } from 'src/warehouse/entities/warehouseHistory.entity';
 import { sendEmail } from 'src/utils/sendEmail';
 import { OfferHistory } from 'src/offer/entities/offer-history.entity';
+import { OrderStatusHistory } from './entities/order-status-history.entity';
+import { OrderAssignmentHistory } from './entities/order-assignment-history.entity';
 import getBearerToken from 'src/methods/getBearerToken';
 import { JwtPayload } from 'jsonwebtoken';
 import * as jwt from 'jsonwebtoken';
@@ -36,7 +38,42 @@ export class OrderService {
     private readonly orderTimerRepository: Repository<OrderTimer>,
     @InjectRepository(OfferHistory)
     private readonly offerHistoryRepository: Repository<OfferHistory>,
+    @InjectRepository(OrderStatusHistory)
+    private readonly orderStatusHistoryRepository: Repository<OrderStatusHistory>,
+    @InjectRepository(OrderAssignmentHistory)
+    private readonly orderAssignmentHistoryRepository: Repository<OrderAssignmentHistory>,
   ) {}
+
+  private async logOrderStatusChange(
+    orderId: string,
+    oldStatus: string | null,
+    newStatus: string,
+  ) {
+    if (oldStatus === newStatus) {
+      return;
+    }
+    const history = this.orderStatusHistoryRepository.create({
+      orderId,
+      oldStatus: oldStatus ?? null,
+      newStatus,
+    });
+    await this.orderStatusHistoryRepository.save(history);
+  }
+
+  private async logOrderAssignmentChange(
+    orderId: string,
+    oldWorkerIds: string[] | null,
+    newWorkerIds: string[],
+    changedBy?: string,
+  ) {
+    const history = this.orderAssignmentHistoryRepository.create({
+      orderId,
+      oldWorkerIds: oldWorkerIds ?? [],
+      newWorkerIds,
+      changedBy,
+    });
+    await this.orderAssignmentHistoryRepository.save(history);
+  }
 
   // =============== CRUD МЕТОДЫ ===============
   async create(data: CreateOrderDto) {
@@ -51,6 +88,10 @@ export class OrderService {
 
       if (!checkOffer) {
         return { code: 404, message: 'Offer not found' };
+      }
+
+      if (checkOffer.status !== 'confirmed') {
+        return { code: 400, message: 'Offer must be confirmed before creating an order' };
       }
 
       const userIds = data.userId.map((user) => user.value);
@@ -76,6 +117,14 @@ export class OrderService {
       await this.offerRepository.update(data.offerId, { 
         status: 'confirmed' 
       });
+
+      // log initial assignment (if any)
+      const initialWorkerIds = assignedWorkers.map((w) => String(w.id));
+      if (initialWorkerIds.length > 0) {
+        await this.logOrderAssignmentChange(newOrder.id, [], initialWorkerIds, String(data.customerId));
+      }
+
+      await this.logOrderStatusChange(newOrder.id, null, 'created');
 
       return { code: 201, data: newOrder };
     } catch (err) {
@@ -147,6 +196,8 @@ export class OrderService {
         return { code: 404, message: 'Offer not found' };
       }
   
+      const previousStatus = order.status;
+
       // Обновляем статус и дату
       order.status = newStatus;
       if (newStatus === 'finished') {
@@ -156,6 +207,8 @@ export class OrderService {
       }
       
       await this.orderRepository.save(order);
+
+      await this.logOrderStatusChange(orderId, previousStatus, newStatus);
   
       // ЛОГИКА ДЛЯ СТАТУСА FINISHED
       if (newStatus === 'finished') {
@@ -203,6 +256,55 @@ export class OrderService {
       };
     } catch (err) {
       console.error(err);
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
+  async updateOrderWorkers(orderId: string, userIds: string[], req: Request) {
+    try {
+      const orderEntity = await this.orderRepository.findOne({
+        where: { id: orderId },
+        relations: ['assignedWorkers'],
+      });
+
+      if (!orderEntity) {
+        return { code: 404, message: 'Order not found' };
+      }
+
+      const oldWorkerIds = (orderEntity.assignedWorkers || []).map((w) => String(w.id));
+
+      const workers = await this.usersRepository.find({
+        where: { id: In(userIds) },
+      });
+
+      orderEntity.assignedWorkers = workers;
+      await this.orderRepository.save(orderEntity);
+
+      let changedBy: string | undefined;
+      try {
+        const token = getBearerToken(req);
+        const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+        changedBy = String(login.id);
+      } catch {
+        changedBy = undefined;
+      }
+
+      await this.logOrderAssignmentChange(
+        orderId,
+        oldWorkerIds,
+        workers.map((w) => String(w.id)),
+        changedBy,
+      );
+
+      return {
+        code: 200,
+        message: 'Order workers updated successfully',
+        data: orderEntity,
+      };
+    } catch (err) {
       return {
         code: 500,
         message: err instanceof Error ? err.message : 'Internal server error',
@@ -287,7 +389,10 @@ export class OrderService {
     });
 
     // Обновляем статус заказа
-    await this.orderRepository.update(orderId, { status: 'in_progress' });
+    const order = await this.orderRepository.findOne({ where: { id: orderId } });
+    const previousStatus = order?.status ?? null;
+    await this.orderRepository.update(orderId, { status: 'in-progress' });
+    await this.logOrderStatusChange(orderId, previousStatus, 'in-progress');
 
     return this.orderTimerRepository.save(timer);
   }
@@ -314,7 +419,10 @@ export class OrderService {
     timer.totalDuration = Math.max(0, totalDuration);
   
     // Обновляем статус заказа
-    await this.orderRepository.update(orderId, { status: 'paused' });
+    const order = await this.orderRepository.findOne({ where: { id: orderId } });
+    const previousStatus = order?.status ?? null;
+    await this.orderRepository.update(orderId, { status: 'waiting' });
+    await this.logOrderStatusChange(orderId, previousStatus, 'waiting');
   
     return this.orderTimerRepository.save(timer);
   }
@@ -335,9 +443,12 @@ export class OrderService {
 
     timer.isPaused = false;
     timer.status = 'In Progress';
-
+    
     // Обновляем статус заказа
-    await this.orderRepository.update(orderId, { status: 'in_progress' });
+    const order = await this.orderRepository.findOne({ where: { id: orderId } });
+    const previousStatus = order?.status ?? null;
+    await this.orderRepository.update(orderId, { status: 'in-progress' });
+    await this.logOrderStatusChange(orderId, previousStatus, 'in-progress');
 
     return this.orderTimerRepository.save(timer);
   }

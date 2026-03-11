@@ -44,6 +44,9 @@ const OrderPage = () => {
     const [orderToDelete, setOrderToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
     const tableRef = useRef(null);
+    const [editWorkersModalIsOpen, setEditWorkersModalIsOpen] = useState(false);
+    const [availableWorkers, setAvailableWorkers] = useState([]);
+    const [selectedWorkersForEdit, setSelectedWorkersForEdit] = useState([]);
 
     // Manual/Help content in English
     const helpSections = {
@@ -282,6 +285,42 @@ const OrderPage = () => {
         }
     };
 
+    const openEditWorkersModal = (order) => {
+        setSelectedOrder(order);
+        const initialSelected = (order.assignedWorkers || []).map(worker => ({
+            value: worker.id,
+            label: worker.fullName,
+        }));
+        setSelectedWorkersForEdit(initialSelected);
+        setEditWorkersModalIsOpen(true);
+    };
+
+    const closeEditWorkersModal = () => {
+        setEditWorkersModalIsOpen(false);
+        setSelectedWorkersForEdit([]);
+    };
+
+    const updateOrderWorkers = async () => {
+        if (!selectedOrder) return;
+        const userIds = (selectedWorkersForEdit || []).map(w => w.value);
+        try {
+            setLoadingUpdate(true);
+            const token = localStorage.getItem('token');
+            await axios.post(`${URL}/orders/${selectedOrder.id}/workers`, { userIds }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            await fetchOrders();
+            closeEditWorkersModal();
+        } catch (error) {
+            console.error('Error updating order workers:', error);
+            toast.error("Error updating order workers");
+        } finally {
+            setLoadingUpdate(false);
+        }
+    };
+
     const handleDelete = (id) => {
         setOrderToDelete(id);
         setDeleteConfirmModalOpen(true);
@@ -354,6 +393,13 @@ const OrderPage = () => {
                         <PencilIcon className="w-5 h-5" />
                     </button>
                     <button
+                        onClick={() => openEditWorkersModal(row)}
+                        className="text-green-500 hover:text-green-700"
+                        title="Edit assigned workers"
+                    >
+                        <PencilIcon className="w-5 h-5" />
+                    </button>
+                    <button
                         onClick={() => handleDelete(row.id)}
                         className="text-red-500 hover:text-red-700"
                         title="Delete order"
@@ -377,6 +423,23 @@ const OrderPage = () => {
     useEffect(() => {
         fetchOrders();
     }, [id]);
+
+    useEffect(() => {
+        const fetchWorkers = async () => {
+            try {
+                const res = await axios.get(`${URL}/users/role/worker`);
+                const workers = res.data.data || [];
+                const options = workers.map(worker => ({
+                    value: worker.id,
+                    label: worker.fullName,
+                }));
+                setAvailableWorkers(options);
+            } catch (error) {
+                console.error('Error fetching workers:', error);
+            }
+        };
+        fetchWorkers();
+    }, []);
 
     const exportToExcel = async () => {
         const exportData = sortedOrders.map(row => ({
@@ -779,6 +842,49 @@ const OrderPage = () => {
                     </div>
                 </Modal>
 
+                {/* Edit Workers Modal */}
+                <Modal isOpen={editWorkersModalIsOpen} onClose={closeEditWorkersModal} title="Edit Assigned Workers">
+                    <div className="space-y-4">
+                        <div className="p-3 bg-blue-50 rounded border border-blue-200">
+                            <p className="text-sm text-blue-700">
+                                <span className="font-semibold">Current Order:</span> {selectedOrder?.id} - {selectedOrder?.offer?.customerFullName || 'N/A'}
+                            </p>
+                        </div>
+                        <ReactSelect
+                            options={availableWorkers}
+                            value={selectedWorkersForEdit}
+                            onChange={(selected) => setSelectedWorkersForEdit(selected || [])}
+                            isMulti
+                            isClearable
+                            isSearchable
+                            placeholder="Select workers..."
+                            className="mb-4"
+                            styles={{
+                                control: (provided) => ({
+                                    ...provided,
+                                }),
+                                option: (provided, state) => ({
+                                    ...provided,
+                                    color: 'black',
+                                    backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
+                                }),
+                                multiValueLabel: (provided) => ({
+                                    ...provided,
+                                    color: 'black',
+                                }),
+                            }}
+                        />
+                        <div className="flex justify-end gap-2">
+                            <Button variant="text" color="red" onClick={closeEditWorkersModal} className="w-full md:w-auto">
+                                <span>Cancel</span>
+                            </Button>
+                            <Button color="green" onClick={updateOrderWorkers} disabled={loadingUpdate} className="w-full md:w-auto">
+                                {loadingUpdate ? <ClipLoader size={13} color={"#123abc"} /> : <span>Save</span>}
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+
                 {/* Edit Status Modal */}
                 <Modal isOpen={editStatusModalIsOpen} onClose={closeEditStatusModal} title="Edit Order Status">
                     <div className="space-y-4">
@@ -798,7 +904,6 @@ const OrderPage = () => {
                             <Option value="created" className="text-black">Created</Option>
                             <Option value="confirmed" className="text-black">Confirmed</Option>
                             <Option value="canceled" className="text-black">Canceled</Option>
-                            <Option value="in-progress" className="text-black">In Progress</Option>
                             <Option value="waiting" className="text-black">Waiting</Option>
                             <Option value="awaiting-approval" className="text-black">Awaiting Approval</Option>
                             <Option value="completed" className="text-black">Completed</Option>
