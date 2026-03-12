@@ -8,6 +8,7 @@ import { warehouse } from './src/warehouse/entities/warehouse.entity';
 import { WarehouseHistory } from './src/warehouse/entities/warehouseHistory.entity';
 import { OfferHistory } from './src/offer/entities/offer-history.entity';
 import { OrderTimer } from './src/order/entities/order-timer.entity';
+import { OrderStatusHistory } from './src/order/entities/order-status-history.entity';
 import { Yacht } from './src/yacht/entities/yacht.entity';
 
 export default new DataSource({
@@ -27,6 +28,7 @@ export default new DataSource({
     WarehouseHistory,
     OfferHistory,
     OrderTimer,
+    OrderStatusHistory,
     Yacht
   ],
   migrations: ['src/migrations/*.ts'],
