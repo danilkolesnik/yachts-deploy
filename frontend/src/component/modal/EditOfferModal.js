@@ -68,6 +68,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
                         }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
                     }}
                 />
                 <Button 
@@ -108,6 +112,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                             ...provided,
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
                         }),
                     }}
                 />
@@ -154,6 +162,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
                         }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
                     }}
                 />
             </div>
@@ -188,6 +200,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         multiValueLabel: (provided, state) => ({
                             ...provided,
                             color: state.data.unofficially ? 'green' : 'gray',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
                         }),
                     }}
                 />

@@ -85,6 +85,10 @@ const CreateOfferModal = ({
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
                         }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
                     }}
                 />
                 <Button 
@@ -125,6 +129,10 @@ const CreateOfferModal = ({
                             ...provided,
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
                         }),
                     }}
                 />
@@ -187,6 +195,10 @@ const CreateOfferModal = ({
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
                         }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
                     }}
                 />
             </div>
@@ -221,6 +233,10 @@ const CreateOfferModal = ({
                         multiValueLabel: (provided, state) => ({
                             ...provided,
                             color: state.data.unofficially ? 'green' : 'gray',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
                         }),
                     }}
                 />
