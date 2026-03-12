@@ -32,6 +32,21 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
         })
     );
 
+    const selectedPartOptions = combinedParts.filter(option =>
+        Array.isArray(formData.parts) && formData.parts.some(part => {
+            const partId = part?.id ?? part?.value?.id;
+            const optionId = option.value?.id ?? option.id;
+
+            if (partId && optionId) {
+                return String(partId) === String(optionId);
+            }
+
+            const partName = part.label || part.name || part.partName;
+            const optionName = option.label || option.name || option.partName;
+            return partName && optionName && partName === optionName;
+        })
+    );
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit Offer">
         <form
@@ -74,7 +89,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 9999,
+                            zIndex: 99,
                         }),
                         menuList: (base) => ({
                             ...base,
@@ -123,7 +138,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 9999,
+                            zIndex: 99,
                         }),
                         menuList: (base) => ({
                             ...base,
@@ -176,7 +191,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 9999,
+                            zIndex: 99,
                         }),
                         menuList: (base) => ({
                             ...base,
@@ -196,8 +211,8 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     id="parts-select"
                     isMulti
                     options={combinedParts}
-                    value={formData.parts}
-                    onChange={(selectedOptions) => handleSelectChange(selectedOptions, 'parts')}
+                    value={selectedPartOptions}
+                    onChange={(selectedOptions) => handleSelectChange(selectedOptions || [], 'parts')}
                     placeholder="Select parts..."
                     className="mt-1"
                     menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
@@ -219,7 +234,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 9999,
+                            zIndex: 99,
                         }),
                         menuList: (base) => ({
                             ...base,

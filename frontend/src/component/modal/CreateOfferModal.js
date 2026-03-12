@@ -91,7 +91,7 @@ const CreateOfferModal = ({
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 9999,
+                            zIndex: 99,
                         }),
                         menuList: (base) => ({
                             ...base,
@@ -140,7 +140,7 @@ const CreateOfferModal = ({
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 9999,
+                            zIndex: 99,
                         }),
                         menuList: (base) => ({
                             ...base,
@@ -209,7 +209,7 @@ const CreateOfferModal = ({
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 9999,
+                            zIndex: 99,
                         }),
                         menuList: (base) => ({
                             ...base,
@@ -252,7 +252,7 @@ const CreateOfferModal = ({
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 9999,
+                            zIndex: 99,
                         }),
                         menuList: (base) => ({
                             ...base,
