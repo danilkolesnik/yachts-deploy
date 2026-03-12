@@ -15,10 +15,38 @@ const OrderTimer = ({ orderId, onStop }) => {
     status 
   } = useOrderTimer(orderId);
 
+  const notifyParent = () => {
+    if (typeof onStop === 'function') {
+      onStop();
+    }
+  };
+
+  const handleStartOrResume = async () => {
+    try {
+      if (isPaused) {
+        await resumeTimer();
+      } else {
+        await startTimer();
+      }
+      notifyParent();
+    } catch {
+      // ошибки уже логируются внутри хука
+    }
+  };
+
+  const handlePause = async () => {
+    try {
+      await pauseTimer();
+      notifyParent();
+    } catch {
+      // ошибки уже логируются внутри хука
+    }
+  };
+
   const handleStop = async () => {
     const stopped = await stopTimer();
-    if (stopped && typeof onStop === 'function') {
-      onStop();
+    if (stopped) {
+      notifyParent();
     }
   };
 
@@ -32,7 +60,7 @@ const OrderTimer = ({ orderId, onStop }) => {
           className={`w-7 h-7 rounded-md flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 shadow-sm ${
             (!isRunning || isPaused) ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-300'
           }`}
-          onClick={isPaused ? resumeTimer : startTimer}
+          onClick={handleStartOrResume}
           disabled={isRunning && !isPaused}
           title={isPaused ? "Продолжить" : "Начать работу"}
         >
@@ -43,7 +71,7 @@ const OrderTimer = ({ orderId, onStop }) => {
           className={`w-7 h-7 rounded-md flex items-center justify-center transition-all transform hover:scale-105 active:scale-95 shadow-sm ${
             (isRunning && !isPaused) ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-300'
           }`}
-          onClick={pauseTimer}
+          onClick={handlePause}
           disabled={!isRunning || isPaused}
           title="Пауза"
         >
