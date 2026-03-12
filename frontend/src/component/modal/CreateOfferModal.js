@@ -72,6 +72,10 @@ const CreateOfferModal = ({
                     isClearable
                     isSearchable
                     className="mb-2"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
@@ -84,6 +88,14 @@ const CreateOfferModal = ({
                             ...provided,
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
+                        menuList: (base) => ({
+                            ...base,
+                            maxHeight: 220,
                         }),
                     }}
                 />
@@ -113,6 +125,10 @@ const CreateOfferModal = ({
                     isSearchable
                     isMulti
                     className="mt-1"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
@@ -121,6 +137,14 @@ const CreateOfferModal = ({
                             ...provided,
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
+                        menuList: (base) => ({
+                            ...base,
+                            maxHeight: 220,
                         }),
                     }}
                 />
@@ -170,6 +194,10 @@ const CreateOfferModal = ({
                     onChange={(selectedOptions) => handleSelectChange((selectedOptions || []).map(option => option.value), 'services')}
                     placeholder="Select services..."
                     className="mt-1"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
@@ -178,6 +206,14 @@ const CreateOfferModal = ({
                             ...provided,
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
+                        menuList: (base) => ({
+                            ...base,
+                            maxHeight: 220,
                         }),
                     }}
                 />
@@ -197,6 +233,10 @@ const CreateOfferModal = ({
                     onChange={(selectedOptions) => handleSelectChange(selectedOptions, 'parts')}
                     placeholder="Select parts..."
                     className="mt-1"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
@@ -209,6 +249,14 @@ const CreateOfferModal = ({
                         multiValueLabel: (provided, state) => ({
                             ...provided,
                             color: state.data.unofficially ? 'green' : 'gray',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
+                        menuList: (base) => ({
+                            ...base,
+                            maxHeight: 220,
                         }),
                     }}
                 />

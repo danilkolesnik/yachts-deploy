@@ -55,6 +55,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     isClearable
                     isSearchable
                     className="mb-2"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
@@ -67,6 +71,14 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                             ...provided,
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
+                        menuList: (base) => ({
+                            ...base,
+                            maxHeight: 220,
                         }),
                     }}
                 />
@@ -96,6 +108,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     isSearchable
                     isMulti
                     className="mt-1"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
@@ -104,6 +120,14 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                             ...provided,
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
+                        menuList: (base) => ({
+                            ...base,
+                            maxHeight: 220,
                         }),
                     }}
                 />
@@ -137,6 +161,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     }
                     placeholder="Select services..."
                     className="mt-1"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
@@ -145,6 +173,14 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                             ...provided,
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
+                        menuList: (base) => ({
+                            ...base,
+                            maxHeight: 220,
                         }),
                     }}
                 />
@@ -164,6 +200,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     onChange={(selectedOptions) => handleSelectChange(selectedOptions, 'parts')}
                     placeholder="Select parts..."
                     className="mt-1"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
@@ -176,6 +216,14 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         multiValueLabel: (provided, state) => ({
                             ...provided,
                             color: state.data.unofficially ? 'green' : 'gray',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
+                        menuList: (base) => ({
+                            ...base,
+                            maxHeight: 220,
                         }),
                     }}
                 />
