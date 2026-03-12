@@ -470,7 +470,7 @@ export class OrderService {
     return { code: 200, data: savedTimer };
   }
 
-  async stopTimer(orderId: string): Promise<OrderTimer> {
+  async stopTimer(orderId: string): Promise<any> {
     const timer = await this.orderTimerRepository.findOne({
       where: { orderId, isRunning: true }
     });
@@ -486,21 +486,12 @@ export class OrderService {
     timer.status = 'Completed';
     timer.totalDuration = now.getTime() - timer.startTime.getTime();
   
-    await this.orderTimerRepository.save(timer);
-  
+    const saved = await this.orderTimerRepository.save(timer);
+ 
     // АВТОМАТИЧЕСКОЕ ИЗМЕНЕНИЕ СТАТУСА ORDER И OFFER НА FINISHED
     await this.updateOrderStatus(orderId, 'finished');
-  
-    return await this.orderTimerRepository.save(
-      this.orderTimerRepository.create({
-        orderId: orderId,
-        isRunning: false,
-        isPaused: false,
-        status: 'Ready',
-        startTime: new Date(),
-        totalPausedTime: 0
-      })
-    );
+ 
+    return { code: 200, data: saved };
   }
 
   async getOrderStatusHistory(orderId: string) {
