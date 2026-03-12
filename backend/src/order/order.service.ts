@@ -375,26 +375,38 @@ export class OrderService {
   }
 
   // =============== ТАЙМЕРЫ ===============
-  async startTimer(orderId: string, req: Request): Promise<OrderTimer> {
-    const token = getBearerToken(req);
-    const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+  async startTimer(orderId: string, req: Request): Promise<any> {
+    try {
+      const token = getBearerToken(req);
+      if (!token) {
+        return { code: 401, message: 'Authorization token missing' };
+      }
 
-    const timer = this.orderTimerRepository.create({
-      orderId,
-      userId: login.id,
-      startTime: new Date(),
-      status: 'In Progress',
-      isRunning: true,
-      isPaused: false
-    });
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
 
-    // Обновляем статус заказа
-    const order = await this.orderRepository.findOne({ where: { id: orderId } });
-    const previousStatus = order?.status ?? null;
-    await this.orderRepository.update(orderId, { status: 'in-progress' });
-    await this.logOrderStatusChange(orderId, previousStatus, 'in-progress');
+      const timer = this.orderTimerRepository.create({
+        orderId,
+        userId: login.id,
+        startTime: new Date(),
+        status: 'In Progress',
+        isRunning: true,
+        isPaused: false,
+      });
 
-    return this.orderTimerRepository.save(timer);
+      // Обновляем статус заказа
+      const order = await this.orderRepository.findOne({ where: { id: orderId } });
+      const previousStatus = order?.status ?? null;
+      await this.orderRepository.update(orderId, { status: 'in-progress' });
+      await this.logOrderStatusChange(orderId, previousStatus, 'in-progress');
+
+      const savedTimer = await this.orderTimerRepository.save(timer);
+      return { code: 200, data: savedTimer };
+    } catch (err) {
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
   }
 
   async pauseTimer(orderId: string): Promise<any> {

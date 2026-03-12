@@ -484,17 +484,48 @@ const OfferDetail = ({ params }) => {
                                 </thead>
                                 <tbody>
                                     {Array.isArray(offer.services) ? (
-                                        offer.services.map((service, index) => (
-                                            <tr key={index}>
-                                                <td className="border border-gray-300 px-4 py-2 text-black">{service.value?.serviceName  || ''}</td>
-                                                <td className="border border-gray-300 px-4 py-2 text-black">{service.value?.priceInEuroWithoutVAT || '0'} €</td>
-                                            </tr>
-                                        ))
+                                        offer.services.map((service, index) => {
+                                            const name =
+                                                service.serviceName ||
+                                                service.value?.serviceName ||
+                                                '';
+                                            const price =
+                                                service.priceInEuroWithoutVAT ??
+                                                service.value?.priceInEuroWithoutVAT ??
+                                                0;
+                                            return (
+                                                <tr key={index}>
+                                                    <td className="border border-gray-300 px-4 py-2 text-black">
+                                                        {name}
+                                                    </td>
+                                                    <td className="border border-gray-300 px-4 py-2 text-black">
+                                                        {price} €
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     ) : (
-                                        <tr>
-                                            <td className="border border-gray-300 px-4 py-2 text-black">{offer.services.value?.serviceName || ''}</td>
-                                            <td className="border border-gray-300 px-4 py-2 text-black">{offer.services.value?.priceInEuroWithoutVAT || '0'} €</td>
-                                        </tr>
+                                        (() => {
+                                            const service = offer.services || {};
+                                            const name =
+                                                service.serviceName ||
+                                                service.value?.serviceName ||
+                                                '';
+                                            const price =
+                                                service.priceInEuroWithoutVAT ??
+                                                service.value?.priceInEuroWithoutVAT ??
+                                                0;
+                                            return (
+                                                <tr>
+                                                    <td className="border border-gray-300 px-4 py-2 text-black">
+                                                        {name}
+                                                    </td>
+                                                    <td className="border border-gray-300 px-4 py-2 text-black">
+                                                        {price} €
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })()
                                     )}
                                 </tbody>
                             </table>
