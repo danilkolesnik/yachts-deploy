@@ -451,7 +451,10 @@ export class OrderService {
 
     if (timer.pauseTime) {
       const pauseDuration = new Date().getTime() - timer.pauseTime.getTime();
-      timer.totalPausedTime = (timer.totalPausedTime || 0) + pauseDuration;
+      const currentTotal = Number(timer.totalPausedTime || 0);
+      const newTotal = currentTotal + pauseDuration;
+      const MAX_BIGINT_SAFE = 9_000_000_000_000_000_000; // ~9e18, меньше максимума bigint PostgreSQL
+      timer.totalPausedTime = Math.min(newTotal, MAX_BIGINT_SAFE);
     }
 
     timer.isPaused = false;
