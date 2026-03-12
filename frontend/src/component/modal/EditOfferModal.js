@@ -64,16 +64,12 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     value={userOptions.find(option => option.label === formData.customerFullName) || null}
                     onChange={selectedOption => {
                         handleChange({ target: { name: 'customerFullName', value: selectedOption ? selectedOption.label : '' } });
-                       
+                        // Reset selected yachts when customer changes
                     }}
                     placeholder="Select a customer..."
                     isClearable
                     isSearchable
                     className="mb-2"
-                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
-                    menuPlacement="auto"
-                    menuPosition="fixed"
-                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
@@ -86,14 +82,6 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                             ...provided,
                             color: 'black',
                             backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
-                        }),
-                        menuPortal: (base) => ({
-                            ...base,
-                            zIndex: 9999,
-                        }),
-                        menuList: (base) => ({
-                            ...base,
-                            maxHeight: 220,
                         }),
                     }}
                 />
@@ -124,8 +112,6 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     isMulti
                     className="mt-1"
                     menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
-                    menuPlacement="auto"
-                    menuPosition="fixed"
                     menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
@@ -177,8 +163,6 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     placeholder="Select services..."
                     className="mt-1"
                     menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
-                    menuPlacement="auto"
-                    menuPosition="fixed"
                     menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
@@ -216,8 +200,6 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     placeholder="Select parts..."
                     className="mt-1"
                     menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
-                    menuPlacement="auto"
-                    menuPosition="relative"
                     menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
