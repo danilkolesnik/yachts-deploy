@@ -52,10 +52,7 @@ export const useOrderTimer = (orderId) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      setIsRunning(true);
-      setIsPaused(false);
-      setStatus('In Progress');
-      setElapsedTime(0);
+      await fetchTimerStatus();
     } catch (error) {
       console.error('Ошибка при запуске таймера:', error);
     }
@@ -65,8 +62,7 @@ export const useOrderTimer = (orderId) => {
   const pauseTimer = async () => {
     try {
       await axios.post(`${API_URL}/${orderId}/timer/pause`);
-      setIsPaused(true);
-      setStatus('Paused');
+      await fetchTimerStatus();
     } catch (error) {
       console.error('Ошибка при постановке таймера на паузу:', error);
     }
@@ -76,8 +72,7 @@ export const useOrderTimer = (orderId) => {
   const resumeTimer = async () => {
     try {
       await axios.post(`${API_URL}/${orderId}/timer/resume`);
-      setIsPaused(false);
-      setStatus('In Progress');
+      await fetchTimerStatus();
     } catch (error) {
       console.error('Ошибка при возобновлении таймера:', error);
     }
@@ -87,12 +82,7 @@ export const useOrderTimer = (orderId) => {
   const stopTimer = async () => {
     try {
       const { data } = await axios.post(`${API_URL}/${orderId}/timer/stop`);
-      setIsRunning(false);
-      setIsPaused(false);
-      setStatus('Completed');
-      if (data.totalDuration) {
-        setElapsedTime(data.totalDuration);
-      }
+      await fetchTimerStatus();
       return true;
     } catch (error) {
       console.error('Ошибка при остановке таймера:', error);

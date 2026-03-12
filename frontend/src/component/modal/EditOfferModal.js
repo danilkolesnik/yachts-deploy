@@ -51,6 +51,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     isClearable
                     isSearchable
                     className="mb-2"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
@@ -92,6 +96,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     isSearchable
                     isMulti
                     className="mt-1"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
@@ -133,6 +141,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     }
                     placeholder="Select services..."
                     className="mt-1"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
@@ -160,6 +172,10 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     onChange={(selectedOptions) => handleSelectChange(selectedOptions, 'parts')}
                     placeholder="Select parts..."
                     className="mt-1"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
                             ...provided,
