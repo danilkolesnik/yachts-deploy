@@ -217,7 +217,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     className="mt-1"
                     menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
                     menuPlacement="auto"
-                    menuPosition="fixed"
+                    menuPosition="relative"
                     menuShouldScrollIntoView={false}
                     styles={{
                         control: (provided) => ({
