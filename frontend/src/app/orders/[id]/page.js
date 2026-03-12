@@ -23,6 +23,7 @@ const OrderDetail = ({ params }) => {
     const [selectedTab, setSelectedTab] = useState('Before');
     const [showGallery, setShowGallery] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [statusHistory, setStatusHistory] = useState([]);
     const router = useRouter();
 
     useEffect(() => {
@@ -39,6 +40,12 @@ const OrderDetail = ({ params }) => {
                     setOrder(response.data.data)
                 })
                 .catch(error => console.error('Error fetching order:', error));
+
+            axios.get(`${URL}/orders/${id}/status-history`)
+                .then(response => {
+                    setStatusHistory(response.data.data || []);
+                })
+                .catch(error => console.error('Error fetching status history:', error));
         }
     }, [id]);
 
@@ -237,6 +244,23 @@ const OrderDetail = ({ params }) => {
             <div className="max-w-4xl mx-auto p-8 bg-white shadow-lg rounded-lg">
                 <Button color="blue" onClick={() => router.push('/orders')}>Back</Button>
                 <h1 className="text-4xl font-extrabold mb-6 text-black pt-4">Order Details</h1>
+                {statusHistory && statusHistory.length > 0 && (
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold mb-3 text-black">Status History</h2>
+                        <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 max-h-60 overflow-y-auto">
+                            <ul className="space-y-2 text-sm text-black">
+                                {statusHistory.map((item, index) => (
+                                    <li key={item.id || index} className="flex justify-between">
+                                        <span className="font-medium">{item.oldStatus || '—'} → {item.newStatus}</span>
+                                        <span className="text-gray-500">
+                                            {item.changedAt ? new Date(item.changedAt).toLocaleString() : ''}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                )}
                 <Tab.Group>
                     <Tab.List className="flex space-x-1 border-b-2 border-gray-300">
                         {['Before', 'In Progress', 'Result'].map((tab) => (

@@ -2294,6 +2294,10 @@ const OfferPage = () => {
                                 isSearchable
                                 isMulti
                                 className="mb-2"
+                                menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                                menuPlacement="auto"
+                                menuPosition="fixed"
+                                menuShouldScrollIntoView={false}
                                 styles={{
                                     control: (provided) => ({
                                         ...provided,
@@ -2302,6 +2306,14 @@ const OfferPage = () => {
                                         ...provided,
                                         color: 'black',
                                         backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
+                                    }),
+                                    menuPortal: (base) => ({
+                                        ...base,
+                                        zIndex: 9999,
+                                    }),
+                                    menuList: (base) => ({
+                                        ...base,
+                                        maxHeight: 200,
                                     }),
                                 }}
                             />

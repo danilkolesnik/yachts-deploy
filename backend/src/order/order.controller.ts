@@ -95,6 +95,11 @@ export class OrderController {
     return this.orderService.getTimerHistory(orderId);
   }
 
+  @Get(':orderId/status-history')
+  async getStatusHistory(@Param('orderId') orderId: string) {
+    return this.orderService.getOrderStatusHistory(orderId);
+  }
+
   @Get('timers/active')
   async getActiveTimers() {
     return this.orderService.getActiveTimers();

@@ -14,6 +14,24 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
         label: `${yacht.name} - ${yacht.model}`
     }));
 
+    const serviceOptions = catagoryData.map(category => ({
+        value: category,
+        label: `${category.serviceName} - ${category.priceInEuroWithoutVAT}€`
+    }));
+
+    const selectedServiceOptions = serviceOptions.filter(option =>
+        Array.isArray(formData.services) && formData.services.some(service => {
+            const serviceId = service?.id ?? service?.value?.id;
+            const optionId = option.value?.id;
+
+            if (serviceId && optionId) {
+                return serviceId === optionId;
+            }
+
+            return (service?.serviceName ?? service?.value?.serviceName) === option.value?.serviceName;
+        })
+    );
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit Offer">
         <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto h-96" style={{ height: '400px', overflowY: 'auto' }}>
@@ -105,12 +123,14 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                 <ReactSelect
                     id="services-select"
                     isMulti
-                    options={catagoryData.map(category => ({
-                        value: category,
-                        label: `${category.serviceName} - ${category.priceInEuroWithoutVAT}€`
-                    }))}
-                    value={formData.services}
-                    onChange={(selectedOptions) => handleSelectChange(selectedOptions, 'services')}
+                    options={serviceOptions}
+                    value={selectedServiceOptions}
+                    onChange={(selectedOptions) =>
+                        handleSelectChange(
+                            (selectedOptions || []).map(option => option.value),
+                            'services'
+                        )
+                    }
                     placeholder="Select services..."
                     className="mt-1"
                     styles={{

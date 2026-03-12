@@ -397,13 +397,13 @@ export class OrderService {
     return this.orderTimerRepository.save(timer);
   }
 
-  async pauseTimer(orderId: string): Promise<OrderTimer> {
+  async pauseTimer(orderId: string): Promise<any> {
     const timer = await this.orderTimerRepository.findOne({
-      where: { orderId, isRunning: true, isPaused: false }
+      where: { orderId, isRunning: true, isPaused: false },
     });
   
     if (!timer) {
-      throw new Error('No active timer found for this order');
+      return { code: 404, message: 'No active timer found for this order' };
     }
   
     const now = new Date();
@@ -424,16 +424,17 @@ export class OrderService {
     await this.orderRepository.update(orderId, { status: 'waiting' });
     await this.logOrderStatusChange(orderId, previousStatus, 'waiting');
   
-    return this.orderTimerRepository.save(timer);
+    const savedTimer = await this.orderTimerRepository.save(timer);
+    return { code: 200, data: savedTimer };
   }
 
-  async resumeTimer(orderId: string): Promise<OrderTimer> {
+  async resumeTimer(orderId: string): Promise<any> {
     const timer = await this.orderTimerRepository.findOne({
-      where: { orderId, isRunning: true, isPaused: true }
+      where: { orderId, isRunning: true, isPaused: true },
     });
-
+ 
     if (!timer) {
-      throw new Error('No paused timer found for this order');
+      return { code: 404, message: 'No paused timer found for this order' };
     }
 
     if (timer.pauseTime) {
@@ -450,7 +451,8 @@ export class OrderService {
     await this.orderRepository.update(orderId, { status: 'in-progress' });
     await this.logOrderStatusChange(orderId, previousStatus, 'in-progress');
 
-    return this.orderTimerRepository.save(timer);
+    const savedTimer = await this.orderTimerRepository.save(timer);
+    return { code: 200, data: savedTimer };
   }
 
   async stopTimer(orderId: string): Promise<OrderTimer> {
@@ -484,6 +486,25 @@ export class OrderService {
         totalPausedTime: 0
       })
     );
+  }
+
+  async getOrderStatusHistory(orderId: string) {
+    try {
+      const history = await this.orderStatusHistoryRepository.find({
+        where: { orderId },
+        order: { changedAt: 'ASC' },
+      });
+
+      return {
+        code: 200,
+        data: history,
+      };
+    } catch (err) {
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
   }
 
   // =============== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===============
