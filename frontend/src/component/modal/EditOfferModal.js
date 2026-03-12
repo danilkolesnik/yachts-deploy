@@ -89,7 +89,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 999,
+                            zIndex: 9999,
                         }),
                         menuList: (base) => ({
                             ...base,
@@ -138,7 +138,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 999,
+                            zIndex: 9999,
                         }),
                         menuList: (base) => ({
                             ...base,
@@ -191,7 +191,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 999,
+                            zIndex: 9999,
                         }),
                         menuList: (base) => ({
                             ...base,
@@ -234,7 +234,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         menuPortal: (base) => ({
                             ...base,
-                            zIndex: 999,
+                            zIndex: 9999,
                         }),
                         menuList: (base) => ({
                             ...base,
