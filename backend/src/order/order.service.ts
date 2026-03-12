@@ -757,17 +757,21 @@ export class OrderService {
   
     if (timer.isRunning) {
       const now = new Date().getTime();
-      let currentDuration = now - timer.startTime.getTime();
-      
-      if (timer.totalPausedTime) {
-        currentDuration -= timer.totalPausedTime;
-      }
+      const sinceStart = now - timer.startTime.getTime();
+
+      // totalPausedTime может быть "испорчена" старыми значениями,Clamp
+      const effectiveTotalPaused = Math.min(
+        Number(timer.totalPausedTime || 0),
+        Math.max(sinceStart, 0),
+      );
+
+      let currentDuration = sinceStart - effectiveTotalPaused;
       
       if (timer.isPaused && timer.pauseTime) {
         const currentPauseDuration = now - timer.pauseTime.getTime();
         currentDuration -= currentPauseDuration;
       }
-  
+ 
       result.currentDuration = Math.max(0, currentDuration);
     } else {
       result.endTime = timer.endTime;
