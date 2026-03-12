@@ -24,6 +24,7 @@ import { warehouse } from './warehouse/entities/warehouse.entity';
 import { WarehouseHistory } from './warehouse/entities/warehouseHistory.entity';
 import { OfferHistory } from './offer/entities/offer-history.entity';
 import { OrderTimer } from './order/entities/order-timer.entity';
+import { OrderStatusHistory } from './order/entities/order-status-history.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { YachtModule } from './yacht/yacht.module';
@@ -76,6 +77,7 @@ createUploadDirectories();
           WarehouseHistory,
           OfferHistory,
           OrderTimer,
+          OrderStatusHistory,
           Yacht
         ],
       })
