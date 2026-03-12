@@ -9,7 +9,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   return (
     <Dialog open={isOpen} handler={onClose} dismiss={{ outsidePress: false }} className="">
       <DialogHeader className="text-black">{title}</DialogHeader>
-      <DialogBody className="overflow-y-auto">{children}</DialogBody>
+      <DialogBody className="overflow-hidden">{children}</DialogBody>
     </Dialog>
   );
 };
