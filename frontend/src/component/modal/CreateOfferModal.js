@@ -51,7 +51,11 @@ const CreateOfferModal = ({
 
     return(
         <Modal isOpen={isOpen} onClose={onClose} title="Create Offer">
-        <form onSubmit={onSubmit} className="space-y-4 overflow-y-auto h-full" style={{ height: '400px', overflowY: 'auto' }}>
+        <form 
+            onSubmit={onSubmit} 
+            className="space-y-4" 
+            style={{ overflow: 'hidden' }}
+        >
             <div className="mb-4">
                 <label htmlFor="customer-select" className="block text-sm font-medium text-gray-700">
                     Select Customer
