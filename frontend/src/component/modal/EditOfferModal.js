@@ -128,7 +128,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         menuList: (base) => ({
                             ...base,
-                            maxHeight: 220,
+
                         }),
                     }}
                 />
@@ -179,7 +179,6 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         menuList: (base) => ({
                             ...base,
-                            maxHeight: 220,
                         }),
                     }}
                 />
@@ -220,7 +219,6 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         menuList: (base) => ({
                             ...base,
-                            maxHeight: 220,
                         }),
                     }}
                 />
