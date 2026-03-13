@@ -54,7 +54,6 @@ const CreateOfferModal = ({
         <form
             onSubmit={onSubmit}
             className="space-y-4 overflow-y-auto h-full"
-            style={{ height: '400px', overflowY: 'auto' }}
         >
             <div className="mb-4">
                 <label htmlFor="customer-select" className="block text-sm font-medium text-gray-700">
@@ -95,7 +94,6 @@ const CreateOfferModal = ({
                         }),
                         menuList: (base) => ({
                             ...base,
-                            maxHeight: 220,
                         }),
                     }}
                 />
@@ -144,7 +142,6 @@ const CreateOfferModal = ({
                         }),
                         menuList: (base) => ({
                             ...base,
-                            maxHeight: 220,
                         }),
                     }}
                 />
@@ -213,7 +210,6 @@ const CreateOfferModal = ({
                         }),
                         menuList: (base) => ({
                             ...base,
-                            maxHeight: 220,
                         }),
                     }}
                 />
@@ -256,7 +252,6 @@ const CreateOfferModal = ({
                         }),
                         menuList: (base) => ({
                             ...base,
-                            maxHeight: 220,
                         }),
                     }}
                 />
