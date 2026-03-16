@@ -901,7 +901,11 @@ const OrderPage = () => {
                             onChange={handleStatusChange} 
                             className="text-black w-full"
                             labelProps={{ className: 'text-black' }}
-                            menuProps={{ className: 'max-h-60 overflow-y-auto text-black' }}
+                            menuProps={{
+                                className: 'max-h-60 overflow-y-auto text-black',
+                                placement: 'bottom-start',
+                                allowFlip: false,
+                            }}
                         >
                             <Option value="created" className="text-black">Created</Option>
                             <Option value="confirmed" className="text-black">Confirmed</Option>
