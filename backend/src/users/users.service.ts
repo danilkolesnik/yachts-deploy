@@ -4,6 +4,7 @@ import { Repository, Not, In } from 'typeorm';
 import { users } from 'src/auth/entities/users.entity';
 import { EmployeeProfile } from './entities/employee-profile.entity';
 import { UserPermissionHistory } from './entities/user-permission-history.entity';
+import { PermissionsList } from 'src/constants/permissions';
 
 @Injectable()
 export class UsersService {
@@ -19,22 +20,31 @@ export class UsersService {
   private readonly ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     admin: ['*'],
     mechanic: [
-      'orders.read',
-      'orders.status.change',
-      'orders.media.add',
-      'orders.media.delete',
-      'orders.comment.add',
+      PermissionsList.ORDERS_READ,
+      PermissionsList.ORDERS_STATUS_CHANGE,
+      PermissionsList.ORDERS_MEDIA_ADD,
+      PermissionsList.ORDERS_MEDIA_DELETE,
+      PermissionsList.ORDERS_COMMENT_ADD,
     ],
     electrician: [
-      'orders.read',
-      'orders.status.change',
-      'orders.media.add',
-      'orders.media.delete',
-      'orders.comment.add',
+      PermissionsList.ORDERS_READ,
+      PermissionsList.ORDERS_STATUS_CHANGE,
+      PermissionsList.ORDERS_MEDIA_ADD,
+      PermissionsList.ORDERS_MEDIA_DELETE,
+      PermissionsList.ORDERS_COMMENT_ADD,
+    ],
+    manager: [
+      PermissionsList.ORDERS_READ,
+      PermissionsList.ORDERS_CREATE,
+      PermissionsList.ORDERS_STATUS_CHANGE,
+      PermissionsList.ORDERS_ASSIGNMENT_MANAGE,
+      PermissionsList.ORDERS_MEDIA_ADD,
+      PermissionsList.ORDERS_MEDIA_DELETE,
+      PermissionsList.ORDERS_COMMENT_ADD,
     ],
     user: [
-      'self.offers.read',
-      'self.orders.read',
+      PermissionsList.SELF_OFFERS_READ,
+      PermissionsList.SELF_ORDERS_READ,
     ],
   };
 

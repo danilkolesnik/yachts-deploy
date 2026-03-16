@@ -513,6 +513,26 @@ export class OrderService {
     }
   }
 
+  async getOrderAssignmentHistory(orderId: string) {
+    try {
+      const history = await this.orderAssignmentHistoryRepository.find({
+        where: { orderId },
+        order: { changedAt: 'ASC' },
+      });
+
+      return {
+        code: 200,
+        data: history,
+      };
+    } catch (err) {
+      return {
+        code: 500,
+        message:
+          err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
   // =============== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===============
   private async notifyAdminsAboutFinishedOffer(offer: offer, order: order) {
     try {

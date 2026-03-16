@@ -12,6 +12,7 @@ import ReactSelect from 'react-select';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-toastify';
 import { ClipLoader } from 'react-spinners';
+import Input from '@/ui/Input';
 
 const UsersPage = () => {
     const [users, setUsers] = useState([]);
@@ -25,6 +26,22 @@ const UsersPage = () => {
     const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [profileModalIsOpen, setProfileModalIsOpen] = useState(false);
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileUser, setProfileUser] = useState(null);
+    const [profileForm, setProfileForm] = useState({
+        fullName: '',
+        dateOfBirth: '',
+        phone: '',
+        secondaryPhone: '',
+        address: '',
+        contractStart: '',
+        contractEnd: '',
+        position: '',
+        notes: '',
+        responsibilityAreasText: '',
+    });
 
     const roles = [
         { value: 'admin', label: 'Admin' },
@@ -66,6 +83,13 @@ const UsersPage = () => {
                         <PencilIcon className="w-5 h-5" />
                     </button>
                     <button
+                        onClick={() => openProfileModal(row)}
+                        className="text-green-500 hover:text-green-700"
+                        title="Edit employee profile"
+                    >
+                        <PencilIcon className="w-5 h-5" />
+                    </button>
+                    <button
                         onClick={() => deleteUser(row.id)}
                         className="text-red-500 hover:text-red-700"
                     >
@@ -82,6 +106,61 @@ const UsersPage = () => {
         setSelectedUser(user);
         setNewRole(user.role || roles[0].value);
         setEditRoleModalIsOpen(true);
+    };
+
+    const closeProfileModal = () => {
+        setProfileModalIsOpen(false);
+        setProfileUser(null);
+        setProfileForm({
+            fullName: '',
+            dateOfBirth: '',
+            phone: '',
+            secondaryPhone: '',
+            address: '',
+            contractStart: '',
+            contractEnd: '',
+            position: '',
+            notes: '',
+            responsibilityAreasText: '',
+        });
+        setProfileLoading(false);
+        setProfileSaving(false);
+    };
+
+    const openProfileModal = async (user) => {
+        setProfileUser(user);
+        setProfileModalIsOpen(true);
+        setProfileLoading(true);
+        try {
+            const response = await axios.get(`${URL}/users/${user.id}/profile`);
+            if (response.data.code === 200 && response.data.data) {
+                const profile = response.data.data;
+                setProfileForm({
+                    fullName: profile.fullName || user.fullName || '',
+                    dateOfBirth: profile.dateOfBirth || '',
+                    phone: profile.phone || '',
+                    secondaryPhone: profile.secondaryPhone || '',
+                    address: profile.address || '',
+                    contractStart: profile.contractStart || '',
+                    contractEnd: profile.contractEnd || '',
+                    position: profile.position || '',
+                    notes: profile.notes || '',
+                    responsibilityAreasText: Array.isArray(profile.responsibilityAreas)
+                        ? profile.responsibilityAreas.join(', ')
+                        : '',
+                });
+            } else {
+                setProfileForm((prev) => ({
+                    ...prev,
+                    fullName: user.fullName || '',
+                }));
+            }
+        } catch (error) {
+            console.error('Error loading employee profile:', error);
+            toast.error('Error loading employee profile');
+        } finally {
+            setProfileLoading(false);
+        }
     };
 
     const closeEditRoleModal = () => {
@@ -155,6 +234,66 @@ const UsersPage = () => {
 
     const handleInputChange = (value) => {
         setInputValue(value);
+    };
+
+    const handleProfileChange = (e) => {
+        const { name, value } = e.target;
+        setProfileForm((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    const saveProfile = async () => {
+        if (!profileUser) return;
+        setProfileSaving(true);
+        try {
+            const responsibilityAreas = profileForm.responsibilityAreasText
+                ? profileForm.responsibilityAreasText
+                      .split(',')
+                      .map((item) => item.trim())
+                      .filter((item) => item.length > 0)
+                : [];
+
+            const payload = {
+                fullName: profileForm.fullName,
+                dateOfBirth: profileForm.dateOfBirth || null,
+                phone: profileForm.phone,
+                secondaryPhone: profileForm.secondaryPhone,
+                address: profileForm.address,
+                contractStart: profileForm.contractStart || null,
+                contractEnd: profileForm.contractEnd || null,
+                position: profileForm.position,
+                notes: profileForm.notes,
+                responsibilityAreas,
+            };
+
+            const response = await axios.put(
+                `${URL}/users/${profileUser.id}/profile`,
+                payload
+            );
+
+            if (response.data.code === 200) {
+                toast.success('Employee profile saved successfully');
+                // Обновляем имя клиента в таблице, если изменили fullName
+                setUsers((prev) =>
+                    prev.map((u) =>
+                        u.id === profileUser.id
+                            ? { ...u, fullName: profileForm.fullName || u.fullName }
+                            : u
+                    )
+                );
+                closeProfileModal();
+            } else {
+                console.error('Failed to save employee profile:', response.data.message);
+                toast.error('Failed to save employee profile');
+            }
+        } catch (error) {
+            console.error('Error saving employee profile:', error);
+            toast.error('Error saving employee profile');
+        } finally {
+            setProfileSaving(false);
+        }
     };
 
     // Filter users based on search and role filter
@@ -277,6 +416,140 @@ const UsersPage = () => {
                                 <span>Update</span>
                             </Button>
                         </div>
+                    </div>
+                </Modal>
+
+                <Modal
+                    isOpen={profileModalIsOpen}
+                    onClose={closeProfileModal}
+                    title={
+                        profileUser
+                            ? `Employee profile: ${profileUser.fullName || profileUser.email}`
+                            : 'Employee profile'
+                    }
+                >
+                    <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+                        {profileLoading ? (
+                            <div className="flex justify-center items-center py-8">
+                                <ClipLoader size={20} color="#123abc" />
+                            </div>
+                        ) : (
+                            <>
+                                <Input
+                                    label="Full name"
+                                    name="fullName"
+                                    value={profileForm.fullName}
+                                    onChange={handleProfileChange}
+                                    required
+                                />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Input
+                                        label="Date of birth"
+                                        name="dateOfBirth"
+                                        type="date"
+                                        value={profileForm.dateOfBirth || ''}
+                                        onChange={handleProfileChange}
+                                    />
+                                    <Input
+                                        label="Position / Specialization"
+                                        name="position"
+                                        value={profileForm.position}
+                                        onChange={handleProfileChange}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Input
+                                        label="Phone"
+                                        name="phone"
+                                        value={profileForm.phone}
+                                        onChange={handleProfileChange}
+                                    />
+                                    <Input
+                                        label="Secondary phone"
+                                        name="secondaryPhone"
+                                        value={profileForm.secondaryPhone}
+                                        onChange={handleProfileChange}
+                                    />
+                                </div>
+                                <Input
+                                    label="Address"
+                                    name="address"
+                                    value={profileForm.address}
+                                    onChange={handleProfileChange}
+                                />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Input
+                                        label="Contract start"
+                                        name="contractStart"
+                                        type="date"
+                                        value={profileForm.contractStart || ''}
+                                        onChange={handleProfileChange}
+                                    />
+                                    <Input
+                                        label="Contract end"
+                                        name="contractEnd"
+                                        type="date"
+                                        value={profileForm.contractEnd || ''}
+                                        onChange={handleProfileChange}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Responsibility areas
+                                    </label>
+                                    <textarea
+                                        name="responsibilityAreasText"
+                                        value={profileForm.responsibilityAreasText}
+                                        onChange={handleProfileChange}
+                                        rows={2}
+                                        className="w-full border rounded-md p-2 text-sm text-black"
+                                        placeholder="Example: engine, electricity, hydraulics"
+                                    />
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Separate multiple areas with commas.
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Notes
+                                    </label>
+                                    <textarea
+                                        name="notes"
+                                        value={profileForm.notes}
+                                        onChange={handleProfileChange}
+                                        rows={3}
+                                        className="w-full border rounded-md p-2 text-sm text-black"
+                                        placeholder="Additional comments / remarks"
+                                    />
+                                </div>
+                                <div className="flex justify-end gap-2 pt-2">
+                                    <Button
+                                        variant="text"
+                                        color="red"
+                                        onClick={closeProfileModal}
+                                        className="w-full md:w-auto"
+                                        disabled={profileSaving}
+                                    >
+                                        <span>Cancel</span>
+                                    </Button>
+                                    <Button
+                                        color="green"
+                                        onClick={saveProfile}
+                                        className="w-full md:w-auto"
+                                        disabled={profileSaving}
+                                    >
+                                        {profileSaving ? (
+                                            <div className="flex items-center gap-2">
+                                                <ClipLoader size={13} color="#ffffff" />
+                                                <span>Saving...</span>
+                                            </div>
+                                        ) : (
+                                            <span>Save</span>
+                                        )}
+                                    </Button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </Modal>
 

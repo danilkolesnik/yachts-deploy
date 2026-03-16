@@ -12,6 +12,7 @@ import ReactPlayer from 'react-player';
 import axios from 'axios';
 import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
+import ReactSelect from 'react-select';
 
 const OrderDetail = ({ params }) => {
     const { id } = use(params);
@@ -24,6 +25,10 @@ const OrderDetail = ({ params }) => {
     const [showGallery, setShowGallery] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [statusHistory, setStatusHistory] = useState([]);
+    const [assignmentHistory, setAssignmentHistory] = useState([]);
+    const [availableWorkers, setAvailableWorkers] = useState([]);
+    const [selectedWorkers, setSelectedWorkers] = useState([]);
+    const [updatingWorkers, setUpdatingWorkers] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -37,7 +42,13 @@ const OrderDetail = ({ params }) => {
         if (id) {
             axios.get(`${URL}/orders/${id}`)
                 .then(response => {
-                    setOrder(response.data.data)
+                    const data = response.data.data;
+                    setOrder(data);
+                    const initialSelected = (data.assignedWorkers || []).map(worker => ({
+                        value: worker.id,
+                        label: worker.fullName,
+                    }));
+                    setSelectedWorkers(initialSelected);
                 })
                 .catch(error => console.error('Error fetching order:', error));
 
@@ -46,6 +57,23 @@ const OrderDetail = ({ params }) => {
                     setStatusHistory(response.data.data || []);
                 })
                 .catch(error => console.error('Error fetching status history:', error));
+
+            axios.get(`${URL}/orders/${id}/assignment-history`)
+                .then(response => {
+                    setAssignmentHistory(response.data.data || []);
+                })
+                .catch(error => console.error('Error fetching assignment history:', error));
+
+            axios.get(`${URL}/users/role/worker`)
+                .then(res => {
+                    const workers = res.data.data || [];
+                    const options = workers.map(worker => ({
+                        value: worker.id,
+                        label: worker.fullName,
+                    }));
+                    setAvailableWorkers(options);
+                })
+                .catch(error => console.error('Error fetching workers:', error));
         }
     }, [id]);
 
@@ -230,6 +258,32 @@ const OrderDetail = ({ params }) => {
         );
     };
 
+    const handleWorkersUpdate = async () => {
+        if (!order) return;
+        const userIds = (selectedWorkers || []).map(w => w.value);
+        setUpdatingWorkers(true);
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post(
+                `${URL}/orders/${order.id}/workers`,
+                { userIds },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+            const updatedOrderRes = await axios.get(`${URL}/orders/${order.id}`);
+            setOrder(updatedOrderRes.data.data);
+            const historyRes = await axios.get(`${URL}/orders/${order.id}/assignment-history`);
+            setAssignmentHistory(historyRes.data.data || []);
+        } catch (error) {
+            console.error('Error updating workers:', error);
+        } finally {
+            setUpdatingWorkers(false);
+        }
+    };
+
     if (!order) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -241,17 +295,98 @@ const OrderDetail = ({ params }) => {
     return (
         <div className="min-h-screen bg-gray-100">
             <Header />
-            <div className="max-w-4xl mx-auto p-8 bg-white shadow-lg rounded-lg">
-                <Button color="blue" onClick={() => router.push('/orders')}>Back</Button>
-                <h1 className="text-4xl font-extrabold mb-6 text-black pt-4">Order Details</h1>
+            <div className="max-w-4xl mx-auto p-8 bg-white shadow-lg rounded-lg space-y-8">
+                <div className="flex items-center justify-between">
+                    <Button color="blue" onClick={() => router.push('/orders')}>Back</Button>
+                    <span className="text-sm text-gray-500">
+                        Order ID: <span className="font-mono">{order.id}</span>
+                    </span>
+                </div>
+                <h1 className="text-4xl font-extrabold text-black">Order Details</h1>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2 text-sm text-black">
+                        <div><span className="font-semibold">Customer:</span> {order.offer?.customerFullName || 'N/A'}</div>
+                        <div><span className="font-semibold">Yacht:</span> {order.offer?.yachtName || 'N/A'}</div>
+                        <div><span className="font-semibold">Status:</span> {order.status}</div>
+                        <div><span className="font-semibold">Created at:</span> {order.createdAt ? new Date(order.createdAt).toLocaleString() : ''}</div>
+                    </div>
+                    <div className="space-y-3">
+                        <h3 className="text-lg font-semibold text-black">Assigned employees</h3>
+                        <ReactSelect
+                            options={availableWorkers}
+                            value={selectedWorkers}
+                            onChange={(selected) => setSelectedWorkers(selected || [])}
+                            isMulti
+                            isClearable
+                            isSearchable
+                            placeholder="Select employees..."
+                            className="text-black"
+                            styles={{
+                                control: (provided) => ({
+                                    ...provided,
+                                }),
+                                option: (provided, state) => ({
+                                    ...provided,
+                                    color: 'black',
+                                    backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
+                                }),
+                                multiValueLabel: (provided) => ({
+                                    ...provided,
+                                    color: 'black',
+                                }),
+                            }}
+                            isDisabled={role === 'user'}
+                        />
+                        {role !== 'user' && (
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={handleWorkersUpdate}
+                                    disabled={updatingWorkers}
+                                    className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 disabled:opacity-60"
+                                >
+                                    {updatingWorkers ? 'Saving...' : 'Save employees'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {statusHistory && statusHistory.length > 0 && (
-                    <div className="mb-8">
+                    <div className="mb-4">
                         <h2 className="text-2xl font-bold mb-3 text-black">Status History</h2>
                         <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 max-h-60 overflow-y-auto">
                             <ul className="space-y-2 text-sm text-black">
                                 {statusHistory.map((item, index) => (
                                     <li key={item.id || index} className="flex justify-between">
                                         <span className="font-medium">{item.oldStatus || '—'} → {item.newStatus}</span>
+                                        <span className="text-gray-500">
+                                            {item.changedAt ? new Date(item.changedAt).toLocaleString() : ''}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                )}
+
+                {assignmentHistory && assignmentHistory.length > 0 && (
+                    <div className="mb-4">
+                        <h2 className="text-2xl font-bold mb-3 text-black">Employees Assignment History</h2>
+                        <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 max-h-60 overflow-y-auto">
+                            <ul className="space-y-2 text-sm text-black">
+                                {assignmentHistory.map((item, index) => (
+                                    <li key={item.id || index} className="flex justify-between">
+                                        <div>
+                                            <span className="font-medium">
+                                                [{(item.oldWorkerIds || []).join(', ') || '—'}] → [{(item.newWorkerIds || []).join(', ')}]
+                                            </span>
+                                            {item.changedBy && (
+                                                <span className="ml-2 text-xs text-gray-500">
+                                                    by {item.changedBy}
+                                                </span>
+                                            )}
+                                        </div>
                                         <span className="text-gray-500">
                                             {item.changedAt ? new Date(item.changedAt).toLocaleString() : ''}
                                         </span>
