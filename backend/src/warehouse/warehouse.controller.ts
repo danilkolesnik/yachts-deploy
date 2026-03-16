@@ -4,27 +4,46 @@ import {
     Body,
     Param,
     Put,
-    Get
+    Get,
+    Req,
  } from '@nestjs/common';
 import { CreateWareHourehDto } from './dto/create-wareHoure.dto';
 import { WarehouseService } from './warehouse.service';
+import { Request } from 'express';
+import getBearerToken from 'src/methods/getBearerToken';
+import * as jwt from 'jsonwebtoken';
+import { JwtPayload } from 'jsonwebtoken';
 @Controller('warehouse')
 export class WarehouseController {
     constructor(private readonly warehouseService:WarehouseService){}
 
+    private extractUserId(req: Request): string | undefined {
+        try {
+            const token = getBearerToken(req);
+            if (!token) return undefined;
+            const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+            return String(login.id);
+        } catch {
+            return undefined;
+        }
+    }
+
     @Post('create')
-    create(@Body() data: CreateWareHourehDto){
-        return this.warehouseService.create(data)
+    create(@Body() data: CreateWareHourehDto, @Req() req: Request){
+        const userId = this.extractUserId(req);
+        return this.warehouseService.create(data, userId);
     }
 
     @Post('delete/:id')
-    delete(@Param('id') id: string){
-        return this.warehouseService.deleteById(id)
+    delete(@Param('id') id: string, @Req() req: Request){
+        const userId = this.extractUserId(req);
+        return this.warehouseService.deleteById(id, userId);
     }
 
     @Put(':id')
-    async updateWarehouse(@Param('id') id: string, @Body() data: Partial<CreateWareHourehDto>) {
-        return this.warehouseService.update(id, data);
+    async updateWarehouse(@Param('id') id: string, @Body() data: Partial<CreateWareHourehDto>, @Req() req: Request) {
+        const userId = this.extractUserId(req);
+        return this.warehouseService.update(id, data, userId);
     }
 
     @Get()

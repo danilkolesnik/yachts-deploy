@@ -12,30 +12,56 @@ const WarehouseHistoryPage = () => {
 
     const columns = [
         {
-            name: 'Date',
+            name: 'Date & Time',
             selector: row => new Date(row.createdAt).toLocaleString(),
             sortable: true,
         },
         {
-            name: 'Action',
-            selector: row => row.action,
+            name: 'Item Name',
+            selector: row => row.data?.name || '',
             sortable: true,
         },
         {
-            name: 'Name',
-            selector: row => row.data.name,
+            name: 'Operation',
+            selector: row => {
+                switch (row.action) {
+                    case 'create':
+                        return 'Receipt';
+                    case 'delete':
+                        return 'Write-off';
+                    case 'update':
+                    default:
+                        return 'Adjustment';
+                }
+            },
             sortable: true,
         },
         {
-            name: 'Quantity',
-            selector: row => row.data?.quantity,
+            name: 'Qty change',
+            selector: row => {
+                const oldQ = typeof row.oldQuantity === 'number' ? row.oldQuantity : 0;
+                const newQ = typeof row.newQuantity === 'number' ? row.newQuantity : 0;
+                const diff = newQ - oldQ;
+                if (!diff) return '0';
+                return diff > 0 ? `+${diff}` : `${diff}`;
+            },
             sortable: true,
         },
         {
-            name: 'Price per unit',
-            selector: row => row.data?.pricePerUnit,
+            name: 'New qty',
+            selector: row => row.newQuantity ?? row.data?.quantity ?? '',
             sortable: true,
-        }
+        },
+        {
+            name: 'Warehouse',
+            selector: row => row.warehouseType === 'official' ? 'Official' : 'Unofficial',
+            sortable: true,
+        },
+        {
+            name: 'User',
+            selector: row => row.user?.fullName || row.userId || '',
+            sortable: true,
+        },
     ];
 
     const getData = async () => {

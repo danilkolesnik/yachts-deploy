@@ -154,11 +154,6 @@ export class OfferService {
         }
       }
 
-      // Track status change if offer was confirmed
-      if (offer.status === 'confirmed') {
-        changedFields['status'] = { oldValue: 'confirmed', newValue: 'created' };
-      }
-
       // Handle yacht data - update yachtName, yachtModel, countryCode from first yacht for backward compatibility
       const yachtData = data.yachts ? {
         yachtName: data.yachts[0]?.name || '',
@@ -167,13 +162,9 @@ export class OfferService {
         yachts: data.yachts
       } : {};
 
-      // If offer was confirmed, change status to created when updating
-      const statusUpdate = offer.status === 'confirmed' ? { status: 'created' } : {};
-
       const updatedOffer = Object.assign(offer, {
         ...data,
         ...yachtData,
-        ...statusUpdate,
         services: Array.isArray(data.services)
           ? data.services
           : (data.services ? [data.services] : offer.services),

@@ -39,6 +39,7 @@ const WarehouseUnofficiallyPage = () => {
     const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
     const [partToDelete, setPartToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [saving, setSaving] = useState(false);
     const router = useRouter();
     const tableRef = useRef(null);
 
@@ -279,6 +280,8 @@ const WarehouseUnofficiallyPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (saving) return;
+        setSaving(true);
         try {   
             if (editMode) {
                 await axios.put(`${URL}/warehouse/${editId}`, formData);
@@ -311,6 +314,8 @@ const WarehouseUnofficiallyPage = () => {
         } catch (error) {
             console.log(error);
             toast.error("Error updating official warehouse");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -806,8 +811,20 @@ const WarehouseUnofficiallyPage = () => {
                         <Button variant="text" color="red" onClick={closeModal} className="w-full md:w-auto">
                             <span>Cancel</span>
                         </Button>
-                        <Button color="green" type="submit" className="w-full md:w-auto bg-green-600 hover:bg-green-700">
-                            <span>{editMode ? 'Update Certified Part' : 'Add to Official Warehouse'}</span>
+                        <Button
+                            color="green"
+                            type="submit"
+                            className="w-full md:w-auto bg-green-600 hover:bg-green-700"
+                            disabled={saving}
+                        >
+                            {saving ? (
+                                <div className="flex items-center gap-2">
+                                    <ClipLoader size={13} color={"#ffffff"} />
+                                    <span>Saving...</span>
+                                </div>
+                            ) : (
+                                <span>{editMode ? 'Update Certified Part' : 'Add to Official Warehouse'}</span>
+                            )}
                         </Button>
                     </div>
                 </form>

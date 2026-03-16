@@ -2,7 +2,9 @@ import axios from 'axios';
 import { NextResponse } from 'next/server';
 import { URL } from '@/utils/constants';
 
-export const dynamic = 'force-static';
+// Always fetch fresh warehouse data (no long-lived cache),
+// so newly created parts appear immediately in the UI.
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {

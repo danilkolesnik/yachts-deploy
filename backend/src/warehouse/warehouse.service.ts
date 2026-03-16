@@ -5,6 +5,7 @@ import { warehouse } from './entities/warehouse.entity';
 import { WarehouseHistory } from './entities/warehouseHistory.entity';
 import { CreateWareHourehDto } from './dto/create-wareHoure.dto';
 import generateRandomId from 'src/methods/generateRandomId';
+import { users } from 'src/auth/entities/users.entity';
 
 @Injectable()
 export class WarehouseService {
@@ -13,9 +14,11 @@ export class WarehouseService {
         private readonly warehouseModule: Repository<warehouse>,
         @InjectRepository(WarehouseHistory)
         private readonly warehouseHistoryRepository: Repository<WarehouseHistory>,
+    @InjectRepository(users)
+    private readonly usersRepository: Repository<users>,
     ){}
 
-    async create(data: CreateWareHourehDto) {
+    async create(data: CreateWareHourehDto, userId?: string) {
         if (!data.name || !data.quantity) {
           return {
             code: 400,
@@ -47,11 +50,17 @@ export class WarehouseService {
             })
           );
     
+          const quantityNumber = parseInt(String(result.quantity), 10) || 0;
+
           await this.warehouseHistoryRepository.save(
             this.warehouseHistoryRepository.create({
               warehouseId: generateId,
               action: 'create',
               data: result,
+              userId,
+              warehouseType: result.unofficially ? 'unofficial' : 'official',
+              oldQuantity: 0,
+              newQuantity: quantityNumber,
             })
           );
     
@@ -67,7 +76,7 @@ export class WarehouseService {
         }
       }
 
-    async deleteById(id: string) {
+    async deleteById(id: string, userId?: string) {
         if (!id) {
             return {
                 code: 400,
@@ -85,6 +94,8 @@ export class WarehouseService {
                 };
             }
 
+            const oldQuantityNumber = parseInt(String(warehouse.quantity), 10) || 0;
+
             await this.warehouseModule.delete(id);
 
             await this.warehouseHistoryRepository.save(
@@ -92,6 +103,10 @@ export class WarehouseService {
                     warehouseId: id,
                     action: 'delete',
                     data: warehouse,
+                    userId,
+                    warehouseType: warehouse.unofficially ? 'unofficial' : 'official',
+                    oldQuantity: oldQuantityNumber,
+                    newQuantity: 0,
                 })
             );
 
@@ -107,7 +122,7 @@ export class WarehouseService {
         }
     }
 
-    async update(id: string, data: Partial<CreateWareHourehDto>) {
+    async update(id: string, data: Partial<CreateWareHourehDto>, userId?: string) {
         if (!id || !Object.keys(data).length) {
             return {
                 code: 400,
@@ -125,15 +140,22 @@ export class WarehouseService {
                 };
             }
 
+            const oldQuantityNumber = parseInt(String(warehouse.quantity), 10) || 0;
+
             Object.assign(warehouse, data);
 
             const updatedWarehouse = await this.warehouseModule.save(warehouse);
+            const newQuantityNumber = parseInt(String(updatedWarehouse.quantity), 10) || 0;
 
             await this.warehouseHistoryRepository.save(
                 this.warehouseHistoryRepository.create({
                     warehouseId: id,
                     action: 'update',
                     data: updatedWarehouse,
+                    userId,
+                    warehouseType: updatedWarehouse.unofficially ? 'unofficial' : 'official',
+                    oldQuantity: oldQuantityNumber,
+                    newQuantity: newQuantityNumber,
                 })
             );
 
@@ -230,10 +252,26 @@ export class WarehouseService {
     async getAllHistory() {
         try {
             const history = await this.warehouseHistoryRepository.find();
-            console.log(history);
+
+            const historyWithUser = await Promise.all(
+                history.map(async (item) => {
+                    if (!item.userId) {
+                        return item;
+                    }
+                    const user = await this.usersRepository.findOne({
+                        where: { id: item.userId },
+                    });
+
+                    return {
+                        ...item,
+                        user: user ? { id: user.id, fullName: user.fullName } : null,
+                    };
+                }),
+            );
+
             return {
                 code: 200,
-                data: history,
+                data: historyWithUser,
             };
         } catch (err) {
             return {

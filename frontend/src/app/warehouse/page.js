@@ -37,6 +37,7 @@ const WarehousePage = () => {
     const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
     const [partToDelete, setPartToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [saving, setSaving] = useState(false);
     const router = useRouter();
     const tableRef = useRef(null);
 
@@ -263,6 +264,8 @@ const WarehousePage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (saving) return;
+        setSaving(true);
         try {
             if (editMode) {
                 await axios.put(`${URL}/warehouse/${editId}`, formData);
@@ -298,6 +301,8 @@ const WarehousePage = () => {
         } catch (error) {
             console.log(error);
             toast.error("Error updating warehouse");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -776,8 +781,20 @@ const WarehousePage = () => {
                         <Button variant="text" color="red" onClick={closeModal} className="w-full md:w-auto">
                             <span>Cancel</span>
                         </Button>
-                        <Button color="green" type="submit" className="w-full md:w-auto">
-                            <span>{editMode ? 'Update Part' : 'Add to Unofficial Warehouse'}</span>
+                        <Button
+                            color="green"
+                            type="submit"
+                            className="w-full md:w-auto"
+                            disabled={saving}
+                        >
+                            {saving ? (
+                                <div className="flex items-center gap-2">
+                                    <ClipLoader size={13} color={"#ffffff"} />
+                                    <span>Saving...</span>
+                                </div>
+                            ) : (
+                                <span>{editMode ? 'Update Part' : 'Add to Unofficial Warehouse'}</span>
+                            )}
                         </Button>
                     </div>
                 </form>
