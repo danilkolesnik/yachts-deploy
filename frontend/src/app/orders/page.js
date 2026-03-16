@@ -895,26 +895,51 @@ const OrderPage = () => {
                             </p>
                         </div>
                         
-                        <Select
-                            label="Status"
-                            value={selectedOrder?.status || ''}
-                            onChange={handleStatusChange} 
-                            className="text-black w-full"
-                            labelProps={{ className: 'text-black' }}
-                            menuProps={{
-                                className: 'max-h-60 overflow-y-auto text-black',
-                                placement: 'bottom-start',
-                                allowFlip: false,
+                        <ReactSelect
+                            value={
+                                selectedOrder?.status
+                                    ? { value: selectedOrder.status, label: selectedOrder.status }
+                                    : null
+                            }
+                            onChange={(option) => handleStatusChange(option ? option.value : '')}
+                            options={[
+                                { value: 'created', label: 'Created' },
+                                { value: 'confirmed', label: 'Confirmed' },
+                                { value: 'canceled', label: 'Canceled' },
+                                { value: 'waiting', label: 'Waiting' },
+                                { value: 'awaiting-approval', label: 'Awaiting Approval' },
+                                { value: 'completed', label: 'Completed' },
+                                { value: 'closed', label: 'Closed' },
+                            ]}
+                            placeholder="Select status..."
+                            className="text-black"
+                            menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                            menuPlacement="bottom"
+                            menuPosition="fixed"
+                            menuShouldScrollIntoView={false}
+                            styles={{
+                                control: (provided) => ({
+                                    ...provided,
+                                }),
+                                singleValue: (provided) => ({
+                                    ...provided,
+                                    color: 'black',
+                                }),
+                                option: (provided, state) => ({
+                                    ...provided,
+                                    color: 'black',
+                                    backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
+                                }),
+                                menuPortal: (base) => ({
+                                    ...base,
+                                    zIndex: 9999,
+                                }),
+                                menuList: (base) => ({
+                                    ...base,
+                                    maxHeight: 240,
+                                }),
                             }}
-                        >
-                            <Option value="created" className="text-black">Created</Option>
-                            <Option value="confirmed" className="text-black">Confirmed</Option>
-                            <Option value="canceled" className="text-black">Canceled</Option>
-                            <Option value="waiting" className="text-black">Waiting</Option>
-                            <Option value="awaiting-approval" className="text-black">Awaiting Approval</Option>
-                            <Option value="completed" className="text-black">Completed</Option>
-                            <Option value="closed" className="text-black">Closed</Option>
-                        </Select>
+                        />
                         
                         <div className="flex justify-end gap-2">
                             <Button variant="text" color="red" onClick={closeEditStatusModal} className="w-full md:w-auto">
