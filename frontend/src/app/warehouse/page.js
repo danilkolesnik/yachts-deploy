@@ -271,7 +271,12 @@ const WarehousePage = () => {
         setSaving(true);
         try {
             if (editMode) {
-                const res = await axios.put(`${URL}/warehouse/${editId}`, formData);
+                const token = localStorage.getItem('token');
+                const res = await axios.put(`${URL}/warehouse/${editId}`, formData, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
                 if (res.data?.code !== 200) {
                     toast.error(res.data?.message || "Error updating warehouse");
                     return;
@@ -292,9 +297,14 @@ const WarehousePage = () => {
                         toast.error("Error: Quantity is required");
                         return;
                 }
+                const token = localStorage.getItem('token');
                 const res = await axios.post(`${URL}/warehouse/create`, {
                     ...formData,
                     unofficially: true
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 });
                 if (res.data?.code !== 201) {
                     toast.error(res.data?.message || "Error creating warehouse part");
@@ -345,7 +355,12 @@ const WarehousePage = () => {
         
         setDeleting(true);
         try {
-            await axios.post(`${URL}/warehouse/delete/${partToDelete}`);
+            const token = localStorage.getItem('token');
+            await axios.post(`${URL}/warehouse/delete/${partToDelete}`, {}, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
             getData().then((res) => {
                 setData(res);
                 setFilteredData(res);

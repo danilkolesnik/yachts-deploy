@@ -1069,7 +1069,12 @@ const OfferPage = () => {
                 unofficially: isUnofficialWarehouse
             };
 
-            const response = await axios.post(`${URL}/warehouse/create`, partData);
+            const token = localStorage.getItem('token');
+            const response = await axios.post(`${URL}/warehouse/create`, partData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
             if (hasServerBusinessError(response, "Error creating part")) {
                 return;
             }
