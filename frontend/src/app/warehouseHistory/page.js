@@ -12,8 +12,11 @@ const WarehouseHistoryPage = () => {
 
     const columns = [
         {
+            id: 'createdAt',
             name: 'Date & Time',
-            selector: row => new Date(row.createdAt).toLocaleString(),
+            // Sort by numeric timestamp (not by formatted string)
+            selector: row => new Date(row.createdAt).getTime(),
+            cell: row => new Date(row.createdAt).toLocaleString(),
             sortable: true,
         },
         {
@@ -100,6 +103,8 @@ const WarehouseHistoryPage = () => {
                         highlightOnHover
                         pointerOnHover
                         className="min-w-full border-collapse"
+                        defaultSortFieldId="createdAt"
+                        defaultSortAsc={false}
                     />
                 </div>
             )}

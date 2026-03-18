@@ -40,6 +40,7 @@ const WarehousePage = () => {
     const [saving, setSaving] = useState(false);
     const router = useRouter();
     const tableRef = useRef(null);
+    const savingRef = useRef(false);
 
     // Manual/Help content in English
     const helpSections = {
@@ -264,11 +265,17 @@ const WarehousePage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (saving) return;
+        // Protect against rapid double submit before state re-render
+        if (savingRef.current) return;
+        savingRef.current = true;
         setSaving(true);
         try {
             if (editMode) {
-                await axios.put(`${URL}/warehouse/${editId}`, formData);
+                const res = await axios.put(`${URL}/warehouse/${editId}`, formData);
+                if (res.data?.code !== 200) {
+                    toast.error(res.data?.message || "Error updating warehouse");
+                    return;
+                }
                 toast.success("Warehouse updated successfully");
             } else {
                 switch (true) {
@@ -285,10 +292,14 @@ const WarehousePage = () => {
                         toast.error("Error: Quantity is required");
                         return;
                 }
-                await axios.post(`${URL}/warehouse/create`, {
+                const res = await axios.post(`${URL}/warehouse/create`, {
                     ...formData,
                     unofficially: true
                 });
+                if (res.data?.code !== 201) {
+                    toast.error(res.data?.message || "Error creating warehouse part");
+                    return;
+                }
                 toast.success("Warehouse created successfully");
             }
             getData().then((res) => {
@@ -303,6 +314,7 @@ const WarehousePage = () => {
             toast.error("Error updating warehouse");
         } finally {
             setSaving(false);
+            savingRef.current = false;
         }
     };
 

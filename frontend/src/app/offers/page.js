@@ -1389,10 +1389,15 @@ const OfferPage = () => {
         }
 
         try {
+            const token = localStorage.getItem('token');
             const response = await axios.post(`${URL}/orders/create`, {
                 userId: createOrderFormData,
                 offerId: id,
                 customerId,
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
             });
             toast.success("Order created successfully");
             closeCreateOrderModal();

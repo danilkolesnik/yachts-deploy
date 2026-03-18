@@ -14,6 +14,7 @@ import { EmployeeProfile } from './entities/employee-profile.entity';
 import getBearerToken from 'src/methods/getBearerToken';
 import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';
+import { PermissionsList } from 'src/constants/permissions';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -67,7 +68,37 @@ export class PermissionsGuard implements CanActivate {
       where: { userId },
     });
 
-    const permissions = profile?.permissions || [];
+    // If profile is missing, fall back to role defaults
+    const roleDefaults: Record<string, string[]> = {
+      manager: [
+        PermissionsList.ORDERS_READ,
+        PermissionsList.ORDERS_CREATE,
+        PermissionsList.ORDERS_STATUS_CHANGE,
+        PermissionsList.ORDERS_ASSIGNMENT_MANAGE,
+        PermissionsList.ORDERS_MEDIA_ADD,
+        PermissionsList.ORDERS_MEDIA_DELETE,
+        PermissionsList.ORDERS_COMMENT_ADD,
+      ],
+      mechanic: [
+        PermissionsList.ORDERS_READ,
+        PermissionsList.ORDERS_STATUS_CHANGE,
+        PermissionsList.ORDERS_MEDIA_ADD,
+        PermissionsList.ORDERS_MEDIA_DELETE,
+        PermissionsList.ORDERS_COMMENT_ADD,
+      ],
+      electrician: [
+        PermissionsList.ORDERS_READ,
+        PermissionsList.ORDERS_STATUS_CHANGE,
+        PermissionsList.ORDERS_MEDIA_ADD,
+        PermissionsList.ORDERS_MEDIA_DELETE,
+        PermissionsList.ORDERS_COMMENT_ADD,
+      ],
+      user: [PermissionsList.SELF_OFFERS_READ, PermissionsList.SELF_ORDERS_READ],
+    };
+
+    const permissions = profile?.permissions?.length
+      ? profile.permissions
+      : (roleDefaults[user.role] || []);
 
     if (permissions.includes('*')) {
       return true;

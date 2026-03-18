@@ -42,6 +42,7 @@ const WarehouseUnofficiallyPage = () => {
     const [saving, setSaving] = useState(false);
     const router = useRouter();
     const tableRef = useRef(null);
+    const savingRef = useRef(false);
 
     // Manual/Help content in English
     const helpSections = {
@@ -280,11 +281,17 @@ const WarehouseUnofficiallyPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (saving) return;
+        // Protect against rapid double submit before state re-render
+        if (savingRef.current) return;
+        savingRef.current = true;
         setSaving(true);
         try {   
             if (editMode) {
-                await axios.put(`${URL}/warehouse/${editId}`, formData);
+                const res = await axios.put(`${URL}/warehouse/${editId}`, formData);
+                if (res.data?.code !== 200) {
+                    toast.error(res.data?.message || "Error updating official warehouse");
+                    return;
+                }
                 toast.success("Official warehouse updated successfully");
             } else {
                 switch (true) {
@@ -298,10 +305,14 @@ const WarehouseUnofficiallyPage = () => {
                         toast.error("Error: Quantity is required");
                         return;
                 }
-                await axios.post(`${URL}/warehouse/create`, {
+                const res = await axios.post(`${URL}/warehouse/create`, {
                     ...formData,
                     unofficially: false
                 });
+                if (res.data?.code !== 201) {
+                    toast.error(res.data?.message || "Error adding official part to warehouse");
+                    return;
+                }
                 toast.success("Official part added to warehouse successfully");
             }
             getData().then((res) => {
@@ -316,6 +327,7 @@ const WarehouseUnofficiallyPage = () => {
             toast.error("Error updating official warehouse");
         } finally {
             setSaving(false);
+            savingRef.current = false;
         }
     };
 
