@@ -276,11 +276,21 @@ const OrderPage = () => {
         if (!selectedOrder) return;
         try {
             setLoadingUpdate(true);
-            await axios.post(`${URL}/orders/${selectedOrder.id}/status`, { status: selectedOrder.status });
+            const token = localStorage.getItem('token');
+            await axios.post(
+                `${URL}/orders/${selectedOrder.id}/status`,
+                { status: selectedOrder.status },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
             fetchOrders();
             closeEditStatusModal(); 
         } catch (error) {
             console.error('Error updating order status:', error);
+            toast.error('Error updating order status');
         } finally {
             setLoadingUpdate(false);
         }
@@ -332,7 +342,16 @@ const OrderPage = () => {
         
         setDeleting(true);
         try {
-            await axios.post(`${URL}/orders/delete/${orderToDelete}`);
+            const token = localStorage.getItem('token');
+            await axios.post(
+                `${URL}/orders/delete/${orderToDelete}`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
             fetchOrders();
             toast.success("Order deleted successfully");
             setDeleteConfirmModalOpen(false);
