@@ -10,6 +10,15 @@ const AuthProvider = ({ children }) => {
   const dispatch = useAppDispatch();
   const router = useRouter()
   const pathname = usePathname()
+  const isAuthRoute = pathname?.startsWith('/auth');
+
+  const forceLogoutToLogin = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    if (!pathname?.includes('reset-password') && !isAuthRoute) {
+      router.push('/auth/login');
+    }
+  };
 
   const verifyUser = async () => {
     try {
@@ -23,6 +32,8 @@ const AuthProvider = ({ children }) => {
         });
         if (response.data.code === 200) {
           return response.data.data;
+        } else {
+          forceLogoutToLogin();
         }
       }else{
         if (!pathname.includes('reset-password')) {
@@ -30,11 +41,44 @@ const AuthProvider = ({ children }) => {
         }
       }
     } catch (error) {
-      console.log(error);
+      forceLogoutToLogin();
     }
   };
 
   useEffect(() => {
+    const requestInterceptor = axios.interceptors.request.use((config) => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers = config.headers || {};
+        if (!config.headers.Authorization) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      }
+      return config;
+    });
+
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        const status = error?.response?.status;
+        const serverMessage = String(error?.response?.data?.message || '').toLowerCase();
+        const rawMessage = String(error?.message || '').toLowerCase();
+        const isTokenProblem =
+          status === 401 ||
+          status === 403 ||
+          serverMessage.includes('jwt expired') ||
+          serverMessage.includes('invalid token') ||
+          serverMessage.includes('authorization token missing') ||
+          rawMessage.includes('jwt expired');
+
+        if (isTokenProblem) {
+          forceLogoutToLogin();
+        }
+
+        return Promise.reject(error);
+      }
+    );
+
     verifyUser()
       .then(res => {
         if (res) {
@@ -44,6 +88,11 @@ const AuthProvider = ({ children }) => {
           localStorage.setItem('role', res.role);
         }
       });
+
+    return () => {
+      axios.interceptors.request.eject(requestInterceptor);
+      axios.interceptors.response.eject(responseInterceptor);
+    };
   },[]);
 
   return <>{children}</>;
