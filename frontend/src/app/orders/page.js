@@ -878,7 +878,11 @@ const OrderPage = () => {
                             isClearable
                             isSearchable
                             placeholder="Select workers..."
-                            className="mb-4"
+                            className="mb-4 text-black"
+                            menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                            menuPlacement="bottom"
+                            menuPosition="fixed"
+                            menuShouldScrollIntoView={false}
                             styles={{
                                 control: (provided) => ({
                                     ...provided,
@@ -891,6 +895,14 @@ const OrderPage = () => {
                                 multiValueLabel: (provided) => ({
                                     ...provided,
                                     color: 'black',
+                                }),
+                                menuPortal: (base) => ({
+                                    ...base,
+                                    zIndex: 9999,
+                                }),
+                                menuList: (base) => ({
+                                    ...base,
+                                    maxHeight: 240,
                                 }),
                             }}
                         />
