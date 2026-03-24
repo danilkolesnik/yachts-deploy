@@ -28,6 +28,7 @@ const OfferPage = () => {
     const [partsUnofficially, setPartsUnofficially] = useState([]);
     const [users, setUsers] = useState([]);
     const [workers, setWorkers] = useState([]);
+    const [orderOfferIds, setOrderOfferIds] = useState(new Set());
     const [yachts, setYachts] = useState([]);
     const [filteredYachts, setFilteredYachts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -400,11 +401,17 @@ const OfferPage = () => {
             name: '',
             cell: row => (
                 <button
-                    onClick={() => row.status === 'confirmed' && openCreateOrderModal(row)}
-                    disabled={row.status !== 'confirmed'}
-                    title={row.status !== 'confirmed' ? 'Work Order can be created only from a confirmed offer' : ''}
+                    onClick={() => row.status === 'confirmed' && !orderOfferIds.has(row.id) && openCreateOrderModal(row)}
+                    disabled={row.status !== 'confirmed' || orderOfferIds.has(row.id)}
+                    title={
+                        row.status !== 'confirmed'
+                            ? 'Work Order can be created only from a confirmed offer'
+                            : orderOfferIds.has(row.id)
+                                ? 'Work Order already exists for this offer'
+                                : ''
+                    }
                     className={`px-2 py-2 text-white rounded transition-all duration-200 cursor-pointer ${
-                        row.status === 'confirmed'
+                        row.status === 'confirmed' && !orderOfferIds.has(row.id)
                             ? 'bg-[#dd3333] hover:bg-[#c42d2d]'
                             : 'bg-gray-400 cursor-not-allowed'
                     }`}
@@ -996,6 +1003,21 @@ const OfferPage = () => {
         }
     };
 
+    const getOrders = async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await axios.get(`${URL}/orders`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            return res.data.data || [];
+        } catch (error) {
+            console.error(error);
+            return [];
+        }
+    };
+
     const getYachts = async () => {
         try {
             const res = await axios.get(`${URL}/yachts`);
@@ -1404,6 +1426,10 @@ const OfferPage = () => {
                     Authorization: `Bearer ${token}`,
                 },
             });
+            if (hasServerBusinessError(response, "Error creating order")) {
+                return;
+            }
+            setOrderOfferIds((prev) => new Set([...prev, id]));
             toast.success("Order created successfully");
             closeCreateOrderModal();
             router.push('/orders');
@@ -1609,8 +1635,8 @@ const OfferPage = () => {
 
     useEffect(() => {
         setLoading(true);
-        Promise.all([getData(), getDataCatagory(), getWareHouse(), getUsers(), getWorkers(), getYachts(), getWareHouseUnofficially()])
-            .then(([res1, res2, res3, res4, res5, res6, res7]) => {
+        Promise.all([getData(), getDataCatagory(), getWareHouse(), getUsers(), getWorkers(), getYachts(), getWareHouseUnofficially(), getOrders()])
+            .then(([res1, res2, res3, res4, res5, res6, res7, res8]) => {
                 setData(res1 || []);
                 setCatagoryData(res2 || []);
                 setParts(res3 || []);
@@ -1618,6 +1644,10 @@ const OfferPage = () => {
                 setWorkers(res5 || []);
                 setYachts(res6 || []);
                 setPartsUnofficially(res7 || []);
+                const offerIdsWithOrders = (res8 || [])
+                    .map(order => order?.offerId)
+                    .filter(Boolean);
+                setOrderOfferIds(new Set(offerIdsWithOrders));
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
