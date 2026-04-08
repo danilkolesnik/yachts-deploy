@@ -1,4 +1,3 @@
-import Head from "next/head";
 import { Geist, Geist_Mono } from "next/font/google";
 import AuthProvider from "./AuthProvider";
 import StoreProvider from "./StoreProvider";
@@ -19,7 +18,7 @@ export const metadata = {
   title: "All Services Marine",
   description: "Yacht Service Management Program",
   icons: {
-    icon: "../../public/favicon.ico",
+    icon: "/favicon.ico",
   },
 };
 
@@ -29,9 +28,6 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Head>
-          <link rel="icon" href="../../public/favicon.ico" />
-        </Head>
         <StoreProvider>
           <AuthProvider>
             {children}

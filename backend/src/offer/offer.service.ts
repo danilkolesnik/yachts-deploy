@@ -201,6 +201,12 @@ export class OfferService {
   async findAll(req: Request) {
     const token = getBearerToken(req);
     try {
+      if (!token) {
+        return {
+          code: 401,
+          message: 'Authorization token missing',
+        };
+      }
       const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
 
       let offers;
@@ -229,8 +235,8 @@ export class OfferService {
       };
     } catch (err) {
       return {
-        code: 500,
-        message: err instanceof Error ? err.message : 'Internal server error',
+        code: 401,
+        message: err instanceof Error ? err.message : 'Unauthorized',
       };
     }
   }

@@ -25,12 +25,36 @@ import { WarehouseHistory } from './warehouse/entities/warehouseHistory.entity';
 import { OfferHistory } from './offer/entities/offer-history.entity';
 import { OrderTimer } from './order/entities/order-timer.entity';
 import { OrderStatusHistory } from './order/entities/order-status-history.entity';
+import { OrderAssignmentHistory } from './order/entities/order-assignment-history.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { YachtModule } from './yacht/yacht.module';
 import { Yacht } from './yacht/entities/yacht.entity';
+import { EmployeeProfile } from './users/entities/employee-profile.entity';
+import { UserPermissionHistory } from './users/entities/user-permission-history.entity';
 
-(global as any).crypto = crypto;
+// Node 19+ already provides `globalThis.crypto` as a WebCrypto implementation.
+// Only set it for older runtimes where it doesn't exist.
+if (!(globalThis as any).crypto) {
+  (globalThis as any).crypto = crypto;
+}
+
+const typeOrmEntities = [
+  users,
+  File,
+  offer,
+  order,
+  Pricelist,
+  warehouse,
+  WarehouseHistory,
+  OfferHistory,
+  OrderTimer,
+  OrderStatusHistory,
+  OrderAssignmentHistory,
+  Yacht,
+  EmployeeProfile,
+  UserPermissionHistory,
+];
 
 // Создаем необходимые директории при старте приложения
 const createUploadDirectories = () => {
@@ -59,28 +83,40 @@ createUploadDirectories();
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory:() =>({
-        type:"postgres",
-        host:process.env.DATABASE_HOST,
-        port: parseInt(process.env.DATABASE_PORT ?? '5432'),
-        username:process.env.DATABASE_USER,
-        password:process.env.DATABASE_PASSWORD,
-        database:process.env.DATABASE_NAME,
-        synchronize: true,
-        entities: [
-          users,
-          File,
-          offer,
-          order,
-          Pricelist,
-          warehouse,
-          WarehouseHistory,
-          OfferHistory,
-          OrderTimer,
-          OrderStatusHistory,
-          Yacht
-        ],
-      })
+      useFactory: () => {
+        // Local dev fallback:
+        // If Postgres envs are not provided, use a local sqlite DB file.
+        const hasPostgresEnv =
+          !!process.env.DATABASE_HOST &&
+          !!process.env.DATABASE_USER &&
+          !!process.env.DATABASE_PASSWORD &&
+          !!process.env.DATABASE_NAME;
+
+        if (!hasPostgresEnv) {
+          return {
+            type: 'sqlite',
+            database: path.join(process.cwd(), 'local.sqlite'),
+            synchronize: true,
+            entities: typeOrmEntities,
+          };
+        }
+
+        return {
+          type: 'postgres',
+          host: process.env.DATABASE_HOST,
+          port: parseInt(process.env.DATABASE_PORT ?? '5432'),
+          username: process.env.DATABASE_USER,
+          password: process.env.DATABASE_PASSWORD,
+          database: process.env.DATABASE_NAME,
+          // Keep legacy behavior by default (true), but allow overriding.
+          // For local work with imported dumps, set TYPEORM_SYNCHRONIZE=false.
+          synchronize:
+            process.env.TYPEORM_SYNCHRONIZE != null
+              ? process.env.TYPEORM_SYNCHRONIZE === 'true'
+              : true,
+          entities: typeOrmEntities,
+        };
+      },
     }),
     AuthModule, 
     WarehouseModule, 

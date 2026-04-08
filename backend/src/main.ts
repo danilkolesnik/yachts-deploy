@@ -18,7 +18,28 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://g000l4c6-3000.euw.devtunnels.ms', 'http://46.225.17.97:3000'],
+    origin: (origin, callback) => {
+      // Allow non-browser tools / same-origin / SSR calls
+      if (!origin) return callback(null, true);
+
+      const allowed = new Set<string>([
+        'http://46.225.17.97:3000',
+        'http://localhost:3000',
+        'https://g000l4c6-3000.euw.devtunnels.ms',
+      ]);
+
+      // Support env-configured client URL(s)
+      const clientUrl = process.env.CLIENT_URL;
+      if (clientUrl) allowed.add(clientUrl);
+
+      // Dev: allow any localhost port (Next often bumps ports if busy)
+      const isLocalhost =
+        /^http:\/\/localhost:\d+$/i.test(origin) ||
+        /^http:\/\/127\.0\.0\.1:\d+$/i.test(origin);
+
+      if (allowed.has(origin) || isLocalhost) return callback(null, true);
+      return callback(new Error(`CORS blocked for origin: ${origin}`), false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

@@ -1,0 +1,14 @@
+{
+  "name": "yachts-monorepo",
+  "private": true,
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm --prefix backend run start:dev\" \"cross-env NEXT_PUBLIC_API_URL=http://localhost:5000 npm --prefix frontend run dev\"",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "start": "concurrently -n backend,frontend -c cyan,magenta \"npm --prefix backend run start\" \"npm --prefix frontend run start\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "cross-env": "^7.0.3"
+  }
+}
