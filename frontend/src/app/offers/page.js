@@ -75,6 +75,7 @@ const OfferPage = () => {
 
     const [formData, setFormData] = useState({
         customerFullName: '',
+        customerId: '',
         yachtName: '',
         yachtModel: '',
         comment: '',
@@ -115,6 +116,7 @@ const OfferPage = () => {
 
     const [editFormData, setEditFormData] = useState({
         customerFullName: '',
+        customerId: '',
         yachtName: '',
         yachtModel: '',
         comment: '',
@@ -1176,10 +1178,19 @@ const OfferPage = () => {
         }
         try {
             const token = localStorage.getItem('token');
+            const resolvedCustomerId =
+                formData.customerId ||
+                users.find((u) => u.fullName === formData.customerFullName)?.id ||
+                '';
+            if (!resolvedCustomerId) {
+                toast.error("Error: Customer is required");
+                setLoadingCreateOffer(false);
+                return;
+            }
             const offerData = { 
                 ...formData, 
                 userId: id,
-                customerId: id,
+                customerId: resolvedCustomerId,
                 services: normalizedServices,
                 parts: normalizedParts,
                 price: 0,
@@ -1208,6 +1219,7 @@ const OfferPage = () => {
                 }
                 setFormData({
                     customerFullName: '',
+                    customerId: '',
                     yachtName: '',
                     yachtModel: '',
                     comment: '',
@@ -1376,8 +1388,10 @@ const OfferPage = () => {
                     yacht.userId === selectedCustomer.id || yacht.userName === selectedCustomer.fullName
                 );
                 setFilteredYachts(customerYachts);
+                setFormData((prev) => ({ ...prev, customerId: selectedCustomer.id }));
             } else {
                 setFilteredYachts([]);
+                setFormData((prev) => ({ ...prev, customerId: '' }));
             }
         }
         
