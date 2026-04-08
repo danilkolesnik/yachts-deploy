@@ -3,5 +3,6 @@ export const Role = {
     MANAGER: "manager",
     MECHANIC: "mechanic",
     ELECTRICIAN: 'electrician',
-    USER: "user"
+    USER: "user",
+    CLIENT: "client"
 };

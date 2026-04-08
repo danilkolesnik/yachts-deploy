@@ -21,6 +21,41 @@ interface UploadResponse {
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
+  // ===== Client API (separate from Permissions decorators) =====
+  @Get('/client')
+  async clientOrders(@Req() request: Request) {
+    return this.orderService.getClientOrders(request);
+  }
+
+  @Get('/client/:id')
+  async clientOrderById(@Param('id') orderId: string, @Req() request: Request) {
+    return this.orderService.getClientOrderById(orderId, request);
+  }
+
+  @Get('/client/:id/messages')
+  async clientMessages(@Param('id') orderId: string, @Req() request: Request) {
+    return this.orderService.getClientMessages(orderId, request);
+  }
+
+  @Get('/client/:id/status-history')
+  async clientStatusHistory(@Param('id') orderId: string, @Req() request: Request) {
+    return this.orderService.getClientStatusHistory(orderId, request);
+  }
+
+  @Get('/client/:id/timer/history')
+  async clientTimerHistory(@Param('id') orderId: string, @Req() request: Request) {
+    return this.orderService.getClientTimerHistory(orderId, request);
+  }
+
+  @Post('/client/:id/messages')
+  async addClientMessage(
+    @Param('id') orderId: string,
+    @Req() request: Request,
+    @Body() body: { kind?: string; message: string },
+  ) {
+    return this.orderService.addClientMessage(orderId, request, body);
+  }
+
   @Post('create')
   @Permissions(PermissionsList.ORDERS_CREATE)
   async createOrder(@Body() createOrderDto: CreateOrderDto) {
@@ -51,8 +86,8 @@ export class OrderController {
 
   @Post(':id/status')
   @Permissions(PermissionsList.ORDERS_STATUS_CHANGE)
-  async updateOrderStatus(@Param('id') orderId: string, @Body('status') newStatus: string) {
-    return this.orderService.updateOrderStatus(orderId, newStatus);
+  async updateOrderStatus(@Param('id') orderId: string, @Body('status') newStatus: string, @Req() req: Request) {
+    return this.orderService.updateOrderStatus(orderId, newStatus, req);
   }
 
   @Post('delete/:id')

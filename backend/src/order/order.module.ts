@@ -12,10 +12,11 @@ import { WarehouseHistory } from 'src/warehouse/entities/warehouseHistory.entity
 import { OfferHistory } from 'src/offer/entities/offer-history.entity';
 import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { OrderAssignmentHistory } from './entities/order-assignment-history.entity';
+import { OrderClientMessage } from './entities/order-client-message.entity';
 
 @Module({
   imports:[
-    TypeOrmModule.forFeature([offer,users,order,File,OrderTimer,warehouse,WarehouseHistory,OfferHistory,OrderStatusHistory,OrderAssignmentHistory]),
+    TypeOrmModule.forFeature([offer,users,order,File,OrderTimer,warehouse,WarehouseHistory,OfferHistory,OrderStatusHistory,OrderAssignmentHistory,OrderClientMessage]),
   ],
   controllers: [OrderController],
   providers: [OrderService]

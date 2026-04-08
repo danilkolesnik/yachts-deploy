@@ -32,6 +32,8 @@ import { YachtModule } from './yacht/yacht.module';
 import { Yacht } from './yacht/entities/yacht.entity';
 import { EmployeeProfile } from './users/entities/employee-profile.entity';
 import { UserPermissionHistory } from './users/entities/user-permission-history.entity';
+import { UserAuditHistory } from './users/entities/user-audit-history.entity';
+import { OrderClientMessage } from './order/entities/order-client-message.entity';
 
 // Node 19+ already provides `globalThis.crypto` as a WebCrypto implementation.
 // Only set it for older runtimes where it doesn't exist.
@@ -51,9 +53,11 @@ const typeOrmEntities = [
   OrderTimer,
   OrderStatusHistory,
   OrderAssignmentHistory,
+  OrderClientMessage,
   Yacht,
   EmployeeProfile,
   UserPermissionHistory,
+  UserAuditHistory,
 ];
 
 // Создаем необходимые директории при старте приложения

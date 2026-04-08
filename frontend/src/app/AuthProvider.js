@@ -65,7 +65,6 @@ const AuthProvider = ({ children }) => {
         const rawMessage = String(error?.message || '').toLowerCase();
         const isTokenProblem =
           status === 401 ||
-          status === 403 ||
           serverMessage.includes('jwt expired') ||
           serverMessage.includes('invalid token') ||
           serverMessage.includes('authorization token missing') ||
@@ -86,6 +85,12 @@ const AuthProvider = ({ children }) => {
           dispatch(setRole(res.role));
           dispatch(setId(res.id));
           localStorage.setItem('role', res.role);
+
+          // Client-facing area lives under /client.
+          // Keep existing admin/worker routes unchanged.
+          if (res.role === 'client' && !pathname?.startsWith('/client') && !isAuthRoute) {
+            router.push('/client/orders');
+          }
         }
       });
 

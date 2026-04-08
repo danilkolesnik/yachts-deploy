@@ -9,7 +9,7 @@ import { URL } from '@/utils/constants';
 import { Button, Select, Option } from '@material-tailwind/react';
 import Modal from '@/ui/Modal';
 import ReactSelect from 'react-select';
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { PencilIcon, TrashIcon, ClockIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-toastify';
 import { ClipLoader } from 'react-spinners';
 import Input from '@/ui/Input';
@@ -30,6 +30,17 @@ const UsersPage = () => {
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileSaving, setProfileSaving] = useState(false);
     const [profileUser, setProfileUser] = useState(null);
+    const [historyModalIsOpen, setHistoryModalIsOpen] = useState(false);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyUser, setHistoryUser] = useState(null);
+    const [historyItems, setHistoryItems] = useState([]);
+    const [historyFilters, setHistoryFilters] = useState({
+        from: '',
+        to: '',
+        actorName: '',
+        actorRole: '',
+        type: '',
+    });
     const [profileForm, setProfileForm] = useState({
         fullName: '',
         dateOfBirth: '',
@@ -43,12 +54,151 @@ const UsersPage = () => {
         responsibilityAreasText: '',
     });
 
+    const [createModalIsOpen, setCreateModalIsOpen] = useState(false);
+    const [createType, setCreateType] = useState('user'); // user | employee | client
+    const [creating, setCreating] = useState(false);
+    const [createForm, setCreateForm] = useState({
+        email: '',
+        fullName: '',
+        password: '',
+        role: 'user',
+        // employee card fields
+        dateOfBirth: '',
+        phone: '',
+        secondaryPhone: '',
+        address: '',
+        contractStart: '',
+        contractEnd: '',
+        position: '',
+        notes: '',
+    });
+    const [createdClientTempPassword, setCreatedClientTempPassword] = useState('');
+
     const roles = [
         { value: 'admin', label: 'Admin' },
+        { value: 'manager', label: 'Manager' },
         { value: 'mechanic', label: 'Mechanic' },
         { value: 'electrician', label: 'Electrician' },
         { value: 'user', label: 'User' },
+        { value: 'client', label: 'Client' },
     ];
+
+    const openCreateModal = (type) => {
+        setCreateType(type);
+        setCreatedClientTempPassword('');
+        setCreateForm({
+            email: '',
+            fullName: '',
+            password: '',
+            role: type === 'employee' ? 'mechanic' : 'user',
+            dateOfBirth: '',
+            phone: '',
+            secondaryPhone: '',
+            address: '',
+            contractStart: '',
+            contractEnd: '',
+            position: '',
+            notes: '',
+        });
+        setCreateModalIsOpen(true);
+    };
+
+    const closeCreateModal = () => {
+        setCreateModalIsOpen(false);
+        setCreating(false);
+        setCreatedClientTempPassword('');
+    };
+
+    const handleCreateChange = (e) => {
+        const { name, value } = e.target;
+        setCreateForm((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const submitCreate = async () => {
+        setCreating(true);
+        try {
+            if (!createForm.email || !createForm.fullName) {
+                toast.error('Email and full name are required');
+                return;
+            }
+
+            if (createType !== 'client' && !createForm.password) {
+                toast.error('Password is required');
+                return;
+            }
+
+            // 1) Create base user
+            let createdUser;
+            if (createType === 'client') {
+                const res = await axios.post(`${URL}/auth/register/client`, {
+                    email: createForm.email,
+                    fullName: createForm.fullName,
+                });
+                if (res.data.code !== 201) {
+                    toast.error(res.data.message || 'Failed to create client user');
+                    return;
+                }
+                createdUser = res.data.data;
+                if (res.data.temporaryPassword) {
+                    setCreatedClientTempPassword(res.data.temporaryPassword);
+                }
+            } else {
+                const res = await axios.post(`${URL}/auth/register`, {
+                    email: createForm.email,
+                    fullName: createForm.fullName,
+                    password: createForm.password,
+                });
+                if (res.data.code !== 201) {
+                    toast.error(res.data.message || 'Failed to create user');
+                    return;
+                }
+                createdUser = res.data.data;
+            }
+
+            // 2) Set role for employee/user if needed
+            if (createType === 'employee') {
+                const roleRes = await axios.put(`${URL}/users/${createdUser.id}/role`, {
+                    role: createForm.role,
+                });
+                if (roleRes.data.code !== 200) {
+                    toast.error(roleRes.data.message || 'Failed to set employee role');
+                    return;
+                }
+
+                // 3) Save employee profile card
+                const profilePayload = {
+                    fullName: createForm.fullName,
+                    dateOfBirth: createForm.dateOfBirth || null,
+                    phone: createForm.phone,
+                    secondaryPhone: createForm.secondaryPhone,
+                    address: createForm.address,
+                    contractStart: createForm.contractStart || null,
+                    contractEnd: createForm.contractEnd || null,
+                    position: createForm.position,
+                    notes: createForm.notes,
+                };
+                const profRes = await axios.put(`${URL}/users/${createdUser.id}/profile`, profilePayload);
+                if (profRes.data.code !== 200) {
+                    toast.error(profRes.data.message || 'Failed to save employee profile');
+                    return;
+                }
+            }
+
+            // refresh list
+            await fetchUsers();
+            toast.success('Created successfully');
+
+            // keep modal open for client to copy temp password
+            if (createType !== 'client') {
+                closeCreateModal();
+            }
+        } catch (e) {
+            console.error('Create failed', e);
+            toast.error('Create failed');
+        } finally {
+            setCreating(false);
+        }
+    };
 
 
     const columns = [
@@ -95,12 +245,82 @@ const UsersPage = () => {
                     >
                         <TrashIcon className="w-5 h-5" />
                     </button>
+                    <button
+                        onClick={() => openHistoryModal(row)}
+                        className="text-gray-700 hover:text-black"
+                        title="History"
+                    >
+                        <ClockIcon className="w-5 h-5" />
+                    </button>
                 </div>
             ),
             ignoreRowClick: true,
             button: "true",
         },
     ];
+
+    const closeHistoryModal = () => {
+        setHistoryModalIsOpen(false);
+        setHistoryUser(null);
+        setHistoryItems([]);
+        setHistoryLoading(false);
+        setHistoryFilters({
+            from: '',
+            to: '',
+            actorName: '',
+            actorRole: '',
+            type: '',
+        });
+    };
+
+    const fetchUserHistory = async (userId, filters) => {
+        const params = new URLSearchParams();
+        if (filters?.from) params.set('from', filters.from);
+        if (filters?.to) params.set('to', filters.to);
+        if (filters?.actorName) params.set('actorName', filters.actorName);
+        if (filters?.actorRole) params.set('actorRole', filters.actorRole);
+        if (filters?.type) params.set('type', filters.type);
+
+        const res = await axios.get(`${URL}/users/${userId}/history?${params.toString()}`);
+        if (res.data?.code === 200) return res.data.data || [];
+        throw new Error(res.data?.message || 'Failed to load history');
+    };
+
+    const openHistoryModal = async (user) => {
+        setHistoryUser(user);
+        setHistoryModalIsOpen(true);
+        setHistoryLoading(true);
+        try {
+            const items = await fetchUserHistory(user.id, historyFilters);
+            setHistoryItems(items);
+        } catch (e) {
+            console.error('Error loading history:', e);
+            toast.error('Error loading history');
+            setHistoryItems([]);
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
+
+    const applyHistoryFilters = async () => {
+        if (!historyUser) return;
+        setHistoryLoading(true);
+        try {
+            const items = await fetchUserHistory(historyUser.id, historyFilters);
+            setHistoryItems(items);
+        } catch (e) {
+            console.error('Error loading history:', e);
+            toast.error('Error loading history');
+            setHistoryItems([]);
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
+
+    const handleHistoryFilterChange = (e) => {
+        const { name, value } = e.target;
+        setHistoryFilters((prev) => ({ ...prev, [name]: value }));
+    };
 
     const openEditRoleModal = (user) => {
         setSelectedUser(user);
@@ -309,6 +529,9 @@ const UsersPage = () => {
             setUsers(response.data.data);
         } catch (error) {
             console.error('Error fetching users:', error);
+            if (error?.response?.status === 403) {
+                toast.error('No access to Users');
+            }
         } finally {
             setLoading(false);
         }
@@ -377,9 +600,22 @@ const UsersPage = () => {
                                 <Option className="text-black" value="">All Roles</Option>
                                 <Option className="text-black" value="admin">Admin</Option>
                                 <Option className="text-black" value="user">User</Option>
+                                <Option className="text-black" value="client">Client</Option>
+                                <Option className="text-black" value="manager">Manager</Option>
                                 <Option className="text-black" value="mechanic">Mechanic</Option>
                                 <Option className="text-black" value="electrician">Electrician</Option>
                             </Select>
+                            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                                <Button color="blue" onClick={() => openCreateModal('user')} className="w-full md:w-auto">
+                                    <span>Create user</span>
+                                </Button>
+                                <Button color="green" onClick={() => openCreateModal('employee')} className="w-full md:w-auto">
+                                    <span>Create employee</span>
+                                </Button>
+                                <Button color="purple" onClick={() => openCreateModal('client')} className="w-full md:w-auto">
+                                    <span>Create client access</span>
+                                </Button>
+                            </div>
                         </div>
                         <div className="overflow-x-auto">
                             <DataTable
@@ -586,6 +822,167 @@ const UsersPage = () => {
                                     </div>
                                 ) : (
                                     <span>Yes, Delete</span>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+
+                <Modal
+                    isOpen={historyModalIsOpen}
+                    onClose={closeHistoryModal}
+                    title={historyUser ? `History: ${historyUser.fullName || historyUser.email}` : 'History'}
+                >
+                    <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <Input label="From" name="from" type="datetime-local" value={historyFilters.from} onChange={handleHistoryFilterChange} />
+                            <Input label="To" name="to" type="datetime-local" value={historyFilters.to} onChange={handleHistoryFilterChange} />
+                            <Input label="Actor name/email" name="actorName" value={historyFilters.actorName} onChange={handleHistoryFilterChange} />
+                            <Select
+                                label="Actor role"
+                                value={historyFilters.actorRole}
+                                onChange={(value) => setHistoryFilters((p) => ({ ...p, actorRole: value || '' }))}
+                                className="text-black"
+                                labelProps={{ className: 'text-black' }}
+                            >
+                                <Option className="text-black" value="">Any</Option>
+                                <Option className="text-black" value="admin">Admin</Option>
+                                <Option className="text-black" value="manager">Manager</Option>
+                                <Option className="text-black" value="mechanic">Mechanic</Option>
+                                <Option className="text-black" value="electrician">Electrician</Option>
+                                <Option className="text-black" value="user">User</Option>
+                                <Option className="text-black" value="client">Client</Option>
+                            </Select>
+                            <Input label="Type (contains)" name="type" value={historyFilters.type} onChange={handleHistoryFilterChange} />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button variant="text" color="red" onClick={closeHistoryModal} className="w-full md:w-auto">
+                                <span>Close</span>
+                            </Button>
+                            <Button color="blue" onClick={applyHistoryFilters} className="w-full md:w-auto" disabled={historyLoading}>
+                                <span>{historyLoading ? 'Loading...' : 'Apply filters'}</span>
+                            </Button>
+                        </div>
+
+                        {historyLoading ? (
+                            <div className="flex justify-center items-center py-8">
+                                <ClipLoader size={20} color="#123abc" />
+                            </div>
+                        ) : historyItems.length === 0 ? (
+                            <div className="text-gray-700">No history.</div>
+                        ) : (
+                            <div className="space-y-2">
+                                {historyItems.map((it) => (
+                                    <div key={it.id} className="border rounded p-3 bg-gray-50">
+                                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                            <div className="text-xs text-gray-600">
+                                                <span className="font-mono">{it.type}</span>
+                                            </div>
+                                            <div className="text-xs text-gray-600">
+                                                {it.at ? new Date(it.at).toLocaleString() : ''}
+                                            </div>
+                                        </div>
+                                        <div className="mt-1 text-sm text-black">
+                                            <div className="text-xs text-gray-600">
+                                                Actor: {it.actor?.fullName || it.actor?.email || it.actorUserId || '—'}
+                                            </div>
+                                            <pre className="mt-2 text-xs bg-white border rounded p-2 overflow-x-auto whitespace-pre-wrap">
+{typeof it.payload === 'string' ? it.payload : JSON.stringify(it.payload, null, 2)}
+                                            </pre>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </Modal>
+
+                <Modal
+                    isOpen={createModalIsOpen}
+                    onClose={closeCreateModal}
+                    title={
+                        createType === 'employee'
+                            ? 'Create employee'
+                            : createType === 'client'
+                            ? 'Create client access'
+                            : 'Create user'
+                    }
+                >
+                    <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+                        <Input label="Email" name="email" value={createForm.email} onChange={handleCreateChange} required />
+                        <Input label="Full name" name="fullName" value={createForm.fullName} onChange={handleCreateChange} required />
+
+                        {createType !== 'client' && (
+                            <Input
+                                label="Password"
+                                name="password"
+                                type="password"
+                                value={createForm.password}
+                                onChange={handleCreateChange}
+                                required
+                            />
+                        )}
+
+                        {createType === 'employee' && (
+                            <>
+                                <Select
+                                    label="Role"
+                                    value={createForm.role}
+                                    onChange={(value) => setCreateForm((p) => ({ ...p, role: value }))}
+                                    className="text-black"
+                                    labelProps={{ className: "text-black" }}
+                                >
+                                    <Option className="text-black" value="mechanic">Mechanic</Option>
+                                    <Option className="text-black" value="electrician">Electrician</Option>
+                                    <Option className="text-black" value="manager">Manager</Option>
+                                </Select>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Input label="Date of birth" name="dateOfBirth" type="date" value={createForm.dateOfBirth} onChange={handleCreateChange} />
+                                    <Input label="Position / Specialization" name="position" value={createForm.position} onChange={handleCreateChange} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Input label="Phone" name="phone" value={createForm.phone} onChange={handleCreateChange} />
+                                    <Input label="Secondary phone" name="secondaryPhone" value={createForm.secondaryPhone} onChange={handleCreateChange} />
+                                </div>
+                                <Input label="Address" name="address" value={createForm.address} onChange={handleCreateChange} />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Input label="Contract start" name="contractStart" type="date" value={createForm.contractStart} onChange={handleCreateChange} />
+                                    <Input label="Contract end" name="contractEnd" type="date" value={createForm.contractEnd} onChange={handleCreateChange} />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                    <textarea
+                                        name="notes"
+                                        value={createForm.notes}
+                                        onChange={handleCreateChange}
+                                        rows={3}
+                                        className="w-full border rounded-md p-2 text-sm text-black"
+                                        placeholder="Additional comments / remarks"
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        {createType === 'client' && createdClientTempPassword && (
+                            <div className="p-3 rounded border bg-gray-50 text-black">
+                                <div className="text-sm font-medium">Temporary password (copy and share once):</div>
+                                <div className="mt-1 font-mono break-all">{createdClientTempPassword}</div>
+                            </div>
+                        )}
+
+                        <div className="flex justify-end gap-2 pt-2">
+                            <Button variant="text" color="red" onClick={closeCreateModal} disabled={creating}>
+                                <span>Cancel</span>
+                            </Button>
+                            <Button color="green" onClick={submitCreate} disabled={creating}>
+                                {creating ? (
+                                    <div className="flex items-center gap-2">
+                                        <ClipLoader size={13} color="#ffffff" />
+                                        <span>Creating...</span>
+                                    </div>
+                                ) : (
+                                    <span>Create</span>
                                 )}
                             </Button>
                         </div>

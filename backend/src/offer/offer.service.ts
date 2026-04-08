@@ -211,7 +211,7 @@ export class OfferService {
 
       let offers;
       
-      if (login.role === 'user') {
+      if (login.role === 'user' || login.role === 'client') {
         offers = await this.offerRepository.find({
           where: { 
             customerId: login.id,

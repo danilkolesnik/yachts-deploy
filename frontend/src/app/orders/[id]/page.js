@@ -26,6 +26,7 @@ const OrderDetail = ({ params }) => {
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [statusHistory, setStatusHistory] = useState([]);
     const [assignmentHistory, setAssignmentHistory] = useState([]);
+    const [clientMessages, setClientMessages] = useState([]);
     const [availableWorkers, setAvailableWorkers] = useState([]);
     const [selectedWorkers, setSelectedWorkers] = useState([]);
     const [updatingWorkers, setUpdatingWorkers] = useState(false);
@@ -63,6 +64,15 @@ const OrderDetail = ({ params }) => {
                     setAssignmentHistory(response.data.data || []);
                 })
                 .catch(error => console.error('Error fetching assignment history:', error));
+
+            // Client messages (visible to admins and assigned workers)
+            axios.get(`${URL}/orders/client/${id}/messages`)
+                .then(res => {
+                    if (res.data?.code === 200) {
+                        setClientMessages(res.data.data || []);
+                    }
+                })
+                .catch(error => console.error('Error fetching client messages:', error));
 
             axios.get(`${URL}/users/role/worker`)
                 .then(res => {
@@ -390,6 +400,25 @@ const OrderDetail = ({ params }) => {
                                         <span className="text-gray-500">
                                             {item.changedAt ? new Date(item.changedAt).toLocaleString() : ''}
                                         </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                )}
+
+                {clientMessages && clientMessages.length > 0 && (
+                    <div className="mb-4">
+                        <h2 className="text-2xl font-bold mb-3 text-black">Client messages</h2>
+                        <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 max-h-60 overflow-y-auto">
+                            <ul className="space-y-3 text-sm text-black">
+                                {clientMessages.map((m, index) => (
+                                    <li key={m.id || index} className="border rounded p-3 bg-white">
+                                        <div className="flex justify-between gap-2 text-xs text-gray-600">
+                                            <span className="uppercase">{m.kind}</span>
+                                            <span>{m.createdAt ? new Date(m.createdAt).toLocaleString() : ''}</span>
+                                        </div>
+                                        <div className="mt-1 whitespace-pre-wrap">{m.message}</div>
                                     </li>
                                 ))}
                             </ul>

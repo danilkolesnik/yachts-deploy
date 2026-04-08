@@ -78,6 +78,10 @@ export class PermissionsGuard implements CanActivate {
         PermissionsList.ORDERS_MEDIA_ADD,
         PermissionsList.ORDERS_MEDIA_DELETE,
         PermissionsList.ORDERS_COMMENT_ADD,
+        PermissionsList.USERS_READ,
+        PermissionsList.USERS_MANAGE,
+        PermissionsList.USERS_PERMISSIONS_MANAGE,
+        PermissionsList.USERS_AUDIT_READ,
       ],
       mechanic: [
         PermissionsList.ORDERS_READ,
@@ -94,6 +98,7 @@ export class PermissionsGuard implements CanActivate {
         PermissionsList.ORDERS_COMMENT_ADD,
       ],
       user: [PermissionsList.SELF_OFFERS_READ, PermissionsList.SELF_ORDERS_READ],
+      client: [PermissionsList.SELF_OFFERS_READ, PermissionsList.SELF_ORDERS_READ],
     };
 
     const permissions = profile?.permissions?.length

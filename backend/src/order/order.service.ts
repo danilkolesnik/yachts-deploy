@@ -14,6 +14,7 @@ import { sendEmail } from 'src/utils/sendEmail';
 import { OfferHistory } from 'src/offer/entities/offer-history.entity';
 import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { OrderAssignmentHistory } from './entities/order-assignment-history.entity';
+import { OrderClientMessage } from './entities/order-client-message.entity';
 import getBearerToken from 'src/methods/getBearerToken';
 import { JwtPayload } from 'jsonwebtoken';
 import * as jwt from 'jsonwebtoken';
@@ -42,12 +43,223 @@ export class OrderService {
     private readonly orderStatusHistoryRepository: Repository<OrderStatusHistory>,
     @InjectRepository(OrderAssignmentHistory)
     private readonly orderAssignmentHistoryRepository: Repository<OrderAssignmentHistory>,
+    @InjectRepository(OrderClientMessage)
+    private readonly orderClientMessageRepository: Repository<OrderClientMessage>,
   ) {}
+
+  private async canAccessOrder(orderId: string, requester: { id: string; role: string }) {
+    const orderEntity = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['assignedWorkers'],
+    });
+
+    if (!orderEntity) {
+      return { ok: false as const, code: 404 as const, message: 'Order not found' };
+    }
+
+    if (requester.role === 'admin') {
+      return { ok: true as const, order: orderEntity };
+    }
+
+    if (requester.role === 'mechanic' || requester.role === 'electrician' || requester.role === 'manager') {
+      const isAssigned =
+        (orderEntity.assignedWorkers || []).some((w) => String(w.id) === String(requester.id));
+      if (isAssigned) return { ok: true as const, order: orderEntity };
+      return { ok: false as const, code: 403 as const, message: 'Access denied' };
+    }
+
+    // user/client: only own orders
+    if (requester.role === 'user' || requester.role === 'client') {
+      if (String(orderEntity.customerId) === String(requester.id)) {
+        return { ok: true as const, order: orderEntity };
+      }
+      return { ok: false as const, code: 403 as const, message: 'Access denied' };
+    }
+
+    return { ok: false as const, code: 403 as const, message: 'Access denied' };
+  }
+
+  private sanitizeOfferForClient(offerEntity: any) {
+    if (!offerEntity) return offerEntity;
+    // remove financials: services pricing and any internal fields
+    const cleaned = { ...offerEntity };
+    // services in DB may be object/array; strip price fields
+    if (cleaned.services) {
+      if (Array.isArray(cleaned.services)) {
+        cleaned.services = cleaned.services.map((s: any) => ({
+          serviceName: s?.serviceName,
+          unitsOfMeasurement: s?.unitsOfMeasurement,
+          description: s?.description,
+        }));
+      } else if (typeof cleaned.services === 'object') {
+        cleaned.services = {
+          serviceName: cleaned.services?.serviceName,
+          unitsOfMeasurement: cleaned.services?.unitsOfMeasurement,
+          description: cleaned.services?.description,
+        };
+      }
+    }
+    // parts: hide pricePerUnit/inventory
+    if (Array.isArray(cleaned.parts)) {
+      cleaned.parts = cleaned.parts.map((p: any) => ({
+        label: p?.label,
+        quantity: p?.quantity,
+      }));
+    }
+    return cleaned;
+  }
+
+  async getClientOrders(req: Request) {
+    const token = getBearerToken(req);
+    if (!token) return { code: 401, message: 'Authorization token missing' };
+    try {
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+      const requester = { id: String(login.id), role: String(login.role) };
+
+      // client: only own, staff/admin: same logic as existing allOrder but without Permissions decorator
+      const base = await this.allOrder(req);
+      if (base?.code !== 200) return base;
+
+      const data = (base.data || []).map((o: any) => {
+        if (requester.role === 'client') {
+          return { ...o, offer: this.sanitizeOfferForClient(o.offer) };
+        }
+        return o;
+      });
+      return { code: 200, data };
+    } catch (err) {
+      return { code: 401, message: err instanceof Error ? err.message : 'Unauthorized' };
+    }
+  }
+
+  async getClientOrderById(orderId: string, req: Request) {
+    const token = getBearerToken(req);
+    if (!token) return { code: 401, message: 'Authorization token missing' };
+    try {
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+      const requester = { id: String(login.id), role: String(login.role) };
+
+      const access = await this.canAccessOrder(orderId, requester);
+      if (!access.ok) return { code: access.code, message: access.message };
+
+      const offerEntity = await this.offerRepository.findOne({ where: { id: access.order.offerId } });
+      const orderWithOffer = {
+        ...access.order,
+        offer: requester.role === 'client' ? this.sanitizeOfferForClient(offerEntity) : offerEntity,
+      };
+      return { code: 200, data: orderWithOffer };
+    } catch (err) {
+      return { code: 401, message: err instanceof Error ? err.message : 'Unauthorized' };
+    }
+  }
+
+  async addClientMessage(orderId: string, req: Request, payload: { kind?: string; message: string }) {
+    const token = getBearerToken(req);
+    if (!token) return { code: 401, message: 'Authorization token missing' };
+    try {
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+      const requester = { id: String(login.id), role: String(login.role) };
+
+      if (requester.role !== 'client') {
+        return { code: 403, message: 'Only client can add messages' };
+      }
+      if (!payload?.message || !payload.message.trim()) {
+        return { code: 400, message: 'Message is required' };
+      }
+
+      const access = await this.canAccessOrder(orderId, requester);
+      if (!access.ok) return { code: access.code, message: access.message };
+
+      const saved = await this.orderClientMessageRepository.save(
+        this.orderClientMessageRepository.create({
+          orderId,
+          userId: requester.id,
+          kind: payload.kind === 'additional_work' ? 'additional_work' : 'comment',
+          message: payload.message.trim(),
+        }),
+      );
+
+      // store in existing order history stream as well
+      await this.orderStatusHistoryRepository.save(
+        this.orderStatusHistoryRepository.create({
+          orderId,
+          oldStatus: undefined,
+          newStatus: `client:${saved.kind}`,
+          changedBy: requester.id,
+        }),
+      );
+
+      return { code: 201, data: saved };
+    } catch (err) {
+      return { code: 500, message: err instanceof Error ? err.message : 'Internal server error' };
+    }
+  }
+
+  async getClientMessages(orderId: string, req: Request) {
+    const token = getBearerToken(req);
+    if (!token) return { code: 401, message: 'Authorization token missing' };
+    try {
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+      const requester = { id: String(login.id), role: String(login.role) };
+
+      const access = await this.canAccessOrder(orderId, requester);
+      if (!access.ok) return { code: access.code, message: access.message };
+
+      const msgs = await this.orderClientMessageRepository.find({
+        where: { orderId },
+        order: { createdAt: 'ASC' },
+      });
+      return { code: 200, data: msgs };
+    } catch (err) {
+      return { code: 401, message: err instanceof Error ? err.message : 'Unauthorized' };
+    }
+  }
+
+  async getClientStatusHistory(orderId: string, req: Request) {
+    const token = getBearerToken(req);
+    if (!token) return { code: 401, message: 'Authorization token missing' };
+    try {
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+      const requester = { id: String(login.id), role: String(login.role) };
+
+      const access = await this.canAccessOrder(orderId, requester);
+      if (!access.ok) return { code: access.code, message: access.message };
+
+      const history = await this.orderStatusHistoryRepository.find({
+        where: { orderId },
+        order: { changedAt: 'ASC' },
+      });
+      return { code: 200, data: history };
+    } catch (err) {
+      return { code: 401, message: err instanceof Error ? err.message : 'Unauthorized' };
+    }
+  }
+
+  async getClientTimerHistory(orderId: string, req: Request) {
+    const token = getBearerToken(req);
+    if (!token) return { code: 401, message: 'Authorization token missing' };
+    try {
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+      const requester = { id: String(login.id), role: String(login.role) };
+
+      const access = await this.canAccessOrder(orderId, requester);
+      if (!access.ok) return { code: access.code, message: access.message };
+
+      const timers = await this.orderTimerRepository.find({
+        where: { orderId },
+        order: { startTime: 'DESC' },
+      });
+      return { code: 200, data: timers };
+    } catch (err) {
+      return { code: 401, message: err instanceof Error ? err.message : 'Unauthorized' };
+    }
+  }
 
   private async logOrderStatusChange(
     orderId: string,
     oldStatus: string | null,
     newStatus: string,
+    changedBy?: string,
   ) {
     if (oldStatus === newStatus) {
       return;
@@ -56,6 +268,7 @@ export class OrderService {
       orderId,
       oldStatus: oldStatus ?? undefined,
       newStatus,
+      changedBy,
     });
     await this.orderStatusHistoryRepository.save(history);
   }
@@ -160,7 +373,7 @@ export class OrderService {
         filteredOrders = ordersWithOffers.filter(order =>
           order.assignedWorkers.some((worker: any) => String(worker.id) === String(login.id))
         );
-      } else if (login.role === 'user') {
+      } else if (login.role === 'user' || login.role === 'client') {
         filteredOrders = ordersWithOffers.filter(order =>
           String(order.customerId) === String(login.id)
         );
@@ -178,7 +391,7 @@ export class OrderService {
   }
 
   // =============== СТАТУСЫ ===============
-  async updateOrderStatus(orderId: string, newStatus: string) {
+  async updateOrderStatus(orderId: string, newStatus: string, req?: Request) {
     try {
       const order = await this.orderRepository.findOne({
         where: { id: orderId },
@@ -197,6 +410,16 @@ export class OrderService {
       }
   
       const previousStatus = order.status;
+      let changedBy: string | undefined;
+      try {
+        if (req) {
+          const token = getBearerToken(req);
+          if (token) {
+            const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+            changedBy = String(login.id);
+          }
+        }
+      } catch {}
 
       // Обновляем статус и дату
       order.status = newStatus;
@@ -208,7 +431,7 @@ export class OrderService {
       
       await this.orderRepository.save(order);
 
-      await this.logOrderStatusChange(orderId, previousStatus, newStatus);
+      await this.logOrderStatusChange(orderId, previousStatus, newStatus, changedBy);
   
       // ЛОГИКА ДЛЯ СТАТУСА FINISHED
       if (newStatus === 'finished') {
@@ -397,7 +620,7 @@ export class OrderService {
       const order = await this.orderRepository.findOne({ where: { id: orderId } });
       const previousStatus = order?.status ?? null;
       await this.orderRepository.update(orderId, { status: 'in-progress' });
-      await this.logOrderStatusChange(orderId, previousStatus, 'in-progress');
+      await this.logOrderStatusChange(orderId, previousStatus, 'in-progress', String(login.id));
 
       const savedTimer = await this.orderTimerRepository.save(timer);
       return { code: 200, data: savedTimer };

@@ -70,3 +70,55 @@ CREATE TABLE IF NOT EXISTS public.user_permission_history (
 
 CREATE INDEX IF NOT EXISTS "IDX_user_permission_history_userId" ON public.user_permission_history ("userId");
 
+-- Client messages on order (additional work / comments)
+CREATE TABLE IF NOT EXISTS public.order_client_message (
+  id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+  "orderId" character varying NOT NULL,
+  "userId" character varying NOT NULL,
+  kind character varying DEFAULT 'comment'::character varying NOT NULL,
+  message text NOT NULL,
+  "createdAt" timestamp without time zone DEFAULT now() NOT NULL,
+  CONSTRAINT "PK_order_client_message_id" PRIMARY KEY (id)
+);
+
+CREATE INDEX IF NOT EXISTS "IDX_order_client_message_orderId" ON public.order_client_message ("orderId");
+
+-- Order status history (used in /orders/:id/status-history)
+CREATE TABLE IF NOT EXISTS public.order_status_history (
+  id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+  "orderId" character varying NOT NULL,
+  "oldStatus" character varying NULL,
+  "newStatus" character varying NOT NULL,
+  "changedBy" character varying NULL,
+  "changedAt" timestamp without time zone DEFAULT now() NOT NULL,
+  CONSTRAINT "PK_order_status_history_id" PRIMARY KEY (id)
+);
+
+CREATE INDEX IF NOT EXISTS "IDX_order_status_history_orderId" ON public.order_status_history ("orderId");
+
+-- Order assignment history (used in /orders/:id/assignment-history)
+CREATE TABLE IF NOT EXISTS public.order_assignment_history (
+  id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+  "orderId" character varying NOT NULL,
+  "oldWorkerIds" text,
+  "newWorkerIds" text NOT NULL,
+  "changedBy" character varying NULL,
+  "changedAt" timestamp without time zone DEFAULT now() NOT NULL,
+  CONSTRAINT "PK_order_assignment_history_id" PRIMARY KEY (id)
+);
+
+CREATE INDEX IF NOT EXISTS "IDX_order_assignment_history_orderId" ON public.order_assignment_history ("orderId");
+
+-- User audit history (viewed in Users -> History)
+CREATE TABLE IF NOT EXISTS public.user_audit_history (
+  id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+  "userId" character varying NOT NULL,
+  "changedBy" character varying NULL,
+  "entityType" character varying NOT NULL,
+  "changeDescription" text NOT NULL,
+  "createdAt" timestamp without time zone DEFAULT now() NOT NULL,
+  CONSTRAINT "PK_user_audit_history_id" PRIMARY KEY (id)
+);
+
+CREATE INDEX IF NOT EXISTS "IDX_user_audit_history_userId" ON public.user_audit_history ("userId");
+

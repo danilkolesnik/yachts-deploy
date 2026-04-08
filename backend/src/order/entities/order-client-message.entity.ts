@@ -1,23 +1,24 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
 @Entity()
-export class OrderStatusHistory {
+export class OrderClientMessage {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column()
   orderId: string;
 
-  @Column({ nullable: true })
-  oldStatus?: string;
-
   @Column()
-  newStatus: string;
+  userId: string;
 
-  @Column({ nullable: true })
-  changedBy?: string;
+  // 'additional_work' | 'comment'
+  @Column({ default: 'comment' })
+  kind: string;
+
+  @Column('text')
+  message: string;
 
   @CreateDateColumn()
-  changedAt: Date;
+  createdAt: Date;
 }
 

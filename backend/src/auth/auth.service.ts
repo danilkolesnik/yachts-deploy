@@ -12,6 +12,7 @@ import * as nodemailer from 'nodemailer';
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
 import { JwtPayload } from 'jsonwebtoken';
+import { Role } from 'src/constants/roles';
 
 @Injectable()
 export class AuthService {
@@ -89,6 +90,7 @@ export class AuthService {
         const result = await this.usersModule.save(
           this.usersModule.create({
             id: generateId,
+            role: Role.CLIENT,
             email: data.email,
             fullName: data.fullName,
             password: bcrypt.hashSync(genaratePassword),
@@ -98,6 +100,7 @@ export class AuthService {
         return {
           code: 201,
           data: result,
+          temporaryPassword: genaratePassword,
         };
       } catch (err) {
         return {

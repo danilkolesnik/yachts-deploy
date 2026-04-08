@@ -5,6 +5,7 @@ import { users } from 'src/auth/entities/users.entity';
 import { EmployeeProfile } from './entities/employee-profile.entity';
 import { UserPermissionHistory } from './entities/user-permission-history.entity';
 import { PermissionsList } from 'src/constants/permissions';
+import { UserAuditHistory } from './entities/user-audit-history.entity';
 
 @Injectable()
 export class UsersService {
@@ -15,7 +16,32 @@ export class UsersService {
     private readonly employeeProfileRepository: Repository<EmployeeProfile>,
     @InjectRepository(UserPermissionHistory)
     private readonly userPermissionHistoryRepository: Repository<UserPermissionHistory>,
+    @InjectRepository(UserAuditHistory)
+    private readonly userAuditHistoryRepository: Repository<UserAuditHistory>,
   ) {}
+
+  private async audit(
+    userId: string,
+    entityType: string,
+    changeDescription: unknown,
+    changedBy?: string,
+  ) {
+    try {
+      await this.userAuditHistoryRepository.save(
+        this.userAuditHistoryRepository.create({
+          userId,
+          entityType,
+          changedBy,
+          changeDescription:
+            typeof changeDescription === 'string'
+              ? changeDescription
+              : JSON.stringify(changeDescription),
+        }),
+      );
+    } catch {
+      // auditing must not break main flow
+    }
+  }
 
   private readonly ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     admin: ['*'],
@@ -41,8 +67,16 @@ export class UsersService {
       PermissionsList.ORDERS_MEDIA_ADD,
       PermissionsList.ORDERS_MEDIA_DELETE,
       PermissionsList.ORDERS_COMMENT_ADD,
+      PermissionsList.USERS_READ,
+      PermissionsList.USERS_MANAGE,
+      PermissionsList.USERS_PERMISSIONS_MANAGE,
+      PermissionsList.USERS_AUDIT_READ,
     ],
     user: [
+      PermissionsList.SELF_OFFERS_READ,
+      PermissionsList.SELF_ORDERS_READ,
+    ],
+    client: [
       PermissionsList.SELF_OFFERS_READ,
       PermissionsList.SELF_ORDERS_READ,
     ],
@@ -67,7 +101,7 @@ export class UsersService {
     try {
       const usersExcludingRoles = await this.usersRepository.find({
         where: {
-          role: Not(In(['user', 'admin'])),
+          role: Not(In(['user', 'client', 'admin'])),
         },
       });
       return {
@@ -86,7 +120,7 @@ export class UsersService {
     try {
       const usersExcludingRoles = await this.usersRepository.find({
         where: {
-          role: 'user',
+          role: In(['user', 'client']),
         },
       });
       return {
@@ -101,7 +135,7 @@ export class UsersService {
     }
   }
 
-  async updateUserRole(id: string, newRole: string) {
+  async updateUserRole(id: string, newRole: string, changedBy?: string) {
     try {
       // Directly find the user by the provided id
       const user = await this.usersRepository.findOne({ where: { id } });
@@ -132,12 +166,14 @@ export class UsersService {
 
       const history = this.userPermissionHistoryRepository.create({
         userId: id,
+        changedBy,
         oldRole,
         newRole,
         oldPermissions,
         newPermissions: defaultPermissions,
       });
       await this.userPermissionHistoryRepository.save(history);
+      await this.audit(id, 'user', { oldRole, newRole }, changedBy);
 
       return {
         code: 200,
@@ -151,7 +187,7 @@ export class UsersService {
     }
   }
 
-  async upsertEmployeeProfile(userId: string, data: Partial<EmployeeProfile>) {
+  async upsertEmployeeProfile(userId: string, data: Partial<EmployeeProfile>, changedBy?: string) {
     try {
       const user = await this.usersRepository.findOne({ where: { id: userId } });
       if (!user) {
@@ -197,6 +233,12 @@ export class UsersService {
       }
 
       const saved = await this.employeeProfileRepository.save(profile);
+      await this.audit(
+        userId,
+        'employee_profile',
+        { before: profile ? { ...profile } : null, after: saved },
+        changedBy,
+      );
 
       // log history if something changed
       const hasResponsibilityChange =
@@ -209,6 +251,7 @@ export class UsersService {
       if (hasResponsibilityChange || hasPermissionsChange) {
         const history = this.userPermissionHistoryRepository.create({
           userId,
+          changedBy,
           oldResponsibilityAreas: oldResponsibilityAreas,
           newResponsibilityAreas: saved.responsibilityAreas || [],
           oldPermissions,
@@ -226,6 +269,35 @@ export class UsersService {
     }
   }
 
+  async updateUser(id: string, data: Partial<users>, changedBy?: string) {
+    try {
+      const user = await this.usersRepository.findOne({ where: { id } });
+      if (!user) return { code: 404, message: 'User not found' };
+
+      const before = { email: user.email, fullName: user.fullName };
+      if (typeof data.email === 'string') user.email = data.email;
+      if (typeof data.fullName === 'string') user.fullName = data.fullName;
+
+      const saved = await this.usersRepository.save(user);
+      await this.audit(id, 'user', { before, after: { email: saved.email, fullName: saved.fullName } }, changedBy);
+      return { code: 200, data: saved };
+    } catch (err) {
+      return { code: 500, message: err instanceof Error ? err.message : 'Internal server error' };
+    }
+  }
+
+  async deleteUser(id: string, changedBy?: string) {
+    try {
+      const user = await this.usersRepository.findOne({ where: { id } });
+      if (!user) return { code: 404, message: 'User not found' };
+      await this.usersRepository.delete(id);
+      await this.audit(id, 'user', { deleted: true }, changedBy);
+      return { code: 200, message: 'User deleted successfully' };
+    } catch (err) {
+      return { code: 500, message: err instanceof Error ? err.message : 'Internal server error' };
+    }
+  }
+
   async getEmployeeProfile(userId: string) {
     try {
       const profile = await this.employeeProfileRepository.findOne({
@@ -240,6 +312,114 @@ export class UsersService {
         code: 500,
         message: err instanceof Error ? err.message : 'Internal server error',
       };
+    }
+  }
+
+  async getUserHistory(
+    userId: string,
+    opts: {
+      from?: string;
+      to?: string;
+      actorName?: string;
+      actorRole?: string;
+      type?: string;
+      req?: any;
+    },
+  ) {
+    try {
+      const fromDate = opts.from ? new Date(opts.from) : undefined;
+      const toDate = opts.to ? new Date(opts.to) : undefined;
+      const type = (opts.type || '').trim().toLowerCase();
+
+      const auditQ = this.userAuditHistoryRepository
+        .createQueryBuilder('a')
+        .where('a.userId = :userId', { userId });
+
+      if (fromDate && !Number.isNaN(fromDate.getTime())) {
+        auditQ.andWhere('a.createdAt >= :from', { from: fromDate.toISOString() });
+      }
+      if (toDate && !Number.isNaN(toDate.getTime())) {
+        auditQ.andWhere('a.createdAt <= :to', { to: toDate.toISOString() });
+      }
+      if (type) {
+        auditQ.andWhere('LOWER(a.entityType) LIKE :type', { type: `%${type}%` });
+      }
+
+      const permQ = this.userPermissionHistoryRepository
+        .createQueryBuilder('p')
+        .where('p.userId = :userId', { userId });
+
+      if (fromDate && !Number.isNaN(fromDate.getTime())) {
+        permQ.andWhere('p.changedAt >= :from', { from: fromDate.toISOString() });
+      }
+      if (toDate && !Number.isNaN(toDate.getTime())) {
+        permQ.andWhere('p.changedAt <= :to', { to: toDate.toISOString() });
+      }
+
+      const [audits, perms] = await Promise.all([auditQ.getMany(), permQ.getMany()]);
+
+      const actorIds = Array.from(
+        new Set(
+          [...audits.map((a) => a.changedBy).filter(Boolean), ...perms.map((p) => p.changedBy).filter(Boolean)].map(
+            (x) => String(x),
+          ),
+        ),
+      );
+
+      const actors = actorIds.length
+        ? await this.usersRepository.find({ where: { id: In(actorIds) } })
+        : [];
+      const actorById = new Map(actors.map((u) => [String(u.id), u]));
+
+      let events: any[] = [
+        ...audits.map((a) => ({
+          id: a.id,
+          at: a.createdAt,
+          type: a.entityType || 'audit',
+          targetUserId: a.userId,
+          actorUserId: a.changedBy || null,
+          actor: a.changedBy ? actorById.get(String(a.changedBy)) || null : null,
+          payload: a.changeDescription,
+        })),
+        ...perms.map((p) => ({
+          id: p.id,
+          at: p.changedAt,
+          type: 'permissions',
+          targetUserId: p.userId,
+          actorUserId: p.changedBy || null,
+          actor: p.changedBy ? actorById.get(String(p.changedBy)) || null : null,
+          payload: {
+            oldRole: p.oldRole,
+            newRole: p.newRole,
+            oldPermissions: p.oldPermissions || [],
+            newPermissions: p.newPermissions || [],
+            oldResponsibilityAreas: p.oldResponsibilityAreas || [],
+            newResponsibilityAreas: p.newResponsibilityAreas || [],
+          },
+        })),
+      ];
+
+      // optional actor filters (name/role)
+      const actorName = (opts.actorName || '').trim().toLowerCase();
+      const actorRole = (opts.actorRole || '').trim().toLowerCase();
+      if (actorName || actorRole) {
+        events = events.filter((e) => {
+          const a = e.actor;
+          if (!a) return false;
+          if (actorRole && String(a.role || '').toLowerCase() !== actorRole) return false;
+          if (actorName) {
+            const hay = `${a.fullName || ''} ${a.email || ''}`.toLowerCase();
+            if (!hay.includes(actorName)) return false;
+          }
+          return true;
+        });
+      }
+
+      events.sort((x, y) => new Date(x.at).getTime() - new Date(y.at).getTime());
+
+      return { code: 200, data: events };
+    } catch (err) {
+      return { code: 500, message: err instanceof Error ? err.message : 'Internal server error' };
     }
   }
 }

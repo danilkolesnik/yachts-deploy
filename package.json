@@ -4,6 +4,8 @@
   "scripts": {
     "install:all": "npm --prefix backend install && npm --prefix frontend install",
     "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm --prefix backend run start:dev\" \"cross-env NEXT_PUBLIC_API_URL=http://localhost:5000 npm --prefix frontend run dev\"",
+    "kill:ports": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/kill-ports.ps1",
+    "dev:clean": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"& ./scripts/kill-ports.ps1; npm run dev\"",
     "build": "npm --prefix backend run build && npm --prefix frontend run build",
     "start": "concurrently -n backend,frontend -c cyan,magenta \"npm --prefix backend run start\" \"npm --prefix frontend run start\""
   },
