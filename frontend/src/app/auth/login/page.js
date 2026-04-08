@@ -26,7 +26,12 @@ const Login = () => {
                 if (verifyResponse.data.code === 200) {
                     localStorage.setItem('role', verifyResponse.data.data.role);
                 }
-                router.push('/offers');
+                const role = verifyResponse?.data?.data?.role;
+                if (role === 'client') {
+                    router.push('/client/orders');
+                } else {
+                    router.push('/offers');
+                }
             } else {
                 setErrorMessage('Incorrect email or password.');
             }

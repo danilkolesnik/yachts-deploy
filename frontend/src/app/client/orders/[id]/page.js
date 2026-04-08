@@ -25,11 +25,13 @@ export default function ClientOrderDetailPage({ params }) {
   const [sending, setSending] = useState(false);
 
   const refreshAll = async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const authHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
     const [o, sh, th, msgs] = await Promise.allSettled([
-      axios.get(`${URL}/orders/client/${id}`),
-      axios.get(`${URL}/orders/client/${id}/status-history`),
-      axios.get(`${URL}/orders/client/${id}/timer/history`),
-      axios.get(`${URL}/orders/client/${id}/messages`),
+      axios.get(`${URL}/orders/client/${id}`, { headers: authHeaders }),
+      axios.get(`${URL}/orders/client/${id}/status-history`, { headers: authHeaders }),
+      axios.get(`${URL}/orders/client/${id}/timer/history`, { headers: authHeaders }),
+      axios.get(`${URL}/orders/client/${id}/messages`, { headers: authHeaders }),
     ]);
 
     if (o.status === "fulfilled" && o.value.data.code === 200) setOrder(o.value.data.data);
@@ -63,10 +65,12 @@ export default function ClientOrderDetailPage({ params }) {
     if (!newMessage.trim()) return;
     setSending(true);
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const authHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
       const res = await axios.post(`${URL}/orders/client/${id}/messages`, {
         kind: newKind,
         message: newMessage.trim(),
-      });
+      }, { headers: authHeaders });
       if (res.data.code === 201) {
         setNewMessage("");
         await refreshAll();

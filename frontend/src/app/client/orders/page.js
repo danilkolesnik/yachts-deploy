@@ -14,8 +14,11 @@ export default function ClientOrdersPage() {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     axios
-      .get(`${URL}/orders/client`)
+      .get(`${URL}/orders/client`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })
       .then((res) => {
         if (!mounted) return;
         if (res.data.code === 200) {
