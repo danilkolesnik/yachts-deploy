@@ -122,6 +122,62 @@ export const pickEmployeeProfileFields = (obj) => {
 export const renderUserHistoryPayload = (it) => {
   const { parsed, raw } = parseHistoryPayload(it?.payload);
 
+  if (it?.type === 'order_status' && parsed && typeof parsed === 'object') {
+    const oldStatus = parsed.oldStatus ?? null;
+    const newStatus = parsed.newStatus ?? null;
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="border rounded bg-white p-2">
+          <div className="text-[11px] text-gray-500 mb-1">Old</div>
+          <FieldRow label="Status" value={oldStatus} />
+        </div>
+        <div className="border rounded bg-white p-2">
+          <div className="text-[11px] text-gray-500 mb-1">New</div>
+          <FieldRow label="Status" value={newStatus} />
+        </div>
+      </div>
+    );
+  }
+
+  if (it?.type === 'order_assignment' && parsed && typeof parsed === 'object') {
+    const oldWorkerIds = Array.isArray(parsed.oldWorkerIds) ? parsed.oldWorkerIds : [];
+    const newWorkerIds = Array.isArray(parsed.newWorkerIds) ? parsed.newWorkerIds : [];
+    const diff = (oldList, newList) => {
+      const oldSet = new Set(oldList.map(String));
+      const newSet = new Set(newList.map(String));
+      const added = Array.from(newSet).filter((x) => !oldSet.has(x));
+      const removed = Array.from(oldSet).filter((x) => !newSet.has(x));
+      return { added, removed };
+    };
+    const d = diff(oldWorkerIds, newWorkerIds);
+    return (
+      <div className="space-y-2">
+        {(d.added.length > 0 || d.removed.length > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="border rounded bg-white p-2">
+              <div className="text-[11px] text-gray-500 mb-1">Added workers</div>
+              <FieldRow label="Workers" value={d.added} />
+            </div>
+            <div className="border rounded bg-white p-2">
+              <div className="text-[11px] text-gray-500 mb-1">Removed workers</div>
+              <FieldRow label="Workers" value={d.removed} />
+            </div>
+          </div>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="border rounded bg-white p-2">
+            <div className="text-[11px] text-gray-500 mb-1">Old</div>
+            <FieldRow label="Workers" value={oldWorkerIds} />
+          </div>
+          <div className="border rounded bg-white p-2">
+            <div className="text-[11px] text-gray-500 mb-1">New</div>
+            <FieldRow label="Workers" value={newWorkerIds} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // common case: role change recorded as audit event with type "user"
   if (it?.type === 'user' && parsed && typeof parsed === 'object') {
     const oldRole = parsed.oldRole ?? parsed.before?.role ?? null;
@@ -172,20 +228,63 @@ export const renderUserHistoryPayload = (it) => {
   }
 
   if (it?.type === 'permissions' && parsed && typeof parsed === 'object') {
+    const toList = (v) => (Array.isArray(v) ? v.map(String) : []);
+    const oldPermissions = toList(parsed.oldPermissions);
+    const newPermissions = toList(parsed.newPermissions);
+    const oldAreas = toList(parsed.oldResponsibilityAreas);
+    const newAreas = toList(parsed.newResponsibilityAreas);
+
+    const diff = (oldList, newList) => {
+      const oldSet = new Set(oldList);
+      const newSet = new Set(newList);
+      const added = Array.from(newSet).filter((x) => !oldSet.has(x));
+      const removed = Array.from(oldSet).filter((x) => !newSet.has(x));
+      return { added, removed };
+    };
+
+    const permDiff = diff(oldPermissions, newPermissions);
+    const areaDiff = diff(oldAreas, newAreas);
+
     return (
       <div className="space-y-2">
+        {(permDiff.added.length > 0 || permDiff.removed.length > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="border rounded bg-white p-2">
+              <div className="text-[11px] text-gray-500 mb-1">Added permissions</div>
+              <FieldRow label="Permissions" value={permDiff.added} />
+            </div>
+            <div className="border rounded bg-white p-2">
+              <div className="text-[11px] text-gray-500 mb-1">Removed permissions</div>
+              <FieldRow label="Permissions" value={permDiff.removed} />
+            </div>
+          </div>
+        )}
+
+        {(areaDiff.added.length > 0 || areaDiff.removed.length > 0) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="border rounded bg-white p-2">
+              <div className="text-[11px] text-gray-500 mb-1">Added responsibility areas</div>
+              <FieldRow label="Responsibility areas" value={areaDiff.added} />
+            </div>
+            <div className="border rounded bg-white p-2">
+              <div className="text-[11px] text-gray-500 mb-1">Removed responsibility areas</div>
+              <FieldRow label="Responsibility areas" value={areaDiff.removed} />
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="border rounded bg-white p-2">
             <div className="text-[11px] text-gray-500 mb-1">Old</div>
             <FieldRow label="Role" value={parsed.oldRole} />
-            <FieldRow label="Permissions" value={parsed.oldPermissions || []} />
-            <FieldRow label="Responsibility areas" value={parsed.oldResponsibilityAreas || []} />
+            <FieldRow label="Permissions" value={oldPermissions} />
+            <FieldRow label="Responsibility areas" value={oldAreas} />
           </div>
           <div className="border rounded bg-white p-2">
             <div className="text-[11px] text-gray-500 mb-1">New</div>
             <FieldRow label="Role" value={parsed.newRole} />
-            <FieldRow label="Permissions" value={parsed.newPermissions || []} />
-            <FieldRow label="Responsibility areas" value={parsed.newResponsibilityAreas || []} />
+            <FieldRow label="Permissions" value={newPermissions} />
+            <FieldRow label="Responsibility areas" value={newAreas} />
           </div>
         </div>
       </div>

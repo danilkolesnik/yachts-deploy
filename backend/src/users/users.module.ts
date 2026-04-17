@@ -6,11 +6,22 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { EmployeeProfile } from './entities/employee-profile.entity';
 import { UserPermissionHistory } from './entities/user-permission-history.entity';
 import { UserAuditHistory } from './entities/user-audit-history.entity';
+import { OrderStatusHistory } from 'src/order/entities/order-status-history.entity';
+import { OrderAssignmentHistory } from 'src/order/entities/order-assignment-history.entity';
 import { PermissionsGuard } from './permissions.guard';
 import { APP_GUARD } from '@nestjs/core';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([users, EmployeeProfile, UserPermissionHistory, UserAuditHistory])],
+  imports: [
+    TypeOrmModule.forFeature([
+      users,
+      EmployeeProfile,
+      UserPermissionHistory,
+      UserAuditHistory,
+      OrderStatusHistory,
+      OrderAssignmentHistory,
+    ]),
+  ],
   controllers: [UsersController],
   providers: [
     UsersService,

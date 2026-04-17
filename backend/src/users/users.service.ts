@@ -6,6 +6,8 @@ import { EmployeeProfile } from './entities/employee-profile.entity';
 import { UserPermissionHistory } from './entities/user-permission-history.entity';
 import { PermissionsList } from 'src/constants/permissions';
 import { UserAuditHistory } from './entities/user-audit-history.entity';
+import { OrderStatusHistory } from 'src/order/entities/order-status-history.entity';
+import { OrderAssignmentHistory } from 'src/order/entities/order-assignment-history.entity';
 
 @Injectable()
 export class UsersService {
@@ -18,6 +20,10 @@ export class UsersService {
     private readonly userPermissionHistoryRepository: Repository<UserPermissionHistory>,
     @InjectRepository(UserAuditHistory)
     private readonly userAuditHistoryRepository: Repository<UserAuditHistory>,
+    @InjectRepository(OrderStatusHistory)
+    private readonly orderStatusHistoryRepository: Repository<OrderStatusHistory>,
+    @InjectRepository(OrderAssignmentHistory)
+    private readonly orderAssignmentHistoryRepository: Repository<OrderAssignmentHistory>,
   ) {}
 
   private async audit(
@@ -485,7 +491,9 @@ export class UsersService {
         ),
       );
 
-      const targetIds = Array.from(new Set([...audits.map((a) => a.userId), ...perms.map((p) => p.userId)].map(String)));
+      const targetIds = Array.from(
+        new Set([...audits.map((a) => a.userId), ...perms.map((p) => p.userId)].map(String)),
+      );
 
       const [actors, targets] = await Promise.all([
         actorIds.length ? this.usersRepository.find({ where: { id: In(actorIds) } }) : [],
@@ -525,6 +533,65 @@ export class UsersService {
         })),
       ];
 
+      // ===== Order-related critical actions (status changes, assignments) =====
+      const [orderStatuses, orderAssignments] = await Promise.all([
+        this.orderStatusHistoryRepository.find({
+          order: { changedAt: 'DESC' },
+        }),
+        this.orderAssignmentHistoryRepository.find({
+          order: { changedAt: 'DESC' },
+        }),
+      ]);
+
+      // apply date range filter in-memory (TypeORM date filters would require query builder)
+      const fromMs = fromDate && !Number.isNaN(fromDate.getTime()) ? fromDate.getTime() : null;
+      const toMs = toDate && !Number.isNaN(toDate.getTime()) ? toDate.getTime() : null;
+
+      const withinRange = (d: Date) => {
+        const t = new Date(d).getTime();
+        if (fromMs != null && t < fromMs) return false;
+        if (toMs != null && t > toMs) return false;
+        return true;
+      };
+
+      const orderStatusEvents = (orderStatuses || [])
+        .filter((h) => withinRange(h.changedAt))
+        .map((h) => ({
+          id: h.id,
+          at: h.changedAt,
+          type: 'order_status',
+          orderId: h.orderId,
+          targetUserId: h.changedBy || 'system',
+          targetUser: h.changedBy ? targetById.get(String(h.changedBy)) || null : null,
+          actorUserId: h.changedBy || null,
+          actor: h.changedBy ? actorById.get(String(h.changedBy)) || null : null,
+          payload: {
+            orderId: h.orderId,
+            oldStatus: h.oldStatus ?? null,
+            newStatus: h.newStatus,
+          },
+        }));
+
+      const orderAssignmentEvents = (orderAssignments || [])
+        .filter((h) => withinRange(h.changedAt))
+        .map((h) => ({
+          id: h.id,
+          at: h.changedAt,
+          type: 'order_assignment',
+          orderId: h.orderId,
+          targetUserId: h.changedBy || 'system',
+          targetUser: h.changedBy ? targetById.get(String(h.changedBy)) || null : null,
+          actorUserId: h.changedBy || null,
+          actor: h.changedBy ? actorById.get(String(h.changedBy)) || null : null,
+          payload: {
+            orderId: h.orderId,
+            oldWorkerIds: h.oldWorkerIds || [],
+            newWorkerIds: h.newWorkerIds || [],
+          },
+        }));
+
+      events = [...events, ...orderStatusEvents, ...orderAssignmentEvents];
+
       const actorName = (opts.actorName || '').trim().toLowerCase();
       const actorRole = (opts.actorRole || '').trim().toLowerCase();
       if (actorName || actorRole) {
@@ -538,6 +605,11 @@ export class UsersService {
           }
           return true;
         });
+      }
+
+      // optional type filter (contains) for ALL event sources
+      if (type) {
+        events = events.filter((e) => String(e.type || '').toLowerCase().includes(type));
       }
 
       // newest first for global history view

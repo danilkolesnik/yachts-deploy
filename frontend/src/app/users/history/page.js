@@ -99,8 +99,10 @@ const UsersHistoryPage = () => {
     return userOptions.find((o) => String(o.value) === String(filters.targetUserId)) || null;
   }, [filters.targetUserId, userOptions]);
 
-  const targetLabel = (it) =>
-    it?.targetUser?.fullName || it?.targetUser?.email || it?.targetUserId || "—";
+  const targetLabel = (it) => {
+    if (it?.orderId) return `Order #${it.orderId}`;
+    return it?.targetUser?.fullName || it?.targetUser?.email || it?.targetUserId || "—";
+  };
 
   return (
     <>
