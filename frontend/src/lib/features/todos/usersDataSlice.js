@@ -3,7 +3,9 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
     role: '',
     email: '',
-    id: ''
+    id: '',
+    /** null = not checked yet, true = verified session, false = no valid session */
+    session: null,
 };
 
 const usersDataSlice = createSlice({
@@ -18,10 +20,22 @@ const usersDataSlice = createSlice({
         },
         setId(state, action) {
             state.id = action.payload;
-        }
+        },
+        setUserFromVerify(state, action) {
+            state.email = action.payload.email ?? '';
+            state.role = action.payload.role ?? '';
+            state.id = action.payload.id ?? '';
+            state.session = true;
+        },
+        clearUserSession(state) {
+            state.role = '';
+            state.email = '';
+            state.id = '';
+            state.session = false;
+        },
     }
 });
 
-export const { setRole, setEmail, setId } = usersDataSlice.actions;
+export const { setRole, setEmail, setId, setUserFromVerify, clearUserSession } = usersDataSlice.actions;
 
 export default usersDataSlice.reducer;

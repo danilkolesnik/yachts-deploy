@@ -17,7 +17,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/solid";
 import { useAppDispatch } from '@/lib/hooks';
-import { setId } from '@/lib/features/todos/usersDataSlice';
+import { clearUserSession } from '@/lib/features/todos/usersDataSlice';
 import Link from 'next/link'
 import { usePathname } from 'next/navigation';
 import Loader from '@/ui/loader';
@@ -50,7 +50,7 @@ function NavList({ isOpen, setIsOpen }) {
 
   const clearLocalStorage = () => {
     localStorage.clear();
-    dispatch(setId(''));
+    dispatch(clearUserSession());
   };
 
   if (role === null) {
@@ -76,9 +76,9 @@ function NavList({ isOpen, setIsOpen }) {
             <span style={{ color: pathname?.startsWith('/client/orders') ? '#dd3333' : 'black' }}>My orders</span>
           </ListItem>
         </Link>
-        <Link href="/auth/login" onClick={() => { clearLocalStorage(); handleClick(); }} className=" font-bold">
+        <Link href="/login" onClick={() => { clearLocalStorage(); handleClick(); }} className=" font-bold">
           <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
-            <LockClosedIcon className={`h-5 w-5 mr-2 ${pathname === '/auth/login' ? 'text-[#dd3333]' : 'text-black'}`} />
+            <LockClosedIcon className={`h-5 w-5 mr-2 ${pathname === '/auth/login' || pathname === '/login' ? 'text-[#dd3333]' : 'text-black'}`} />
             <span>Logout</span>
           </ListItem>
         </Link>
@@ -148,9 +148,9 @@ function NavList({ isOpen, setIsOpen }) {
           </Link>
         </>
       )}
-      <Link href="/auth/login" onClick={() => { clearLocalStorage(); handleClick(); }} className=" font-bold">
+      <Link href="/login" onClick={() => { clearLocalStorage(); handleClick(); }} className=" font-bold">
         <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
-          <LockClosedIcon className={`h-5 w-5 mr-2 ${pathname === '/auth/login' ? 'text-[#dd3333]' : 'text-black'}`} />
+          <LockClosedIcon className={`h-5 w-5 mr-2 ${pathname === '/auth/login' || pathname === '/login' ? 'text-[#dd3333]' : 'text-black'}`} />
           <span>Logout</span>
         </ListItem>
       </Link>
