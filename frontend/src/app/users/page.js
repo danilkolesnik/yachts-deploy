@@ -590,7 +590,7 @@ const UsersPage = () => {
                                 <Button color="purple" onClick={() => openCreateModal('client')} className="w-full md:w-auto">
                                     <span>Create client access</span>
                                 </Button>
-                                <Button color="white" onClick={() => router.push('/users/history')} className="w-full md:w-auto border border-gray-300 text-black">
+                                <Button color="white" onClick={() => router.push('/users/history')} className="w-full md:w-auto border-[2px] border-[#D33] text-[#000]">
                                     <span>History</span>
                                 </Button>
                             </div>
