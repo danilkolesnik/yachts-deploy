@@ -139,6 +139,34 @@ export const renderUserHistoryPayload = (it) => {
     );
   }
 
+  if (it?.type === 'order_timer' && parsed && typeof parsed === 'object') {
+    const action = parsed.action != null ? String(parsed.action) : '';
+    const actionLabel =
+      action === 'start'
+        ? 'Start'
+        : action === 'pause'
+          ? 'Pause'
+          : action === 'resume'
+            ? 'Resume'
+            : action === 'stop'
+              ? 'Stop'
+              : action || '—';
+    return (
+      <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <FieldRow label="Action" value={actionLabel} />
+          <FieldRow label="Timer id" value={parsed.timerId ?? null} />
+          <FieldRow label="Timer owner (user id)" value={parsed.timerUserId ?? null} />
+          <FieldRow label="Timer status" value={parsed.timerStatus ?? null} />
+          <FieldRow label="Order status (side effect)" value={parsed.orderStatusSideEffect ?? null} />
+          <FieldRow label="Total duration (ms)" value={parsed.totalDurationMs ?? null} />
+          <FieldRow label="Total paused (ms)" value={parsed.totalPausedTimeMs ?? null} />
+          <FieldRow label="End time" value={parsed.endTime ?? null} />
+        </div>
+      </div>
+    );
+  }
+
   if (it?.type === 'order_assignment' && parsed && typeof parsed === 'object') {
     const oldWorkerIds = Array.isArray(parsed.oldWorkerIds) ? parsed.oldWorkerIds : [];
     const newWorkerIds = Array.isArray(parsed.newWorkerIds) ? parsed.newWorkerIds : [];

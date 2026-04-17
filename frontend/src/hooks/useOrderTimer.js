@@ -60,8 +60,15 @@ export const useOrderTimer = (orderId) => {
 
   // Пауза таймера
   const pauseTimer = async () => {
+    const token = localStorage.getItem('token');
     try {
-      await axios.post(`${API_URL}/${orderId}/timer/pause`);
+      await axios.post(
+        `${API_URL}/${orderId}/timer/pause`,
+        {},
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        },
+      );
       await fetchTimerStatus();
     } catch (error) {
       console.error('Ошибка при постановке таймера на паузу:', error);
@@ -70,8 +77,15 @@ export const useOrderTimer = (orderId) => {
 
   // Возобновление таймера
   const resumeTimer = async () => {
+    const token = localStorage.getItem('token');
     try {
-      await axios.post(`${API_URL}/${orderId}/timer/resume`);
+      await axios.post(
+        `${API_URL}/${orderId}/timer/resume`,
+        {},
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        },
+      );
       await fetchTimerStatus();
     } catch (error) {
       console.error('Ошибка при возобновлении таймера:', error);
@@ -80,8 +94,15 @@ export const useOrderTimer = (orderId) => {
 
   // Остановка таймера
   const stopTimer = async () => {
+    const token = localStorage.getItem('token');
     try {
-      const { data } = await axios.post(`${API_URL}/${orderId}/timer/stop`);
+      const { data } = await axios.post(
+        `${API_URL}/${orderId}/timer/stop`,
+        {},
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        },
+      );
       await fetchTimerStatus();
       return true;
     } catch (error) {

@@ -8,6 +8,7 @@ import { PermissionsList } from 'src/constants/permissions';
 import { UserAuditHistory } from './entities/user-audit-history.entity';
 import { OrderStatusHistory } from 'src/order/entities/order-status-history.entity';
 import { OrderAssignmentHistory } from 'src/order/entities/order-assignment-history.entity';
+import { OrderTimerHistory } from 'src/order/entities/order-timer-history.entity';
 
 @Injectable()
 export class UsersService {
@@ -24,6 +25,8 @@ export class UsersService {
     private readonly orderStatusHistoryRepository: Repository<OrderStatusHistory>,
     @InjectRepository(OrderAssignmentHistory)
     private readonly orderAssignmentHistoryRepository: Repository<OrderAssignmentHistory>,
+    @InjectRepository(OrderTimerHistory)
+    private readonly orderTimerHistoryRepository: Repository<OrderTimerHistory>,
   ) {}
 
   private async audit(
@@ -483,16 +486,45 @@ export class UsersService {
 
       const [audits, perms] = await Promise.all([auditQ.getMany(), permQ.getMany()]);
 
+      const [orderStatuses, orderAssignments, orderTimerHistories] = await Promise.all([
+        this.orderStatusHistoryRepository.find({
+          order: { changedAt: 'DESC' },
+        }),
+        this.orderAssignmentHistoryRepository.find({
+          order: { changedAt: 'DESC' },
+        }),
+        this.orderTimerHistoryRepository.find({
+          order: { changedAt: 'DESC' },
+        }),
+      ]);
+
+      const timerOwnerIds: string[] = [];
+      for (const h of orderTimerHistories || []) {
+        if (!h.meta) continue;
+        try {
+          const m = JSON.parse(h.meta) as { timerUserId?: string };
+          if (m?.timerUserId) timerOwnerIds.push(String(m.timerUserId));
+        } catch {
+          /* ignore */
+        }
+      }
+
       const actorIds = Array.from(
         new Set(
-          [...audits.map((a) => a.changedBy).filter(Boolean), ...perms.map((p) => p.changedBy).filter(Boolean)].map(
-            (x) => String(x),
-          ),
+          [
+            ...audits.map((a) => a.changedBy).filter(Boolean),
+            ...perms.map((p) => p.changedBy).filter(Boolean),
+            ...orderStatuses.map((s) => s.changedBy).filter(Boolean),
+            ...orderAssignments.map((a) => a.changedBy).filter(Boolean),
+            ...orderTimerHistories.map((h) => h.changedBy).filter(Boolean),
+          ].map((x) => String(x)),
         ),
       );
 
       const targetIds = Array.from(
-        new Set([...audits.map((a) => a.userId), ...perms.map((p) => p.userId)].map(String)),
+        new Set(
+          [...audits.map((a) => a.userId), ...perms.map((p) => p.userId), ...timerOwnerIds].map(String),
+        ),
       );
 
       const [actors, targets] = await Promise.all([
@@ -533,16 +565,6 @@ export class UsersService {
         })),
       ];
 
-      // ===== Order-related critical actions (status changes, assignments) =====
-      const [orderStatuses, orderAssignments] = await Promise.all([
-        this.orderStatusHistoryRepository.find({
-          order: { changedAt: 'DESC' },
-        }),
-        this.orderAssignmentHistoryRepository.find({
-          order: { changedAt: 'DESC' },
-        }),
-      ]);
-
       // apply date range filter in-memory (TypeORM date filters would require query builder)
       const fromMs = fromDate && !Number.isNaN(fromDate.getTime()) ? fromDate.getTime() : null;
       const toMs = toDate && !Number.isNaN(toDate.getTime()) ? toDate.getTime() : null;
@@ -562,7 +584,7 @@ export class UsersService {
           type: 'order_status',
           orderId: h.orderId,
           targetUserId: h.changedBy || 'system',
-          targetUser: h.changedBy ? targetById.get(String(h.changedBy)) || null : null,
+          targetUser: h.changedBy ? actorById.get(String(h.changedBy)) || null : null,
           actorUserId: h.changedBy || null,
           actor: h.changedBy ? actorById.get(String(h.changedBy)) || null : null,
           payload: {
@@ -580,7 +602,7 @@ export class UsersService {
           type: 'order_assignment',
           orderId: h.orderId,
           targetUserId: h.changedBy || 'system',
-          targetUser: h.changedBy ? targetById.get(String(h.changedBy)) || null : null,
+          targetUser: h.changedBy ? actorById.get(String(h.changedBy)) || null : null,
           actorUserId: h.changedBy || null,
           actor: h.changedBy ? actorById.get(String(h.changedBy)) || null : null,
           payload: {
@@ -590,7 +612,59 @@ export class UsersService {
           },
         }));
 
-      events = [...events, ...orderStatusEvents, ...orderAssignmentEvents];
+      const orderTimerEvents = (orderTimerHistories || [])
+        .filter((h) => withinRange(h.changedAt))
+        .map((h) => {
+          let meta: Record<string, unknown> = {};
+          try {
+            if (h.meta) meta = JSON.parse(h.meta) as Record<string, unknown>;
+          } catch {
+            meta = {};
+          }
+          const timerUserId = meta.timerUserId != null ? String(meta.timerUserId) : null;
+          return {
+            id: h.id,
+            at: h.changedAt,
+            type: 'order_timer',
+            orderId: h.orderId,
+            targetUserId: timerUserId || h.changedBy || 'system',
+            targetUser: timerUserId ? targetById.get(timerUserId) || null : null,
+            actorUserId: h.changedBy || null,
+            actor: h.changedBy ? actorById.get(String(h.changedBy)) || null : null,
+            payload: {
+              orderId: h.orderId,
+              timerId: h.timerId ?? null,
+              action: h.action,
+              timerUserId,
+              ...meta,
+            },
+          };
+        });
+
+      events = [...events, ...orderStatusEvents, ...orderAssignmentEvents, ...orderTimerEvents];
+
+      if (targetUserId) {
+        const tid = String(targetUserId);
+        events = events.filter((e) => {
+          if (e.type === 'order_status') {
+            return e.actorUserId != null && String(e.actorUserId) === tid;
+          }
+          if (e.type === 'order_assignment') {
+            const p = e.payload || {};
+            const ow = Array.isArray(p.oldWorkerIds) ? p.oldWorkerIds : [];
+            const nw = Array.isArray(p.newWorkerIds) ? p.newWorkerIds : [];
+            if ([...ow, ...nw].map(String).includes(tid)) return true;
+            return e.actorUserId != null && String(e.actorUserId) === tid;
+          }
+          if (e.type === 'order_timer') {
+            const tu = e.payload?.timerUserId;
+            if (e.actorUserId != null && String(e.actorUserId) === tid) return true;
+            if (tu != null && String(tu) === tid) return true;
+            return false;
+          }
+          return true;
+        });
+      }
 
       const actorName = (opts.actorName || '').trim().toLowerCase();
       const actorRole = (opts.actorRole || '').trim().toLowerCase();
