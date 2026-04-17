@@ -81,7 +81,7 @@ const UserHistoryPage = ({ params }) => {
           <div className="w-full space-y-6 bg-white rounded shadow-md p-4">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div className="flex items-center gap-3">
-                <Button color="blue" onClick={() => router.push("/users")}>
+                <Button color="blue" onClick={() => router.push("/users/history")}>
                   Back
                 </Button>
                 <div className="text-sm text-gray-700">
