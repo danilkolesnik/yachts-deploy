@@ -479,8 +479,8 @@ export class UsersService {
         targetIds.length ? this.usersRepository.find({ where: { id: In(targetIds) } }) : [],
       ]);
 
-      const actorById = new Map(actors.map((u) => [String(u.id), u]));
-      const targetById = new Map(targets.map((u) => [String(u.id), u]));
+      const actorById = new Map(actors.map((u) => [String(u.id), u] as const));
+      const targetById = new Map(targets.map((u) => [String(u.id), u] as const));
 
       let events: any[] = [
         ...audits.map((a) => ({
