@@ -702,13 +702,19 @@ export class OrderService {
     const order = await this.orderRepository.findOne({ where: { id: orderId } });
     const previousStatus = order?.status ?? null;
     await this.orderRepository.update(orderId, { status: 'waiting' });
-    await this.logOrderStatusChange(orderId, previousStatus, 'waiting');
+    await this.logOrderStatusChange(orderId, previousStatus, 'waiting', changedBy);
   
     const savedTimer = await this.orderTimerRepository.save(timer);
+    await this.logOrderTimerEvent(orderId, savedTimer.id, 'pause', changedBy, {
+      timerUserId: String(timer.userId || ''),
+      timerStatus: savedTimer.status,
+      totalDurationMs: savedTimer.totalDuration != null ? Number(savedTimer.totalDuration) : null,
+      orderStatusSideEffect: 'waiting',
+    });
     return { code: 200, data: savedTimer };
   }
 
-  async resumeTimer(orderId: string): Promise<any> {
+  async resumeTimer(orderId: string, req?: Request): Promise<any> {
     const timer = await this.orderTimerRepository.findOne({
       where: { orderId, isRunning: true, isPaused: true },
     });
@@ -716,6 +722,8 @@ export class OrderService {
     if (!timer) {
       return { code: 404, message: 'No paused timer found for this order' };
     }
+
+    const changedBy = this.tryGetUserIdFromRequest(req);
 
     if (timer.pauseTime) {
       const pauseDuration = new Date().getTime() - timer.pauseTime.getTime();
@@ -732,13 +740,19 @@ export class OrderService {
     const order = await this.orderRepository.findOne({ where: { id: orderId } });
     const previousStatus = order?.status ?? null;
     await this.orderRepository.update(orderId, { status: 'in-progress' });
-    await this.logOrderStatusChange(orderId, previousStatus, 'in-progress');
+    await this.logOrderStatusChange(orderId, previousStatus, 'in-progress', changedBy);
 
     const savedTimer = await this.orderTimerRepository.save(timer);
+    await this.logOrderTimerEvent(orderId, savedTimer.id, 'resume', changedBy, {
+      timerUserId: String(timer.userId || ''),
+      timerStatus: savedTimer.status,
+      totalPausedTimeMs: savedTimer.totalPausedTime != null ? Number(savedTimer.totalPausedTime) : null,
+      orderStatusSideEffect: 'in-progress',
+    });
     return { code: 200, data: savedTimer };
   }
 
-  async stopTimer(orderId: string): Promise<any> {
+  async stopTimer(orderId: string, req?: Request): Promise<any> {
     const timer = await this.orderTimerRepository.findOne({
       where: { orderId, isRunning: true }
     });
@@ -746,6 +760,8 @@ export class OrderService {
     if (!timer) {
       throw new Error('No active timer found for this order');
     }
+
+    const changedBy = this.tryGetUserIdFromRequest(req);
   
     const now = new Date();
     timer.endTime = now;
@@ -755,6 +771,12 @@ export class OrderService {
     timer.totalDuration = now.getTime() - timer.startTime.getTime();
   
     const saved = await this.orderTimerRepository.save(timer);
+    await this.logOrderTimerEvent(orderId, saved.id, 'stop', changedBy, {
+      timerUserId: String(timer.userId || ''),
+      timerStatus: saved.status,
+      totalDurationMs: saved.totalDuration != null ? Number(saved.totalDuration) : null,
+      endTime: saved.endTime ? saved.endTime.toISOString() : null,
+    });
  
     // АВТОМАТИЧЕСКОЕ ИЗМЕНЕНИЕ СТАТУСА ORDER И OFFER НА FINISHED
     await this.updateOrderStatus(orderId, 'finished');
