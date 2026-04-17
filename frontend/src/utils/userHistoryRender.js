@@ -122,6 +122,26 @@ export const pickEmployeeProfileFields = (obj) => {
 export const renderUserHistoryPayload = (it) => {
   const { parsed, raw } = parseHistoryPayload(it?.payload);
 
+  // common case: role change recorded as audit event with type "user"
+  if (it?.type === 'user' && parsed && typeof parsed === 'object') {
+    const oldRole = parsed.oldRole ?? parsed.before?.role ?? null;
+    const newRole = parsed.newRole ?? parsed.after?.role ?? null;
+    if (oldRole != null || newRole != null) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="border rounded bg-white p-2">
+            <div className="text-[11px] text-gray-500 mb-1">Old</div>
+            <FieldRow label="Role" value={oldRole} />
+          </div>
+          <div className="border rounded bg-white p-2">
+            <div className="text-[11px] text-gray-500 mb-1">New</div>
+            <FieldRow label="Role" value={newRole} />
+          </div>
+        </div>
+      );
+    }
+  }
+
   if (it?.type === 'permissions' && parsed && typeof parsed === 'object') {
     return (
       <div className="space-y-2">
