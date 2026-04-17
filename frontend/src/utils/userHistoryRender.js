@@ -126,7 +126,17 @@ export const renderUserHistoryPayload = (it) => {
   if (it?.type === 'user' && parsed && typeof parsed === 'object') {
     const oldRole = parsed.oldRole ?? parsed.before?.role ?? null;
     const newRole = parsed.newRole ?? parsed.after?.role ?? null;
-    if (oldRole != null || newRole != null) {
+    const oldFullName = parsed.before?.fullName ?? null;
+    const newFullName = parsed.after?.fullName ?? null;
+    const oldEmail = parsed.before?.email ?? null;
+    const newEmail = parsed.after?.email ?? null;
+
+    const hasSimpleRoleChange = oldRole != null || newRole != null;
+    const hasBeforeAfter =
+      (parsed.before && typeof parsed.before === 'object') ||
+      (parsed.after && typeof parsed.after === 'object');
+
+    if (hasSimpleRoleChange && !hasBeforeAfter) {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="border rounded bg-white p-2">
@@ -135,6 +145,25 @@ export const renderUserHistoryPayload = (it) => {
           </div>
           <div className="border rounded bg-white p-2">
             <div className="text-[11px] text-gray-500 mb-1">New</div>
+            <FieldRow label="Role" value={newRole} />
+          </div>
+        </div>
+      );
+    }
+
+    if (hasBeforeAfter) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="border rounded bg-white p-2">
+            <div className="text-[11px] text-gray-500 mb-1">Before</div>
+            <FieldRow label="Full name" value={oldFullName} />
+            <FieldRow label="Email" value={oldEmail} />
+            <FieldRow label="Role" value={oldRole} />
+          </div>
+          <div className="border rounded bg-white p-2">
+            <div className="text-[11px] text-gray-500 mb-1">After</div>
+            <FieldRow label="Full name" value={newFullName} />
+            <FieldRow label="Email" value={newEmail} />
             <FieldRow label="Role" value={newRole} />
           </div>
         </div>
