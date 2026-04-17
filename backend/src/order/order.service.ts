@@ -14,6 +14,7 @@ import { sendEmail } from 'src/utils/sendEmail';
 import { OfferHistory } from 'src/offer/entities/offer-history.entity';
 import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { OrderAssignmentHistory } from './entities/order-assignment-history.entity';
+import { OrderTimerHistory } from './entities/order-timer-history.entity';
 import { OrderClientMessage } from './entities/order-client-message.entity';
 import getBearerToken from 'src/methods/getBearerToken';
 import { JwtPayload } from 'jsonwebtoken';
@@ -43,9 +44,45 @@ export class OrderService {
     private readonly orderStatusHistoryRepository: Repository<OrderStatusHistory>,
     @InjectRepository(OrderAssignmentHistory)
     private readonly orderAssignmentHistoryRepository: Repository<OrderAssignmentHistory>,
+    @InjectRepository(OrderTimerHistory)
+    private readonly orderTimerHistoryRepository: Repository<OrderTimerHistory>,
     @InjectRepository(OrderClientMessage)
     private readonly orderClientMessageRepository: Repository<OrderClientMessage>,
   ) {}
+
+  private tryGetUserIdFromRequest(req?: Request): string | undefined {
+    try {
+      if (!req) return undefined;
+      const token = getBearerToken(req);
+      if (!token) return undefined;
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+      return String(login.id);
+    } catch {
+      return undefined;
+    }
+  }
+
+  private async logOrderTimerEvent(
+    orderId: string,
+    timerId: string | null | undefined,
+    action: string,
+    changedBy?: string,
+    meta?: Record<string, unknown>,
+  ) {
+    try {
+      await this.orderTimerHistoryRepository.save(
+        this.orderTimerHistoryRepository.create({
+          orderId,
+          timerId: timerId || undefined,
+          action,
+          changedBy,
+          meta: meta && Object.keys(meta).length ? JSON.stringify(meta) : undefined,
+        }),
+      );
+    } catch {
+      // never break main flow
+    }
+  }
 
   private async canAccessOrder(orderId: string, requester: { id: string; role: string }) {
     const orderEntity = await this.orderRepository.findOne({
@@ -623,6 +660,12 @@ export class OrderService {
       await this.logOrderStatusChange(orderId, previousStatus, 'in-progress', String(login.id));
 
       const savedTimer = await this.orderTimerRepository.save(timer);
+      await this.logOrderTimerEvent(orderId, savedTimer.id, 'start', String(login.id), {
+        timerUserId: String(savedTimer.userId || login.id),
+        timerStatus: savedTimer.status,
+        isRunning: savedTimer.isRunning,
+        isPaused: savedTimer.isPaused,
+      });
       return { code: 200, data: savedTimer };
     } catch (err) {
       return {
@@ -632,7 +675,7 @@ export class OrderService {
     }
   }
 
-  async pauseTimer(orderId: string): Promise<any> {
+  async pauseTimer(orderId: string, req?: Request): Promise<any> {
     const timer = await this.orderTimerRepository.findOne({
       where: { orderId, isRunning: true, isPaused: false },
     });
@@ -640,6 +683,8 @@ export class OrderService {
     if (!timer) {
       return { code: 404, message: 'No active timer found for this order' };
     }
+
+    const changedBy = this.tryGetUserIdFromRequest(req);
   
     const now = new Date();
     timer.isPaused = true;

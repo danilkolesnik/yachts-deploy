@@ -178,7 +178,6 @@ export const renderUserHistoryPayload = (it) => {
     );
   }
 
-  // common case: role change recorded as audit event with type "user"
   if (it?.type === 'user' && parsed && typeof parsed === 'object') {
     const oldRole = parsed.oldRole ?? parsed.before?.role ?? null;
     const newRole = parsed.newRole ?? parsed.after?.role ?? null;

@@ -26,6 +26,7 @@ import { OfferHistory } from './offer/entities/offer-history.entity';
 import { OrderTimer } from './order/entities/order-timer.entity';
 import { OrderStatusHistory } from './order/entities/order-status-history.entity';
 import { OrderAssignmentHistory } from './order/entities/order-assignment-history.entity';
+import { OrderTimerHistory } from './order/entities/order-timer-history.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { YachtModule } from './yacht/yacht.module';
@@ -53,6 +54,7 @@ const typeOrmEntities = [
   OrderTimer,
   OrderStatusHistory,
   OrderAssignmentHistory,
+  OrderTimerHistory,
   OrderClientMessage,
   Yacht,
   EmployeeProfile,

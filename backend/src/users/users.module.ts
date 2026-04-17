@@ -8,6 +8,7 @@ import { UserPermissionHistory } from './entities/user-permission-history.entity
 import { UserAuditHistory } from './entities/user-audit-history.entity';
 import { OrderStatusHistory } from 'src/order/entities/order-status-history.entity';
 import { OrderAssignmentHistory } from 'src/order/entities/order-assignment-history.entity';
+import { OrderTimerHistory } from 'src/order/entities/order-timer-history.entity';
 import { PermissionsGuard } from './permissions.guard';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -20,6 +21,7 @@ import { APP_GUARD } from '@nestjs/core';
       UserAuditHistory,
       OrderStatusHistory,
       OrderAssignmentHistory,
+      OrderTimerHistory,
     ]),
   ],
   controllers: [UsersController],
