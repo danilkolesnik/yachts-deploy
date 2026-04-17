@@ -25,6 +25,8 @@ const AuthProvider = ({ children }) => {
   const pathname = usePathname();
   const session = useAppSelector((s) => s.userData?.session ?? null);
   const [authReady, setAuthReady] = useState(false);
+  /** While false, ignore 401 on arbitrary API calls (avoids logout race with child useEffects). */
+  const authGateOpenRef = useRef(false);
 
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
@@ -41,7 +43,7 @@ const AuthProvider = ({ children }) => {
     dispatchRef.current(clearUserSession());
     const p = pathnameRef.current || "";
     if (!isPublicPathname(p)) {
-      routerRef.current.replace("/login");
+      routerRef.current.replace("/auth/login");
     }
   }, []);
 
@@ -80,7 +82,7 @@ const AuthProvider = ({ children }) => {
       }
       dispatchRef.current(clearUserSession());
       if (!isPublicPathname(p)) {
-        routerRef.current.replace("/login");
+        routerRef.current.replace("/auth/login");
       }
       return null;
     } catch {
@@ -94,7 +96,7 @@ const AuthProvider = ({ children }) => {
     if (!authReady) return;
     if (session !== false) return;
     if (isPublicPathname(pathname)) return;
-    router.replace("/login");
+    router.replace("/auth/login");
   }, [authReady, session, pathname, router]);
 
   /** Sync bootstrap attaches Bearer + JWT check; this only handles logout from that path. */
@@ -119,7 +121,7 @@ const AuthProvider = ({ children }) => {
           serverMessage.includes("unauthorized") ||
           rawMessage.includes("jwt expired");
 
-        if (isTokenProblem) {
+        if (isTokenProblem && authGateOpenRef.current) {
           forceLogoutToLogin();
         }
 
@@ -133,6 +135,7 @@ const AuthProvider = ({ children }) => {
   }, [forceLogoutToLogin]);
 
   useEffect(() => {
+    authGateOpenRef.current = false;
     setAuthReady(false);
     let cancelled = false;
     const isAuthRoute = pathname?.startsWith("/auth");
@@ -153,7 +156,10 @@ const AuthProvider = ({ children }) => {
         }
       })
       .finally(() => {
-        if (!cancelled) setAuthReady(true);
+        if (!cancelled) {
+          authGateOpenRef.current = true;
+          setAuthReady(true);
+        }
       });
     return () => {
       cancelled = true;
