@@ -573,10 +573,17 @@ const UsersPage = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get(`${URL}/users`);
+            const token = localStorage.getItem('token');
+            const response = await axios.get(`${URL}/users`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            });
             setUsers(response.data.data);
         } catch (error) {
             console.error('Error fetching users:', error);
+            if (error?.response?.status === 401) {
+                toast.error('Authorization required');
+                return;
+            }
             if (error?.response?.status === 403) {
                 toast.error('No access to Users');
             }
