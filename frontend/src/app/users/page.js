@@ -837,9 +837,9 @@ const UsersPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <Input label="From" name="from" type="datetime-local" value={historyFilters.from} onChange={handleHistoryFilterChange} />
                             <Input label="To" name="to" type="datetime-local" value={historyFilters.to} onChange={handleHistoryFilterChange} />
-                            <Input label="Actor name/email" name="actorName" value={historyFilters.actorName} onChange={handleHistoryFilterChange} />
+                            <Input label="Name / Email" name="actorName" value={historyFilters.actorName} onChange={handleHistoryFilterChange} />
                             <Select
-                                label="Actor role"
+                                label="Role"
                                 value={historyFilters.actorRole}
                                 onChange={(value) => setHistoryFilters((p) => ({ ...p, actorRole: value || '' }))}
                                 className="text-black"
@@ -884,7 +884,7 @@ const UsersPage = () => {
                                         </div>
                                         <div className="mt-1 text-sm text-black">
                                             <div className="text-xs text-gray-600">
-                                                Actor: {it.actor?.fullName || it.actor?.email || it.actorUserId || '—'}
+                                                By: {it.actor?.fullName || it.actor?.email || it.actorUserId || '—'}
                                             </div>
                                             <pre className="mt-2 text-xs bg-white border rounded p-2 overflow-x-auto whitespace-pre-wrap">
 {typeof it.payload === 'string' ? it.payload : JSON.stringify(it.payload, null, 2)}
