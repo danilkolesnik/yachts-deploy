@@ -127,8 +127,47 @@ const UsersPage = () => {
                 return;
             }
 
+            const isValidDateYYYYMMDD = (v) => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ''));
+            const ensureValidOptionalDate = (value, fieldLabel) => {
+                if (!value) return null;
+                if (!isValidDateYYYYMMDD(value)) {
+                    toast.error(`${fieldLabel} must be a valid date (YYYY-MM-DD)`);
+                    return undefined;
+                }
+                return value;
+            };
+
+            // Pre-validate employee profile dates BEFORE creating user (prevents "created despite error")
+            let prevalidatedEmployeeProfilePayload = null;
+            if (createType === 'employee') {
+                const dateOfBirth = ensureValidOptionalDate(createForm.dateOfBirth, 'Date of birth');
+                if (dateOfBirth === undefined) return;
+                const contractStart = ensureValidOptionalDate(createForm.contractStart, 'Contract start');
+                if (contractStart === undefined) return;
+                const contractEnd = ensureValidOptionalDate(createForm.contractEnd, 'Contract end');
+                if (contractEnd === undefined) return;
+
+                if (contractStart && contractEnd && contractStart > contractEnd) {
+                    toast.error('Contract start must be before contract end');
+                    return;
+                }
+
+                prevalidatedEmployeeProfilePayload = {
+                    fullName: createForm.fullName,
+                    dateOfBirth,
+                    phone: createForm.phone || '',
+                    secondaryPhone: createForm.secondaryPhone || '',
+                    address: createForm.address || '',
+                    contractStart,
+                    contractEnd,
+                    position: createForm.position || '',
+                    notes: createForm.notes,
+                };
+            }
+
             // 1) Create base user
             let createdUser;
+            let createdUserId = null;
             if (createType === 'client') {
                 const res = await axios.post(`${URL}/auth/register/client`, {
                     email: createForm.email,
@@ -139,6 +178,7 @@ const UsersPage = () => {
                     return;
                 }
                 createdUser = res.data.data;
+                createdUserId = createdUser?.id || null;
                 if (res.data.temporaryPassword) {
                     setCreatedClientTempPassword(res.data.temporaryPassword);
                 }
@@ -153,34 +193,42 @@ const UsersPage = () => {
                     return;
                 }
                 createdUser = res.data.data;
+                createdUserId = createdUser?.id || null;
             }
 
             // 2) Set role for employee/user if needed
             if (createType === 'employee') {
-                const roleRes = await axios.put(`${URL}/users/${createdUser.id}/role`, {
-                    role: createForm.role,
-                });
-                if (roleRes.data.code !== 200) {
-                    toast.error(roleRes.data.message || 'Failed to set employee role');
-                    return;
-                }
+                try {
+                    const roleRes = await axios.put(`${URL}/users/${createdUser.id}/role`, {
+                        role: createForm.role,
+                    });
+                    if (roleRes.data.code !== 200) {
+                        toast.error(roleRes.data.message || 'Failed to set employee role');
+                        throw new Error(roleRes.data.message || 'Failed to set employee role');
+                    }
 
-                // 3) Save employee profile card
-                const profilePayload = {
-                    fullName: createForm.fullName,
-                    dateOfBirth: createForm.dateOfBirth || null,
-                    phone: createForm.phone,
-                    secondaryPhone: createForm.secondaryPhone,
-                    address: createForm.address,
-                    contractStart: createForm.contractStart || null,
-                    contractEnd: createForm.contractEnd || null,
-                    position: createForm.position,
-                    notes: createForm.notes,
-                };
-                const profRes = await axios.put(`${URL}/users/${createdUser.id}/profile`, profilePayload);
-                if (profRes.data.code !== 200) {
-                    toast.error(profRes.data.message || 'Failed to save employee profile');
-                    return;
+                    // 3) Save employee profile card
+                    const profRes = await axios.put(
+                        `${URL}/users/${createdUser.id}/profile`,
+                        prevalidatedEmployeeProfilePayload
+                    );
+                    if (profRes.data.code !== 200) {
+                        toast.error(profRes.data.message || 'Failed to save employee profile');
+                        throw new Error(profRes.data.message || 'Failed to save employee profile');
+                    }
+                } catch (e) {
+                    // rollback: avoid leaving a created user when employee setup failed
+                    try {
+                        if (createdUserId) {
+                            const token = localStorage.getItem('token');
+                            await axios.delete(`${URL}/users/${createdUserId}`, {
+                                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                            });
+                        }
+                    } catch (rollbackError) {
+                        console.error('Rollback delete failed', rollbackError);
+                    }
+                    throw e;
                 }
             }
 
