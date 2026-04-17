@@ -248,6 +248,28 @@ const UsersPage = () => {
         }
     };
 
+    const formatHistoryPayload = (payload) => {
+        if (payload == null) return '';
+        if (typeof payload === 'string') {
+            const trimmed = payload.trim();
+            const looksLikeJson =
+                (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+                (trimmed.startsWith('[') && trimmed.endsWith(']'));
+            if (!looksLikeJson) return payload;
+            try {
+                const parsed = JSON.parse(trimmed);
+                return JSON.stringify(parsed, null, 2);
+            } catch {
+                return payload;
+            }
+        }
+        try {
+            return JSON.stringify(payload, null, 2);
+        } catch {
+            return String(payload);
+        }
+    };
+
 
     const columns = [
         {
@@ -685,7 +707,12 @@ const UsersPage = () => {
                         </div>
                     </div>
                 )}
-                <Modal isOpen={editRoleModalIsOpen} onClose={closeEditRoleModal} title="Edit User Role">
+                <Modal
+                    isOpen={editRoleModalIsOpen}
+                    onClose={closeEditRoleModal}
+                    title="Edit User Role"
+                    bodyClassName="overflow-visible"
+                >
                     <div className="space-y-4 h-full justify-between w-full" style={{ height: '200px' }}>
                         <Select
                             label="Role"
@@ -942,7 +969,7 @@ const UsersPage = () => {
                                                 By: {it.actor?.fullName || it.actor?.email || it.actorUserId || '—'}
                                             </div>
                                             <pre className="mt-2 text-xs bg-white border rounded p-2 overflow-x-auto whitespace-pre-wrap">
-{typeof it.payload === 'string' ? it.payload : JSON.stringify(it.payload, null, 2)}
+{formatHistoryPayload(it.payload)}
                                             </pre>
                                         </div>
                                     </div>
