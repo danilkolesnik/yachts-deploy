@@ -1,15 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { URL } from "@/utils/constants";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useRouter, usePathname } from "next/navigation";
 import { setUserFromVerify, clearUserSession } from "@/lib/features/todos/usersDataSlice";
+import { isJwtExpired } from "@/utils/jwtExpiry";
 
 const isPublicPathname = (pathname) =>
   Boolean(
-    pathname?.startsWith("/auth") ||
+    pathname === "/" ||
+      !pathname ||
+      pathname?.startsWith("/auth") ||
       pathname === "/login" ||
       pathname?.includes("reset-password"),
   );
@@ -19,6 +22,7 @@ const AuthProvider = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
   const session = useAppSelector((s) => s.userData?.session ?? null);
+  const [authReady, setAuthReady] = useState(false);
 
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
@@ -39,12 +43,24 @@ const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const logoutIfTokenExpired = useCallback(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    if (isJwtExpired(token)) {
+      forceLogoutToLogin();
+    }
+  }, [forceLogoutToLogin]);
+
   const verifyUser = useCallback(async () => {
     const p = pathnameRef.current || "";
     try {
       const token = localStorage.getItem("token");
 
       if (token) {
+        if (isJwtExpired(token)) {
+          forceLogoutToLogin();
+          return null;
+        }
         const response = await axios.post(
           `${URL}/auth/verify`,
           {},
@@ -71,17 +87,22 @@ const AuthProvider = ({ children }) => {
     }
   }, [forceLogoutToLogin]);
 
-  /** Any protected page while Redux says there is no session → login. */
+  /** After the first verify on this navigation, enforce “no session” → login. */
   useEffect(() => {
+    if (!authReady) return;
     if (session !== false) return;
     if (isPublicPathname(pathname)) return;
     router.replace("/login");
-  }, [session, pathname, router]);
+  }, [authReady, session, pathname, router]);
 
   useEffect(() => {
     const requestInterceptor = axios.interceptors.request.use((config) => {
       const token = localStorage.getItem("token");
       if (token) {
+        if (isJwtExpired(token)) {
+          forceLogoutToLogin();
+          return Promise.reject(new Error("JWT expired (client)"));
+        }
         config.headers = config.headers || {};
         if (!config.headers.Authorization) {
           config.headers.Authorization = `Bearer ${token}`;
@@ -119,9 +140,12 @@ const AuthProvider = ({ children }) => {
   }, [forceLogoutToLogin]);
 
   useEffect(() => {
+    setAuthReady(false);
+    let cancelled = false;
     const isAuthRoute = pathname?.startsWith("/auth");
-    verifyUser().then((res) => {
-      if (res) {
+    verifyUser()
+      .then((res) => {
+        if (cancelled || !res) return;
         dispatch(
           setUserFromVerify({
             email: res.email,
@@ -134,9 +158,33 @@ const AuthProvider = ({ children }) => {
         if (res.role === "client" && !pathname?.startsWith("/client") && !isAuthRoute) {
           router.push("/client/orders");
         }
-      }
-    });
+      })
+      .finally(() => {
+        if (!cancelled) setAuthReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [pathname, verifyUser, dispatch, router]);
+
+  /** Expired JWT must log the user out even without a new API call (same page). */
+  useEffect(() => {
+    logoutIfTokenExpired();
+    const id = setInterval(logoutIfTokenExpired, 15_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        logoutIfTokenExpired();
+        void verifyUser();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [logoutIfTokenExpired, verifyUser]);
 
   return <>{children}</>;
 };
