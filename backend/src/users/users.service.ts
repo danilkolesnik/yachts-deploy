@@ -194,10 +194,23 @@ export class UsersService {
         return { code: 404, message: 'User not found' };
       }
 
+      // Keep `users.fullName` in sync with profile fullName so that `/users` list
+      // shows the updated name after refresh.
+      if (typeof (data as any)?.fullName === 'string' && (data as any).fullName.trim()) {
+        const nextFullName = String((data as any).fullName).trim();
+        if (nextFullName && user.fullName !== nextFullName) {
+          const before = { fullName: user.fullName };
+          user.fullName = nextFullName;
+          await this.usersRepository.save(user);
+          await this.audit(userId, 'user', { before, after: { fullName: nextFullName } }, changedBy);
+        }
+      }
+
       let profile = await this.employeeProfileRepository.findOne({
         where: { userId },
       });
 
+      const beforeProfileSnapshot = profile ? { ...profile } : null;
       const oldResponsibilityAreas = profile?.responsibilityAreas || [];
       const oldPermissions = profile?.permissions || [];
 
@@ -236,7 +249,7 @@ export class UsersService {
       await this.audit(
         userId,
         'employee_profile',
-        { before: profile ? { ...profile } : null, after: saved },
+        { before: beforeProfileSnapshot, after: saved },
         changedBy,
       );
 
