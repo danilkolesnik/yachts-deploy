@@ -422,4 +422,117 @@ export class UsersService {
       return { code: 500, message: err instanceof Error ? err.message : 'Internal server error' };
     }
   }
+
+  async getAllUsersHistory(opts: {
+    from?: string;
+    to?: string;
+    targetUserId?: string;
+    actorName?: string;
+    actorRole?: string;
+    type?: string;
+  }) {
+    try {
+      const fromDate = opts.from ? new Date(opts.from) : undefined;
+      const toDate = opts.to ? new Date(opts.to) : undefined;
+      const type = (opts.type || '').trim().toLowerCase();
+      const targetUserId = (opts.targetUserId || '').trim();
+
+      const auditQ = this.userAuditHistoryRepository.createQueryBuilder('a');
+      if (targetUserId) {
+        auditQ.where('a.userId = :userId', { userId: targetUserId });
+      }
+      if (fromDate && !Number.isNaN(fromDate.getTime())) {
+        auditQ.andWhere('a.createdAt >= :from', { from: fromDate.toISOString() });
+      }
+      if (toDate && !Number.isNaN(toDate.getTime())) {
+        auditQ.andWhere('a.createdAt <= :to', { to: toDate.toISOString() });
+      }
+      if (type) {
+        auditQ.andWhere('LOWER(a.entityType) LIKE :type', { type: `%${type}%` });
+      }
+
+      const permQ = this.userPermissionHistoryRepository.createQueryBuilder('p');
+      if (targetUserId) {
+        permQ.where('p.userId = :userId', { userId: targetUserId });
+      }
+      if (fromDate && !Number.isNaN(fromDate.getTime())) {
+        permQ.andWhere('p.changedAt >= :from', { from: fromDate.toISOString() });
+      }
+      if (toDate && !Number.isNaN(toDate.getTime())) {
+        permQ.andWhere('p.changedAt <= :to', { to: toDate.toISOString() });
+      }
+
+      const [audits, perms] = await Promise.all([auditQ.getMany(), permQ.getMany()]);
+
+      const actorIds = Array.from(
+        new Set(
+          [...audits.map((a) => a.changedBy).filter(Boolean), ...perms.map((p) => p.changedBy).filter(Boolean)].map(
+            (x) => String(x),
+          ),
+        ),
+      );
+
+      const targetIds = Array.from(new Set([...audits.map((a) => a.userId), ...perms.map((p) => p.userId)].map(String)));
+
+      const [actors, targets] = await Promise.all([
+        actorIds.length ? this.usersRepository.find({ where: { id: In(actorIds) } }) : [],
+        targetIds.length ? this.usersRepository.find({ where: { id: In(targetIds) } }) : [],
+      ]);
+
+      const actorById = new Map(actors.map((u) => [String(u.id), u]));
+      const targetById = new Map(targets.map((u) => [String(u.id), u]));
+
+      let events: any[] = [
+        ...audits.map((a) => ({
+          id: a.id,
+          at: a.createdAt,
+          type: a.entityType || 'audit',
+          targetUserId: a.userId,
+          targetUser: targetById.get(String(a.userId)) || null,
+          actorUserId: a.changedBy || null,
+          actor: a.changedBy ? actorById.get(String(a.changedBy)) || null : null,
+          payload: a.changeDescription,
+        })),
+        ...perms.map((p) => ({
+          id: p.id,
+          at: p.changedAt,
+          type: 'permissions',
+          targetUserId: p.userId,
+          targetUser: targetById.get(String(p.userId)) || null,
+          actorUserId: p.changedBy || null,
+          actor: p.changedBy ? actorById.get(String(p.changedBy)) || null : null,
+          payload: {
+            oldRole: p.oldRole,
+            newRole: p.newRole,
+            oldPermissions: p.oldPermissions || [],
+            newPermissions: p.newPermissions || [],
+            oldResponsibilityAreas: p.oldResponsibilityAreas || [],
+            newResponsibilityAreas: p.newResponsibilityAreas || [],
+          },
+        })),
+      ];
+
+      const actorName = (opts.actorName || '').trim().toLowerCase();
+      const actorRole = (opts.actorRole || '').trim().toLowerCase();
+      if (actorName || actorRole) {
+        events = events.filter((e) => {
+          const a = e.actor;
+          if (!a) return false;
+          if (actorRole && String(a.role || '').toLowerCase() !== actorRole) return false;
+          if (actorName) {
+            const hay = `${a.fullName || ''} ${a.email || ''}`.toLowerCase();
+            if (!hay.includes(actorName)) return false;
+          }
+          return true;
+        });
+      }
+
+      // newest first for global history view
+      events.sort((x, y) => new Date(y.at).getTime() - new Date(x.at).getTime());
+
+      return { code: 200, data: events };
+    } catch (err) {
+      return { code: 500, message: err instanceof Error ? err.message : 'Internal server error' };
+    }
+  }
 }

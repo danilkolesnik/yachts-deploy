@@ -17,6 +17,26 @@ export class UsersController {
     return this.usersService.allUsers();
   }
 
+  @Get('history')
+  @Permissions(PermissionsList.USERS_AUDIT_READ)
+  async getAllUsersHistory(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('targetUserId') targetUserId?: string,
+    @Query('actorName') actorName?: string,
+    @Query('actorRole') actorRole?: string,
+    @Query('type') type?: string,
+  ) {
+    return this.usersService.getAllUsersHistory({
+      from,
+      to,
+      targetUserId,
+      actorName,
+      actorRole,
+      type,
+    });
+  }
+
   @Get('role/worker')
   @Permissions(PermissionsList.USERS_READ)
   async getWorkers() {

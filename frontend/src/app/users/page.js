@@ -9,7 +9,7 @@ import { URL } from '@/utils/constants';
 import { Button, Select, Option } from '@material-tailwind/react';
 import Modal from '@/ui/Modal';
 import ReactSelect from 'react-select';
-import { PencilIcon, TrashIcon, ClockIcon } from '@heroicons/react/24/solid';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-toastify';
 import { ClipLoader } from 'react-spinners';
 import Input from '@/ui/Input';
@@ -282,13 +282,6 @@ const UsersPage = () => {
                         className="text-red-500 hover:text-red-700"
                     >
                         <TrashIcon className="w-5 h-5" />
-                    </button>
-                    <button
-                        onClick={() => router.push(`/users/${row.id}/history`)}
-                        className="text-gray-700 hover:text-black"
-                        title="History"
-                    >
-                        <ClockIcon className="w-5 h-5" />
                     </button>
                 </div>
             ),
@@ -596,6 +589,9 @@ const UsersPage = () => {
                                 </Button>
                                 <Button color="purple" onClick={() => openCreateModal('client')} className="w-full md:w-auto">
                                     <span>Create client access</span>
+                                </Button>
+                                <Button color="white" onClick={() => router.push('/users/history')} className="w-full md:w-auto border border-gray-300 text-black">
+                                    <span>History</span>
                                 </Button>
                             </div>
                         </div>
