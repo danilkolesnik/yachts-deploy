@@ -8,6 +8,8 @@ import { useRouter, usePathname } from "next/navigation";
 import { setUserFromVerify, clearUserSession } from "@/lib/features/todos/usersDataSlice";
 import { isJwtExpired } from "@/utils/jwtExpiry";
 
+const SESSION_EXPIRED_EVENT = "app:session-expired";
+
 const isPublicPathname = (pathname) =>
   Boolean(
     pathname === "/" ||
@@ -95,22 +97,14 @@ const AuthProvider = ({ children }) => {
     router.replace("/login");
   }, [authReady, session, pathname, router]);
 
+  /** Sync bootstrap attaches Bearer + JWT check; this only handles logout from that path. */
   useEffect(() => {
-    const requestInterceptor = axios.interceptors.request.use((config) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        if (isJwtExpired(token)) {
-          forceLogoutToLogin();
-          return Promise.reject(new Error("JWT expired (client)"));
-        }
-        config.headers = config.headers || {};
-        if (!config.headers.Authorization) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-      }
-      return config;
-    });
+    const onSessionExpired = () => forceLogoutToLogin();
+    window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+  }, [forceLogoutToLogin]);
 
+  useEffect(() => {
     const responseInterceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -134,7 +128,6 @@ const AuthProvider = ({ children }) => {
     );
 
     return () => {
-      axios.interceptors.request.eject(requestInterceptor);
       axios.interceptors.response.eject(responseInterceptor);
     };
   }, [forceLogoutToLogin]);
