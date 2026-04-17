@@ -118,20 +118,20 @@ export class OrderController {
  
   @Post(':orderId/timer/pause')
   @Permissions(PermissionsList.ORDERS_STATUS_CHANGE)
-  async pauseTimer(@Param('orderId') orderId: string) {
-    return this.orderService.pauseTimer(orderId);
+  async pauseTimer(@Param('orderId') orderId: string, @Req() request: Request) {
+    return this.orderService.pauseTimer(orderId, request);
   }
 
   @Post(':orderId/timer/resume') 
   @Permissions(PermissionsList.ORDERS_STATUS_CHANGE)
-  async resumeTimer(@Param('orderId') orderId: string) {
-    return this.orderService.resumeTimer(orderId);
+  async resumeTimer(@Param('orderId') orderId: string, @Req() request: Request) {
+    return this.orderService.resumeTimer(orderId, request);
   }
 
   @Post(':orderId/timer/stop')
   @Permissions(PermissionsList.ORDERS_STATUS_CHANGE)
-  async stopTimer(@Param('orderId') orderId: string) {
-    return this.orderService.stopTimer(orderId);
+  async stopTimer(@Param('orderId') orderId: string, @Req() request: Request) {
+    return this.orderService.stopTimer(orderId, request);
   }
 
   @Get(':orderId/timer')

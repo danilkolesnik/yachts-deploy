@@ -779,7 +779,7 @@ export class OrderService {
     });
  
     // АВТОМАТИЧЕСКОЕ ИЗМЕНЕНИЕ СТАТУСА ORDER И OFFER НА FINISHED
-    await this.updateOrderStatus(orderId, 'finished');
+    await this.updateOrderStatus(orderId, 'finished', req);
  
     return { code: 200, data: saved };
   }
