@@ -13,8 +13,10 @@ import { PencilIcon, TrashIcon, ClockIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-toastify';
 import { ClipLoader } from 'react-spinners';
 import Input from '@/ui/Input';
+import { useRouter } from 'next/navigation';
 
 const UsersPage = () => {
+    const router = useRouter();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editRoleModalIsOpen, setEditRoleModalIsOpen] = useState(false);
@@ -30,17 +32,6 @@ const UsersPage = () => {
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileSaving, setProfileSaving] = useState(false);
     const [profileUser, setProfileUser] = useState(null);
-    const [historyModalIsOpen, setHistoryModalIsOpen] = useState(false);
-    const [historyLoading, setHistoryLoading] = useState(false);
-    const [historyUser, setHistoryUser] = useState(null);
-    const [historyItems, setHistoryItems] = useState([]);
-    const [historyFilters, setHistoryFilters] = useState({
-        from: '',
-        to: '',
-        actorName: '',
-        actorRole: '',
-        type: '',
-    });
     const [profileForm, setProfileForm] = useState({
         fullName: '',
         dateOfBirth: '',
@@ -248,191 +239,6 @@ const UsersPage = () => {
         }
     };
 
-    const formatHistoryPayload = (payload) => {
-        if (payload == null) return '';
-        if (typeof payload === 'string') {
-            const trimmed = payload.trim();
-            const looksLikeJson =
-                (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-                (trimmed.startsWith('[') && trimmed.endsWith(']'));
-            if (!looksLikeJson) return payload;
-            try {
-                const parsed = JSON.parse(trimmed);
-                return JSON.stringify(parsed, null, 2);
-            } catch {
-                return payload;
-            }
-        }
-        try {
-            return JSON.stringify(payload, null, 2);
-        } catch {
-            return String(payload);
-        }
-    };
-
-    const parseHistoryPayload = (payload) => {
-        if (payload == null) return { parsed: null, raw: payload };
-        if (typeof payload === 'string') {
-            const trimmed = payload.trim();
-            const looksLikeJson =
-                (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-                (trimmed.startsWith('[') && trimmed.endsWith(']'));
-            if (!looksLikeJson) return { parsed: null, raw: payload };
-            try {
-                return { parsed: JSON.parse(trimmed), raw: payload };
-            } catch {
-                return { parsed: null, raw: payload };
-            }
-        }
-        return { parsed: payload, raw: payload };
-    };
-
-    const FieldRow = ({ label, value }) => {
-        const formatPermissionCode = (code) => {
-            const raw = String(code || '');
-            if (!raw) return raw;
-            // human-readable: "self.offers.read" -> "Self / Offers / Read"
-            const pretty = raw
-                .split('.')
-                .filter(Boolean)
-                .map((part) => part.replace(/[_-]+/g, ' '))
-                .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-                .join(' / ');
-            return pretty || raw;
-        };
-
-        const renderValue = (v) => {
-            if (v == null || v === '') return <span className="text-gray-400">—</span>;
-            if (Array.isArray(v)) {
-                if (v.length === 0) return <span className="text-gray-400">—</span>;
-                const isPermissionsRow = String(label || '').toLowerCase().includes('permission');
-                return (
-                    <div className="flex flex-wrap gap-1">
-                        {v.map((x, idx) => (
-                            <span
-                                key={`${label}-${idx}`}
-                                className="px-2 py-0.5 text-[11px] border rounded bg-white text-gray-800"
-                                title={String(x)}
-                            >
-                                {isPermissionsRow ? formatPermissionCode(x) : String(x)}
-                            </span>
-                        ))}
-                    </div>
-                );
-            }
-            if (typeof v === 'object') {
-                return (
-                    <pre className="text-[11px] bg-white border rounded p-2 overflow-x-auto whitespace-pre-wrap">
-                        {formatHistoryPayload(v)}
-                    </pre>
-                );
-            }
-            return <span className="break-words">{String(v)}</span>;
-        };
-
-        return (
-            <div className="grid grid-cols-3 gap-2 py-1 border-b last:border-b-0">
-                <div className="text-[11px] text-gray-500 col-span-1">{label}</div>
-                <div className="text-[12px] text-gray-900 col-span-2">{renderValue(value)}</div>
-            </div>
-        );
-    };
-
-    const pickEmployeeProfileFields = (obj) => {
-        if (!obj || typeof obj !== 'object') return null;
-        const {
-            fullName,
-            dateOfBirth,
-            phone,
-            secondaryPhone,
-            address,
-            contractStart,
-            contractEnd,
-            position,
-            notes,
-            responsibilityAreas,
-            permissions,
-        } = obj;
-        return {
-            fullName,
-            dateOfBirth,
-            phone,
-            secondaryPhone,
-            address,
-            contractStart,
-            contractEnd,
-            position,
-            notes,
-            responsibilityAreas,
-            permissions,
-        };
-    };
-
-    const renderHistoryPayload = (it) => {
-        const { parsed, raw } = parseHistoryPayload(it?.payload);
-
-        if (it?.type === 'permissions' && parsed && typeof parsed === 'object') {
-            return (
-                <div className="space-y-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="border rounded bg-white p-2">
-                            <div className="text-[11px] text-gray-500 mb-1">Old</div>
-                            <FieldRow label="Role" value={parsed.oldRole} />
-                            <FieldRow label="Permissions" value={parsed.oldPermissions || []} />
-                            <FieldRow label="Responsibility areas" value={parsed.oldResponsibilityAreas || []} />
-                        </div>
-                        <div className="border rounded bg-white p-2">
-                            <div className="text-[11px] text-gray-500 mb-1">New</div>
-                            <FieldRow label="Role" value={parsed.newRole} />
-                            <FieldRow label="Permissions" value={parsed.newPermissions || []} />
-                            <FieldRow label="Responsibility areas" value={parsed.newResponsibilityAreas || []} />
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        if (it?.type === 'employee_profile' && parsed && typeof parsed === 'object') {
-            const before = pickEmployeeProfileFields(parsed.before);
-            const after = pickEmployeeProfileFields(parsed.after);
-            return (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="border rounded bg-white p-2">
-                        <div className="text-[11px] text-gray-500 mb-1">Before</div>
-                        {before ? (
-                            <div>
-                                {Object.entries(before).map(([k, v]) => (
-                                    <FieldRow key={`before-${k}`} label={k} value={v} />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-[12px] text-gray-500">—</div>
-                        )}
-                    </div>
-                    <div className="border rounded bg-white p-2">
-                        <div className="text-[11px] text-gray-500 mb-1">After</div>
-                        {after ? (
-                            <div>
-                                {Object.entries(after).map(([k, v]) => (
-                                    <FieldRow key={`after-${k}`} label={k} value={v} />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-[12px] text-gray-500">—</div>
-                        )}
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <pre className="mt-2 text-xs bg-white border rounded p-2 overflow-x-auto whitespace-pre-wrap">
-                {typeof raw === 'string' ? formatHistoryPayload(raw) : formatHistoryPayload(raw)}
-            </pre>
-        );
-    };
-
-
     const columns = [
         {
             name: 'ID',
@@ -478,7 +284,7 @@ const UsersPage = () => {
                         <TrashIcon className="w-5 h-5" />
                     </button>
                     <button
-                        onClick={() => openHistoryModal(row)}
+                        onClick={() => router.push(`/users/${row.id}/history`)}
                         className="text-gray-700 hover:text-black"
                         title="History"
                     >
@@ -490,69 +296,6 @@ const UsersPage = () => {
             button: "true",
         },
     ];
-
-    const closeHistoryModal = () => {
-        setHistoryModalIsOpen(false);
-        setHistoryUser(null);
-        setHistoryItems([]);
-        setHistoryLoading(false);
-        setHistoryFilters({
-            from: '',
-            to: '',
-            actorName: '',
-            actorRole: '',
-            type: '',
-        });
-    };
-
-    const fetchUserHistory = async (userId, filters) => {
-        const params = new URLSearchParams();
-        if (filters?.from) params.set('from', filters.from);
-        if (filters?.to) params.set('to', filters.to);
-        if (filters?.actorName) params.set('actorName', filters.actorName);
-        if (filters?.actorRole) params.set('actorRole', filters.actorRole);
-        if (filters?.type) params.set('type', filters.type);
-
-        const res = await axios.get(`${URL}/users/${userId}/history?${params.toString()}`);
-        if (res.data?.code === 200) return res.data.data || [];
-        throw new Error(res.data?.message || 'Failed to load history');
-    };
-
-    const openHistoryModal = async (user) => {
-        setHistoryUser(user);
-        setHistoryModalIsOpen(true);
-        setHistoryLoading(true);
-        try {
-            const items = await fetchUserHistory(user.id, historyFilters);
-            setHistoryItems(items);
-        } catch (e) {
-            console.error('Error loading history:', e);
-            toast.error('Error loading history');
-            setHistoryItems([]);
-        } finally {
-            setHistoryLoading(false);
-        }
-    };
-
-    const applyHistoryFilters = async () => {
-        if (!historyUser) return;
-        setHistoryLoading(true);
-        try {
-            const items = await fetchUserHistory(historyUser.id, historyFilters);
-            setHistoryItems(items);
-        } catch (e) {
-            console.error('Error loading history:', e);
-            toast.error('Error loading history');
-            setHistoryItems([]);
-        } finally {
-            setHistoryLoading(false);
-        }
-    };
-
-    const handleHistoryFilterChange = (e) => {
-        const { name, value } = e.target;
-        setHistoryFilters((prev) => ({ ...prev, [name]: value }));
-    };
 
     const openEditRoleModal = (user) => {
         setSelectedUser(user);
@@ -1069,75 +812,6 @@ const UsersPage = () => {
                                 )}
                             </Button>
                         </div>
-                    </div>
-                </Modal>
-
-                <Modal
-                    isOpen={historyModalIsOpen}
-                    onClose={closeHistoryModal}
-                    title={historyUser ? `History: ${historyUser.fullName || historyUser.email}` : 'History'}
-                >
-                    <div className="space-y-4 max-h-[70vh] overflow-y-auto">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <Input label="From" name="from" type="datetime-local" value={historyFilters.from} onChange={handleHistoryFilterChange} />
-                            <Input label="To" name="to" type="datetime-local" value={historyFilters.to} onChange={handleHistoryFilterChange} />
-                            <Input label="Name / Email" name="actorName" value={historyFilters.actorName} onChange={handleHistoryFilterChange} />
-                            <Select
-                                label="Role"
-                                value={historyFilters.actorRole}
-                                onChange={(value) => setHistoryFilters((p) => ({ ...p, actorRole: value || '' }))}
-                                className="text-black"
-                                labelProps={{ className: 'text-black' }}
-                            >
-                                <Option className="text-black" value="">Any</Option>
-                                <Option className="text-black" value="admin">Admin</Option>
-                                <Option className="text-black" value="manager">Manager</Option>
-                                <Option className="text-black" value="mechanic">Mechanic</Option>
-                                <Option className="text-black" value="electrician">Electrician</Option>
-                                <Option className="text-black" value="user">User</Option>
-                                <Option className="text-black" value="client">Client</Option>
-                            </Select>
-                            <Input label="Type (contains)" name="type" value={historyFilters.type} onChange={handleHistoryFilterChange} />
-                        </div>
-                        <div className="flex justify-end gap-2">
-                            <Button variant="text" color="red" onClick={closeHistoryModal} className="w-full md:w-auto">
-                                <span>Close</span>
-                            </Button>
-                            <Button color="blue" onClick={applyHistoryFilters} className="w-full md:w-auto" disabled={historyLoading}>
-                                <span>{historyLoading ? 'Loading...' : 'Apply filters'}</span>
-                            </Button>
-                        </div>
-
-                        {historyLoading ? (
-                            <div className="flex justify-center items-center py-8">
-                                <ClipLoader size={20} color="#123abc" />
-                            </div>
-                        ) : historyItems.length === 0 ? (
-                            <div className="text-gray-700">No history.</div>
-                        ) : (
-                            <div className="space-y-2">
-                                {historyItems.map((it) => (
-                                    <div key={it.id} className="border rounded p-3 bg-gray-50">
-                                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                                            <div className="text-xs text-gray-600">
-                                                <span className="font-mono">{it.type}</span>
-                                            </div>
-                                            <div className="text-xs text-gray-600">
-                                                {it.at ? new Date(it.at).toLocaleString() : ''}
-                                            </div>
-                                        </div>
-                                        <div className="mt-1 text-sm text-black">
-                                            <div className="text-xs text-gray-600">
-                                                By: {it.actor?.fullName || it.actor?.email || it.actorUserId || '—'}
-                                            </div>
-                                            <div className="mt-2">
-                                                {renderHistoryPayload(it)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
                     </div>
                 </Modal>
 
