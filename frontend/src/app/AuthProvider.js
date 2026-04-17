@@ -18,7 +18,7 @@ const AuthProvider = ({ children }) => {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const pathname = usePathname();
-  const session = useAppSelector((s) => s.usersData.session);
+  const session = useAppSelector((s) => s.userData?.session ?? null);
 
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
