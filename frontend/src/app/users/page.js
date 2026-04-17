@@ -288,18 +288,33 @@ const UsersPage = () => {
     };
 
     const FieldRow = ({ label, value }) => {
+        const formatPermissionCode = (code) => {
+            const raw = String(code || '');
+            if (!raw) return raw;
+            // human-readable: "self.offers.read" -> "Self / Offers / Read"
+            const pretty = raw
+                .split('.')
+                .filter(Boolean)
+                .map((part) => part.replace(/[_-]+/g, ' '))
+                .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                .join(' / ');
+            return pretty || raw;
+        };
+
         const renderValue = (v) => {
             if (v == null || v === '') return <span className="text-gray-400">—</span>;
             if (Array.isArray(v)) {
                 if (v.length === 0) return <span className="text-gray-400">—</span>;
+                const isPermissionsRow = String(label || '').toLowerCase().includes('permission');
                 return (
                     <div className="flex flex-wrap gap-1">
                         {v.map((x, idx) => (
                             <span
                                 key={`${label}-${idx}`}
                                 className="px-2 py-0.5 text-[11px] border rounded bg-white text-gray-800"
+                                title={String(x)}
                             >
-                                {String(x)}
+                                {isPermissionsRow ? formatPermissionCode(x) : String(x)}
                             </span>
                         ))}
                     </div>
