@@ -4,9 +4,12 @@ import { URL } from '@/utils/constants';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
+import { useAppDispatch } from '@/lib/hooks';
+import { setUserFromVerify, clearUserSession } from '@/lib/features/todos/usersDataSlice';
 
 const Login = () => {
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
@@ -24,14 +27,29 @@ const Login = () => {
                     },
                 });
                 if (verifyResponse.data.code === 200) {
-                    localStorage.setItem('role', verifyResponse.data.data.role);
+                    const me = verifyResponse.data.data;
+                    localStorage.setItem('role', me.role);
+                    dispatch(
+                        setUserFromVerify({
+                            email: me.email,
+                            role: me.role,
+                            id: me.id,
+                            permissions: me.permissions,
+                            responsibilityAreas: me.responsibilityAreas,
+                        }),
+                    );
+                    if (me.role === 'client') {
+                        router.push('/client/orders');
+                    } else {
+                        router.push('/offers');
+                    }
+                    return;
                 }
-                const role = verifyResponse?.data?.data?.role;
-                if (role === 'client') {
-                    router.push('/client/orders');
-                } else {
-                    router.push('/offers');
-                }
+                localStorage.removeItem('token');
+                localStorage.removeItem('role');
+                dispatch(clearUserSession());
+                setErrorMessage('Could not verify session. Please try again.');
+                return;
             } else {
                 setErrorMessage('Incorrect email or password.');
             }

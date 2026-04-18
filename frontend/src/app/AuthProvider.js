@@ -96,6 +96,11 @@ const AuthProvider = ({ children }) => {
     if (!authReady) return;
     if (session !== false) return;
     if (isPublicPathname(pathname)) return;
+    // Token present but Redux not updated yet: right after login → navigate, verify effect
+    // may still be in flight while authReady stayed true from the previous route — do not bounce to login.
+    if (typeof window !== "undefined" && localStorage.getItem("token")) {
+      return;
+    }
     router.replace("/auth/login");
   }, [authReady, session, pathname, router]);
 
