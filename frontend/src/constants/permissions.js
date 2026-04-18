@@ -1,7 +1,6 @@
+/** Mirrors backend `src/constants/permissions.ts` — used for UI gating. */
 export const PermissionsList = {
   OFFERS_READ: 'offers.read',
-
-  // Orders
   ORDERS_READ: 'orders.read',
   ORDERS_CREATE: 'orders.create',
   ORDERS_UPDATE: 'orders.update',
@@ -16,17 +15,10 @@ export const PermissionsList = {
   ORDERS_TIMERS_GLOBAL_READ: 'orders.timers.global.read',
   ORDERS_DELETE: 'orders.delete',
   ORDERS_OFFER_CLOSE: 'orders.offer.close',
-
-  // Users / employees / permissions
   USERS_READ: 'users.read',
-  USERS_MANAGE: 'users.manage', // create/update/delete users, assign roles
-  USERS_PERMISSIONS_MANAGE: 'users.permissions.manage', // edit responsibility & permission overrides
-  USERS_AUDIT_READ: 'users.audit.read', // view history/audit
-
-  // Self-access for clients
+  USERS_MANAGE: 'users.manage',
+  USERS_PERMISSIONS_MANAGE: 'users.permissions.manage',
+  USERS_AUDIT_READ: 'users.audit.read',
   SELF_OFFERS_READ: 'self.offers.read',
   SELF_ORDERS_READ: 'self.orders.read',
-} as const;
-
-export type PermissionCode = (typeof PermissionsList)[keyof typeof PermissionsList] | '*';
-
+};

@@ -147,6 +147,8 @@ const AuthProvider = ({ children }) => {
             email: res.email,
             role: res.role,
             id: res.id,
+            permissions: res.permissions,
+            responsibilityAreas: res.responsibilityAreas,
           }),
         );
         localStorage.setItem("role", res.role);

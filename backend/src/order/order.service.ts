@@ -1,4 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Not } from 'typeorm';
 import { Request } from 'express';
@@ -62,6 +67,34 @@ export class OrderService {
     }
   }
 
+  private getRequesterFromReq(req: Request): { id: string; role: string } {
+    const token = getBearerToken(req);
+    if (!token) {
+      throw new UnauthorizedException('Authorization token missing');
+    }
+    const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+    return { id: String(login.id), role: String(login.role) };
+  }
+
+  private async assertCanAccessOrder(orderId: string, req: Request) {
+    const requester = this.getRequesterFromReq(req);
+    const access = await this.canAccessOrder(orderId, requester);
+    if (!access.ok) {
+      if (access.code === 404) {
+        throw new NotFoundException(access.message);
+      }
+      throw new ForbiddenException(access.message);
+    }
+    return access.order;
+  }
+
+  private assertGlobalTimersRead(req: Request) {
+    const requester = this.getRequesterFromReq(req);
+    if (requester.role !== 'admin' && requester.role !== 'manager') {
+      throw new ForbiddenException('Access denied');
+    }
+  }
+
   private async logOrderTimerEvent(
     orderId: string,
     timerId: string | null | undefined,
@@ -94,11 +127,11 @@ export class OrderService {
       return { ok: false as const, code: 404 as const, message: 'Order not found' };
     }
 
-    if (requester.role === 'admin') {
+    if (requester.role === 'admin' || requester.role === 'manager') {
       return { ok: true as const, order: orderEntity };
     }
 
-    if (requester.role === 'mechanic' || requester.role === 'electrician' || requester.role === 'manager') {
+    if (requester.role === 'mechanic' || requester.role === 'electrician') {
       const isAssigned =
         (orderEntity.assignedWorkers || []).some((w) => String(w.id) === String(requester.id));
       if (isAssigned) return { ok: true as const, order: orderEntity };
@@ -404,7 +437,7 @@ export class OrderService {
       const userRoles = ['mechanic', 'electrician'];
       let filteredOrders = ordersWithOffers;
 
-      if (login.role === 'admin') {
+      if (login.role === 'admin' || login.role === 'manager') {
         return { code: 200, data: ordersWithOffers };
       } else if (userRoles.includes(login.role)) {
         filteredOrders = ordersWithOffers.filter(order =>
@@ -430,6 +463,10 @@ export class OrderService {
   // =============== СТАТУСЫ ===============
   async updateOrderStatus(orderId: string, newStatus: string, req?: Request) {
     try {
+      if (req) {
+        await this.assertCanAccessOrder(orderId, req);
+      }
+
       const order = await this.orderRepository.findOne({
         where: { id: orderId },
       });
@@ -525,6 +562,8 @@ export class OrderService {
 
   async updateOrderWorkers(orderId: string, userIds: string[], req: Request) {
     try {
+      await this.assertCanAccessOrder(orderId, req);
+
       const orderEntity = await this.orderRepository.findOne({
         where: { id: orderId },
         relations: ['assignedWorkers'],
@@ -590,18 +629,6 @@ export class OrderService {
         };
       }
   
-      // Проверяем права пользователя
-      const user = await this.usersRepository.findOne({
-        where: { id: userId },
-      });
-  
-      if (!user || !['admin', 'accountant', 'manager'].includes(user.role)) {
-        return {
-          code: 403,
-          message: 'Only admin, accountant or manager can close offers',
-        };
-      }
-  
       // Меняем статус на "closed"
       offer.status = 'closed';
       offer.closedAt = new Date();
@@ -637,6 +664,8 @@ export class OrderService {
   // =============== ТАЙМЕРЫ ===============
   async startTimer(orderId: string, req: Request): Promise<any> {
     try {
+      await this.assertCanAccessOrder(orderId, req);
+
       const token = getBearerToken(req);
       if (!token) {
         return { code: 401, message: 'Authorization token missing' };
@@ -668,6 +697,13 @@ export class OrderService {
       });
       return { code: 200, data: savedTimer };
     } catch (err) {
+      if (
+        err instanceof ForbiddenException ||
+        err instanceof NotFoundException ||
+        err instanceof UnauthorizedException
+      ) {
+        throw err;
+      }
       return {
         code: 500,
         message: err instanceof Error ? err.message : 'Internal server error',
@@ -675,7 +711,9 @@ export class OrderService {
     }
   }
 
-  async pauseTimer(orderId: string, req?: Request): Promise<any> {
+  async pauseTimer(orderId: string, req: Request): Promise<any> {
+    await this.assertCanAccessOrder(orderId, req);
+
     const timer = await this.orderTimerRepository.findOne({
       where: { orderId, isRunning: true, isPaused: false },
     });
@@ -714,7 +752,9 @@ export class OrderService {
     return { code: 200, data: savedTimer };
   }
 
-  async resumeTimer(orderId: string, req?: Request): Promise<any> {
+  async resumeTimer(orderId: string, req: Request): Promise<any> {
+    await this.assertCanAccessOrder(orderId, req);
+
     const timer = await this.orderTimerRepository.findOne({
       where: { orderId, isRunning: true, isPaused: true },
     });
@@ -752,13 +792,15 @@ export class OrderService {
     return { code: 200, data: savedTimer };
   }
 
-  async stopTimer(orderId: string, req?: Request): Promise<any> {
+  async stopTimer(orderId: string, req: Request): Promise<any> {
+    await this.assertCanAccessOrder(orderId, req);
+
     const timer = await this.orderTimerRepository.findOne({
       where: { orderId, isRunning: true }
     });
   
     if (!timer) {
-      throw new Error('No active timer found for this order');
+      return { code: 404, message: 'No active timer found for this order' };
     }
 
     const changedBy = this.tryGetUserIdFromRequest(req);
@@ -784,8 +826,10 @@ export class OrderService {
     return { code: 200, data: saved };
   }
 
-  async getOrderStatusHistory(orderId: string) {
+  async getOrderStatusHistory(orderId: string, req: Request) {
     try {
+      await this.assertCanAccessOrder(orderId, req);
+
       const history = await this.orderStatusHistoryRepository.find({
         where: { orderId },
         order: { changedAt: 'ASC' },
@@ -796,6 +840,13 @@ export class OrderService {
         data: history,
       };
     } catch (err) {
+      if (
+        err instanceof ForbiddenException ||
+        err instanceof NotFoundException ||
+        err instanceof UnauthorizedException
+      ) {
+        throw err;
+      }
       return {
         code: 500,
         message: err instanceof Error ? err.message : 'Internal server error',
@@ -803,8 +854,10 @@ export class OrderService {
     }
   }
 
-  async getOrderAssignmentHistory(orderId: string) {
+  async getOrderAssignmentHistory(orderId: string, req: Request) {
     try {
+      await this.assertCanAccessOrder(orderId, req);
+
       const history = await this.orderAssignmentHistoryRepository.find({
         where: { orderId },
         order: { changedAt: 'ASC' },
@@ -815,6 +868,13 @@ export class OrderService {
         data: history,
       };
     } catch (err) {
+      if (
+        err instanceof ForbiddenException ||
+        err instanceof NotFoundException ||
+        err instanceof UnauthorizedException
+      ) {
+        throw err;
+      }
       return {
         code: 500,
         message:
@@ -869,8 +929,8 @@ export class OrderService {
         whereCondition.status = status;
       }
 
-      // Для не-админов скрываем закрытые офферы
-      if (userRole !== 'admin') {
+      // Для не-админов/не-менеджеров скрываем закрытые офферы
+      if (userRole !== 'admin' && userRole !== 'manager') {
         if (status === 'closed') {
           return {
             code: 403,
@@ -903,23 +963,23 @@ export class OrderService {
   }
 
   // =============== ДРУГИЕ МЕТОДЫ (оставлены без изменений) ===============
-  async getOrderById(orderId: string) {
+  async getOrderById(orderId: string, req: Request) {
     try {
-      const order = await this.orderRepository.findOne({
-        where: { id: orderId },
-        relations: ['assignedWorkers'],
-      });
-
-      if (!order) {
-        return { code: 404, message: 'Order not found' };
-      }
+      const orderEntity = await this.assertCanAccessOrder(orderId, req);
 
       const offer = await this.offerRepository.findOne({
-        where: { id: order.offerId },
+        where: { id: orderEntity.offerId },
       });
 
-      return { code: 200, data: { ...order, offer } };
+      return { code: 200, data: { ...orderEntity, offer } };
     } catch (err) {
+      if (
+        err instanceof ForbiddenException ||
+        err instanceof NotFoundException ||
+        err instanceof UnauthorizedException
+      ) {
+        throw err;
+      }
       return {
         code: 500,
         message: err instanceof Error ? err.message : 'Internal server error',
@@ -927,8 +987,10 @@ export class OrderService {
     }
   }
 
-  async deleteOrder(orderId: string) {
+  async deleteOrder(orderId: string, req: Request) {
     try {
+      await this.assertCanAccessOrder(orderId, req);
+
       const order = await this.orderRepository.findOne({
         where: { id: orderId },
       });
@@ -940,6 +1002,9 @@ export class OrderService {
       await this.orderRepository.remove(order);
       return { code: 200, message: 'Order deleted successfully' };
     } catch (err) {
+      if (err instanceof ForbiddenException || err instanceof NotFoundException) {
+        throw err;
+      }
       return {
         code: 500,
         message: err instanceof Error ? err.message : 'Internal server error',
@@ -956,15 +1021,17 @@ export class OrderService {
     return this.normalizeUrl(`${process.env.SERVER_URL}/uploads/${folder}/${filename}`);
   }
 
-  async uploadFileToOrder(orderId: string, file: Express.Multer.File, tab: string): Promise<any> {
+  async uploadFileToOrder(
+    orderId: string,
+    file: Express.Multer.File,
+    tab: string,
+    req: Request,
+  ): Promise<any> {
     if (!file) {
       return { message: 'Файл не загружен.' };
     }
 
-    const order = await this.orderRepository.findOne({ where: { id: orderId } });
-    if (!order) {
-      return { message: 'Order не найден.' };
-    }
+    const order = await this.assertCanAccessOrder(orderId, req);
 
     const isImage = file.mimetype.startsWith('image/');
     const isVideo = file.mimetype.startsWith('video/');
@@ -1008,11 +1075,13 @@ export class OrderService {
     };
   }
 
-  async deleteFileFromOrder(orderId: string, fileUrl: string, tab: string): Promise<{ message: string; code: number }> {
-    const order = await this.orderRepository.findOne({ where: { id: orderId } });
-    if (!order) {
-      return { message: 'Order не найден.', code: 404 };
-    }
+  async deleteFileFromOrder(
+    orderId: string,
+    fileUrl: string,
+    tab: string,
+    req: Request,
+  ): Promise<{ message: string; code: number }> {
+    const order = await this.assertCanAccessOrder(orderId, req);
 
     const filename = fileUrl.split('/').pop();
     if (!filename) {
@@ -1042,7 +1111,7 @@ export class OrderService {
     return { message: 'Файл успешно удалён.', code: 200 };
   }
 
-  async getTimerStatus(orderId: string): Promise<{
+  async getTimerStatus(orderId: string, req: Request): Promise<{
     status: string;
     startTime: Date;
     currentDuration?: number;
@@ -1050,6 +1119,8 @@ export class OrderService {
     totalDuration?: number;
     isPaused: boolean;
   } | null> {
+    await this.assertCanAccessOrder(orderId, req);
+
     const timer = await this.orderTimerRepository.findOne({
       where: { orderId },
       order: { startTime: 'DESC' }
@@ -1091,21 +1162,24 @@ export class OrderService {
     return result;
   }
 
-  async getActiveTimers(): Promise<OrderTimer[]> {
+  async getActiveTimers(req: Request): Promise<OrderTimer[]> {
+    this.assertGlobalTimersRead(req);
     return this.orderTimerRepository.find({
       where: { isRunning: true, isPaused: false },
       order: { startTime: 'DESC' }
     });
   }
 
-  async getTimerHistory(orderId: string): Promise<OrderTimer[]> {
+  async getTimerHistory(orderId: string, req: Request): Promise<OrderTimer[]> {
+    await this.assertCanAccessOrder(orderId, req);
     return this.orderTimerRepository.find({
       where: { orderId },
       order: { startTime: 'DESC' }
     });
   }
 
-  async getAllTimers() {
+  async getAllTimers(req: Request) {
+    this.assertGlobalTimersRead(req);
     const timers = await this.orderTimerRepository.find({
       order: { startTime: 'DESC' },
       where: { status: In(['Completed', 'Paused', "finished"]) }

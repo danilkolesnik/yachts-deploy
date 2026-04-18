@@ -10,6 +10,9 @@ import Loader from '@/ui/loader';
 import Image from 'next/image';
 import ReactPlayer from 'react-player';
 import axios from 'axios';
+import { useAppSelector } from '@/lib/hooks';
+import { PermissionsList } from '@/constants/permissions';
+import { can } from '@/utils/canPermission';
 import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
 import ReactSelect from 'react-select';
@@ -20,7 +23,7 @@ const OrderDetail = ({ params }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [deleting, setDeleting] = useState(false);
-    const [role, setRole] = useState(null);
+    const permissions = useAppSelector((s) => s.userData?.permissions || []);
     const [selectedTab, setSelectedTab] = useState('Before');
     const [showGallery, setShowGallery] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -31,13 +34,6 @@ const OrderDetail = ({ params }) => {
     const [selectedWorkers, setSelectedWorkers] = useState([]);
     const [updatingWorkers, setUpdatingWorkers] = useState(false);
     const router = useRouter();
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const storedRole = localStorage.getItem('role');
-            setRole(storedRole);
-        }
-    }, []);
 
     useEffect(() => {
         if (id) {
@@ -74,18 +70,20 @@ const OrderDetail = ({ params }) => {
                 })
                 .catch(error => console.error('Error fetching client messages:', error));
 
-            axios.get(`${URL}/users/role/worker`)
-                .then(res => {
-                    const workers = res.data.data || [];
-                    const options = workers.map(worker => ({
-                        value: worker.id,
-                        label: worker.fullName,
-                    }));
-                    setAvailableWorkers(options);
-                })
-                .catch(error => console.error('Error fetching workers:', error));
+            if (can(permissions, PermissionsList.ORDERS_ASSIGNMENT_MANAGE)) {
+                axios.get(`${URL}/users/role/worker`)
+                    .then(res => {
+                        const workers = res.data.data || [];
+                        const options = workers.map(worker => ({
+                            value: worker.id,
+                            label: worker.fullName,
+                        }));
+                        setAvailableWorkers(options);
+                    })
+                    .catch(error => console.error('Error fetching workers:', error));
+            }
         }
-    }, [id]);
+    }, [id, permissions]);
 
     const handleFileChange = (event) => {
         setSelectedFile(event.target.files[0]);
@@ -220,7 +218,7 @@ const OrderDetail = ({ params }) => {
                                         height={300}
                                         className="w-full h-auto rounded-lg shadow-md transition-transform transform group-hover:scale-105"
                                     />
-                                    {role !== 'user' && (
+                                    {can(permissions, PermissionsList.ORDERS_MEDIA_DELETE) && (
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -250,7 +248,7 @@ const OrderDetail = ({ params }) => {
                                         height="100%"
                                         className="rounded-lg shadow-md"
                                     />
-                                    {role !== 'user' && (
+                                    {can(permissions, PermissionsList.ORDERS_MEDIA_DELETE) && (
                                         <button
                                             onClick={() => handleDelete(url)}
                                             disabled={deleting}
@@ -346,9 +344,9 @@ const OrderDetail = ({ params }) => {
                                     color: 'black',
                                 }),
                             }}
-                            isDisabled={role === 'user'}
+                            isDisabled={!can(permissions, PermissionsList.ORDERS_ASSIGNMENT_MANAGE)}
                         />
-                        {role !== 'user' && (
+                        {can(permissions, PermissionsList.ORDERS_ASSIGNMENT_MANAGE) && (
                             <div className="flex justify-end">
                                 <button
                                     onClick={handleWorkersUpdate}
@@ -447,7 +445,7 @@ const OrderDetail = ({ params }) => {
                         <Tab.Panel>{selectedTab === 'Result' && renderTabContent()}</Tab.Panel>
                     </Tab.Panels>
                 </Tab.Group>
-                {role != 'user' && (
+                {can(permissions, PermissionsList.ORDERS_MEDIA_ADD) && (
                     <div className="mt-10">
                         <h2 className="text-3xl font-bold mb-6 text-black">Upload New File</h2>
                         <input 

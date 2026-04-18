@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Request } from 'express';
 import { users } from './entities/users.entity';
+import { EmployeeProfile } from 'src/users/entities/employee-profile.entity';
+import { getEffectivePermissions } from 'src/users/effective-permissions';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import generateRandomId from 'src/methods/generateRandomId';
@@ -19,6 +21,8 @@ export class AuthService {
     constructor(
         @InjectRepository(users)
         private readonly usersModule: Repository<users>,
+        @InjectRepository(EmployeeProfile)
+        private readonly employeeProfileRepository: Repository<EmployeeProfile>,
     ){}
 
     async create(data: CreateAuthDto) {
@@ -182,9 +186,19 @@ export class AuthService {
         });
   
         if (checkUser) {
+          const profile = await this.employeeProfileRepository.findOne({
+            where: { userId: String(checkUser.id) },
+          });
+          const permissions = getEffectivePermissions(checkUser.role, profile?.permissions);
+          const safeUser = { ...checkUser } as Record<string, unknown>;
+          delete safeUser.password;
           return {
             code: 200,
-            data: checkUser,
+            data: {
+              ...safeUser,
+              permissions,
+              responsibilityAreas: profile?.responsibilityAreas || [],
+            },
           };
         }
   

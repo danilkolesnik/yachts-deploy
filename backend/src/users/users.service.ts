@@ -5,6 +5,7 @@ import { users } from 'src/auth/entities/users.entity';
 import { EmployeeProfile } from './entities/employee-profile.entity';
 import { UserPermissionHistory } from './entities/user-permission-history.entity';
 import { PermissionsList } from 'src/constants/permissions';
+import { ROLE_DEFAULT_PERMISSIONS } from 'src/constants/role-default-permissions';
 import { UserAuditHistory } from './entities/user-audit-history.entity';
 import { OrderStatusHistory } from 'src/order/entities/order-status-history.entity';
 import { OrderAssignmentHistory } from 'src/order/entities/order-assignment-history.entity';
@@ -51,45 +52,6 @@ export class UsersService {
       // auditing must not break main flow
     }
   }
-
-  private readonly ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
-    admin: ['*'],
-    mechanic: [
-      PermissionsList.ORDERS_READ,
-      PermissionsList.ORDERS_STATUS_CHANGE,
-      PermissionsList.ORDERS_MEDIA_ADD,
-      PermissionsList.ORDERS_MEDIA_DELETE,
-      PermissionsList.ORDERS_COMMENT_ADD,
-    ],
-    electrician: [
-      PermissionsList.ORDERS_READ,
-      PermissionsList.ORDERS_STATUS_CHANGE,
-      PermissionsList.ORDERS_MEDIA_ADD,
-      PermissionsList.ORDERS_MEDIA_DELETE,
-      PermissionsList.ORDERS_COMMENT_ADD,
-    ],
-    manager: [
-      PermissionsList.ORDERS_READ,
-      PermissionsList.ORDERS_CREATE,
-      PermissionsList.ORDERS_STATUS_CHANGE,
-      PermissionsList.ORDERS_ASSIGNMENT_MANAGE,
-      PermissionsList.ORDERS_MEDIA_ADD,
-      PermissionsList.ORDERS_MEDIA_DELETE,
-      PermissionsList.ORDERS_COMMENT_ADD,
-      PermissionsList.USERS_READ,
-      PermissionsList.USERS_MANAGE,
-      PermissionsList.USERS_PERMISSIONS_MANAGE,
-      PermissionsList.USERS_AUDIT_READ,
-    ],
-    user: [
-      PermissionsList.SELF_OFFERS_READ,
-      PermissionsList.SELF_ORDERS_READ,
-    ],
-    client: [
-      PermissionsList.SELF_OFFERS_READ,
-      PermissionsList.SELF_ORDERS_READ,
-    ],
-  };
 
   async allUsers() {
     try {
@@ -165,11 +127,15 @@ export class UsersService {
         where: { userId: id },
       });
 
-      const defaultPermissions = this.ROLE_DEFAULT_PERMISSIONS[newRole] || [];
+      const defaultPermissions = ROLE_DEFAULT_PERMISSIONS[newRole] || [];
       let oldPermissions: string[] | undefined;
+      let oldResponsibilityAreas: string[] | undefined;
+      let newResponsibilityAreas: string[] | undefined;
       if (profile) {
         oldPermissions = profile.permissions || [];
+        oldResponsibilityAreas = profile.responsibilityAreas || [];
         profile.permissions = defaultPermissions;
+        newResponsibilityAreas = profile.responsibilityAreas || [];
         await this.employeeProfileRepository.save(profile);
       }
 
@@ -180,6 +146,8 @@ export class UsersService {
         newRole,
         oldPermissions,
         newPermissions: defaultPermissions,
+        oldResponsibilityAreas,
+        newResponsibilityAreas,
       });
       await this.userPermissionHistoryRepository.save(history);
       await this.audit(id, 'user', { oldRole, newRole }, changedBy);
@@ -224,6 +192,14 @@ export class UsersService {
       const oldPermissions = profile?.permissions || [];
 
       if (!profile) {
+        const initialPerms =
+          data.permissions !== undefined && Array.isArray(data.permissions)
+            ? data.permissions.length > 0
+              ? data.permissions
+              : ROLE_DEFAULT_PERMISSIONS[user.role] || []
+            : data.permissions ||
+              ROLE_DEFAULT_PERMISSIONS[user.role] ||
+              [];
         profile = this.employeeProfileRepository.create({
           userId,
           fullName: data.fullName || user.fullName,
@@ -236,21 +212,20 @@ export class UsersService {
           position: data.position || '',
           notes: data.notes,
           responsibilityAreas: data.responsibilityAreas || [],
-          permissions:
-            data.permissions ||
-            this.ROLE_DEFAULT_PERMISSIONS[user.role] ||
-            [],
+          permissions: initialPerms,
         });
       } else {
         Object.assign(profile, {
           ...data,
           fullName: data.fullName ?? profile.fullName ?? user.fullName,
         });
-        if (!profile.permissions || profile.permissions.length === 0) {
+        if (data.permissions !== undefined && Array.isArray(data.permissions)) {
           profile.permissions =
-            data.permissions ||
-            this.ROLE_DEFAULT_PERMISSIONS[user.role] ||
-            [];
+            data.permissions.length > 0
+              ? data.permissions
+              : ROLE_DEFAULT_PERMISSIONS[user.role] || [];
+        } else if (!profile.permissions || profile.permissions.length === 0) {
+          profile.permissions = ROLE_DEFAULT_PERMISSIONS[user.role] || [];
         }
       }
 

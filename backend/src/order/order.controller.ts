@@ -72,36 +72,22 @@ export class OrderController {
     return this.orderService.updateOrderWorkers(orderId, userIds, request);
   }
 
-  @Get(':id')
-  @Permissions(PermissionsList.ORDERS_READ)
-  async getOrderById(@Param('id') orderId: string) {
-    return this.orderService.getOrderById(orderId);
-  }
-
   @Get('')
   @Permissions(PermissionsList.ORDERS_READ)
   async getAllOrders(@Req() request: Request) {
     return this.orderService.allOrder(request);
   }
 
-  @Post(':id/status')
-  @Permissions(PermissionsList.ORDERS_STATUS_CHANGE)
-  async updateOrderStatus(@Param('id') orderId: string, @Body('status') newStatus: string, @Req() req: Request) {
-    return this.orderService.updateOrderStatus(orderId, newStatus, req);
+  @Get('timers/active')
+  @Permissions(PermissionsList.ORDERS_TIMERS_GLOBAL_READ)
+  async getActiveTimers(@Req() req: Request) {
+    return this.orderService.getActiveTimers(req);
   }
 
-  @Post('delete/:id')
-  @Permissions(PermissionsList.ORDERS_STATUS_CHANGE)
-  async deleteOrder(@Param('id') orderId: string) {
-    return this.orderService.deleteOrder(orderId);
-  }
-
-  @Post(':id/close')
-  @Permissions(PermissionsList.ORDERS_STATUS_CHANGE)
-  async closeOffer(@Param('id') id: string, @Req() req: Request) {
-    const token = getBearerToken(req);
-    const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
-    return this.orderService.closeOffer(id, login.id);
+  @Get('timers/all')
+  @Permissions(PermissionsList.ORDERS_TIMERS_GLOBAL_READ)
+  async getAllTimers(@Req() req: Request) {
+    return this.orderService.getAllTimers(req);
   }
 
   @Get('offers/filter')
@@ -110,61 +96,76 @@ export class OrderController {
     return this.orderService.getOffersWithFilter(req, status);
   }
 
-  @Post(':orderId/timer/start')
+  @Post('delete/:id')
+  @Permissions(PermissionsList.ORDERS_DELETE)
+  async deleteOrder(@Param('id') orderId: string, @Req() req: Request) {
+    return this.orderService.deleteOrder(orderId, req);
+  }
+
+  @Get(':id')
+  @Permissions(PermissionsList.ORDERS_READ)
+  async getOrderById(@Param('id') orderId: string, @Req() req: Request) {
+    return this.orderService.getOrderById(orderId, req);
+  }
+
+  @Post(':id/status')
   @Permissions(PermissionsList.ORDERS_STATUS_CHANGE)
+  async updateOrderStatus(@Param('id') orderId: string, @Body('status') newStatus: string, @Req() req: Request) {
+    return this.orderService.updateOrderStatus(orderId, newStatus, req);
+  }
+
+  @Post(':id/close')
+  @Permissions(PermissionsList.ORDERS_OFFER_CLOSE)
+  async closeOffer(@Param('id') id: string, @Req() req: Request) {
+    const token = getBearerToken(req);
+    const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+    return this.orderService.closeOffer(id, login.id);
+  }
+
+  @Post(':orderId/timer/start')
+  @Permissions(PermissionsList.ORDERS_TIMER_USE)
   async startTimer(@Param('orderId') orderId: string, @Req() request: Request) {
     return this.orderService.startTimer(orderId, request);
   }
  
   @Post(':orderId/timer/pause')
-  @Permissions(PermissionsList.ORDERS_STATUS_CHANGE)
+  @Permissions(PermissionsList.ORDERS_TIMER_USE)
   async pauseTimer(@Param('orderId') orderId: string, @Req() request: Request) {
     return this.orderService.pauseTimer(orderId, request);
   }
 
   @Post(':orderId/timer/resume') 
-  @Permissions(PermissionsList.ORDERS_STATUS_CHANGE)
+  @Permissions(PermissionsList.ORDERS_TIMER_USE)
   async resumeTimer(@Param('orderId') orderId: string, @Req() request: Request) {
     return this.orderService.resumeTimer(orderId, request);
   }
 
   @Post(':orderId/timer/stop')
-  @Permissions(PermissionsList.ORDERS_STATUS_CHANGE)
+  @Permissions(PermissionsList.ORDERS_TIMER_STOP)
   async stopTimer(@Param('orderId') orderId: string, @Req() request: Request) {
     return this.orderService.stopTimer(orderId, request);
   }
 
   @Get(':orderId/timer')
   @Permissions(PermissionsList.ORDERS_READ)
-  async getTimerStatus(@Param('orderId') orderId: string) {
-    return this.orderService.getTimerStatus(orderId);
+  async getTimerStatus(@Param('orderId') orderId: string, @Req() req: Request) {
+    return this.orderService.getTimerStatus(orderId, req);
   }
 
   @Get(':orderId/timer/history')
   @Permissions(PermissionsList.ORDERS_READ)
-  async getTimerHistory(@Param('orderId') orderId: string) {
-    return this.orderService.getTimerHistory(orderId);
+  async getTimerHistory(@Param('orderId') orderId: string, @Req() req: Request) {
+    return this.orderService.getTimerHistory(orderId, req);
   }
 
   @Get(':orderId/status-history')
   @Permissions(PermissionsList.ORDERS_READ)
-  async getStatusHistory(@Param('orderId') orderId: string) {
-    return this.orderService.getOrderStatusHistory(orderId);
-  }
-
-  @Get('timers/active')
-  @Permissions(PermissionsList.ORDERS_READ)
-  async getActiveTimers() {
-    return this.orderService.getActiveTimers();
-  }
-
-  @Get('timers/all')
-  @Permissions(PermissionsList.ORDERS_READ)
-  async getAllTimers() {
-    return this.orderService.getAllTimers();
+  async getStatusHistory(@Param('orderId') orderId: string, @Req() req: Request) {
+    return this.orderService.getOrderStatusHistory(orderId, req);
   }
 
   @Post(':orderId/upload/:tab')
+  @Permissions(PermissionsList.ORDERS_MEDIA_ADD)
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
       destination: (req, file, callback) => {
@@ -190,9 +191,10 @@ export class OrderController {
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
     @Param('orderId') orderId: string,
-    @Param('tab') tab: string
+    @Param('tab') tab: string,
+    @Req() req: Request,
   ): Promise<UploadResponse> {
-    return await this.orderService.uploadFileToOrder(orderId, file, tab) as UploadResponse;
+    return await this.orderService.uploadFileToOrder(orderId, file, tab, req) as UploadResponse;
   }
 
   @Post(':orderId/delete/:tab')
@@ -200,14 +202,15 @@ export class OrderController {
   async deleteFile(
     @Param('orderId') orderId: string,
     @Param('tab') tab: string,
-    @Body('fileUrl') fileUrl: string
+    @Body('fileUrl') fileUrl: string,
+    @Req() req: Request,
   ): Promise<{ message: string; code: number }> {
-    return this.orderService.deleteFileFromOrder(orderId, fileUrl, tab);
+    return this.orderService.deleteFileFromOrder(orderId, fileUrl, tab, req);
   }
 
   @Get(':orderId/assignment-history')
   @Permissions(PermissionsList.ORDERS_READ)
-  async getAssignmentHistory(@Param('orderId') orderId: string) {
-    return this.orderService.getOrderAssignmentHistory(orderId);
+  async getAssignmentHistory(@Param('orderId') orderId: string, @Req() req: Request) {
+    return this.orderService.getOrderAssignmentHistory(orderId, req);
   }
 }

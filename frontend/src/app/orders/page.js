@@ -5,6 +5,8 @@ import DataTable from 'react-data-table-component';
 import { Select, Option, Button } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import { useAppSelector } from '@/lib/hooks';
+import { PermissionsList } from '@/constants/permissions';
+import { can } from '@/utils/canPermission';
 import { PencilIcon, TrashIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/solid';
 import { ClipLoader } from 'react-spinners';
 import Header from '@/component/header';
@@ -35,10 +37,11 @@ const OrderPage = () => {
     const [loading, setLoading] = useState(true);
     const [loadingUpdate, setLoadingUpdate] = useState(false);
     const id = useAppSelector(state => state.userData?.id);
+    const permissions = useAppSelector((s) => s.userData?.permissions || []);
+    const role = useAppSelector((s) => s.userData?.role);
     const [editStatusModalIsOpen, setEditStatusModalIsOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [statusOptions, setStatusOptions] = useState(null);
-    const [role, setRole] = useState(null);
     const [helpModalOpen, setHelpModalOpen] = useState(false);
     const [activeHelpSection, setActiveHelpSection] = useState('overview');
     const [deleteConfirmModalOpen, setDeleteConfirmModalOpen] = useState(false);
@@ -392,19 +395,29 @@ const OrderPage = () => {
                 {row.status}
             </span>
         ) },
-        ...(role !== 'user' ? [{
+        ...(can(permissions, PermissionsList.ORDERS_TIMER_USE) || can(permissions, PermissionsList.ORDERS_TIMER_STOP)
+            ? [{
             name: 'Timers',
             cell: row => (
                 <div className="flex justify-center">
-                    <WorkTimer orderId={row.id} onStop={fetchOrders} />
+                    <WorkTimer
+                        orderId={row.id}
+                        onStop={fetchOrders}
+                        canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
+                        canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
+                    />
                 </div>
             ),
             ignoreRowClick: true,
         }] : []),
-        ...(role !== 'user' ? [{
+        ...((can(permissions, PermissionsList.ORDERS_STATUS_CHANGE) ||
+            can(permissions, PermissionsList.ORDERS_ASSIGNMENT_MANAGE) ||
+            can(permissions, PermissionsList.ORDERS_DELETE)) && role !== 'user'
+            ? [{
             name: 'Actions',
             cell: row => (
                 <div className="flex space-x-2">
+                    {can(permissions, PermissionsList.ORDERS_STATUS_CHANGE) && (
                     <button
                         onClick={() => handleStatusEdit(row)}
                         className="text-blue-500 hover:text-blue-700"
@@ -412,6 +425,8 @@ const OrderPage = () => {
                     >
                         <PencilIcon className="w-5 h-5" />
                     </button>
+                    )}
+                    {can(permissions, PermissionsList.ORDERS_ASSIGNMENT_MANAGE) && (
                     <button
                         onClick={() => openEditWorkersModal(row)}
                         className="text-green-500 hover:text-green-700"
@@ -419,6 +434,8 @@ const OrderPage = () => {
                     >
                         <PencilIcon className="w-5 h-5" />
                     </button>
+                    )}
+                    {can(permissions, PermissionsList.ORDERS_DELETE) && (
                     <button
                         onClick={() => handleDelete(row.id)}
                         className="text-red-500 hover:text-red-700"
@@ -426,19 +443,13 @@ const OrderPage = () => {
                     >
                         <TrashIcon className="w-5 h-5" />
                     </button>
+                    )}
                 </div>
             ),
             ignoreRowClick: true,
             button: true.toString(),
         }] : []),
     ];
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const storedRole = localStorage.getItem('role');
-            setRole(storedRole);
-        }
-    }, []);
 
     useEffect(() => {
         fetchOrders();
@@ -556,7 +567,7 @@ const OrderPage = () => {
                                     <span>Help</span>
                                 </Button>
                                 
-                                {role !== 'user' && (
+                                {role !== 'user' && can(permissions, PermissionsList.ORDERS_TIMERS_GLOBAL_READ) && (
                                     <>
                                     <Button className="w-full sm:w-auto bg-[#282828] text-white" onClick={exportToExcel}>
                                         Export to Excel

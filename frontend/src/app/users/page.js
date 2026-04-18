@@ -14,6 +14,29 @@ import { toast } from 'react-toastify';
 import { ClipLoader } from 'react-spinners';
 import Input from '@/ui/Input';
 import { useRouter } from 'next/navigation';
+import { PermissionsList } from '@/constants/permissions';
+
+const PROFILE_PERMISSION_OPTIONS = [
+    { code: PermissionsList.OFFERS_READ, label: 'Offers: view' },
+    { code: PermissionsList.ORDERS_READ, label: 'Orders: view' },
+    { code: PermissionsList.ORDERS_CREATE, label: 'Orders: create' },
+    { code: PermissionsList.ORDERS_UPDATE, label: 'Orders: edit / supplement' },
+    { code: PermissionsList.ORDERS_MATERIALS_ADD, label: 'Orders: add materials' },
+    { code: PermissionsList.ORDERS_STATUS_CHANGE, label: 'Orders: change status' },
+    { code: PermissionsList.ORDERS_ASSIGNMENT_MANAGE, label: 'Orders: assign staff' },
+    { code: PermissionsList.ORDERS_MEDIA_ADD, label: 'Orders: upload photos/videos' },
+    { code: PermissionsList.ORDERS_MEDIA_DELETE, label: 'Orders: delete media' },
+    { code: PermissionsList.ORDERS_COMMENT_ADD, label: 'Orders: comments' },
+    { code: PermissionsList.ORDERS_TIMER_USE, label: 'Timer: start / pause / resume' },
+    { code: PermissionsList.ORDERS_TIMER_STOP, label: 'Timer: stop / clear (completes order)' },
+    { code: PermissionsList.ORDERS_TIMERS_GLOBAL_READ, label: 'Timers: global list' },
+    { code: PermissionsList.ORDERS_DELETE, label: 'Orders: delete' },
+    { code: PermissionsList.ORDERS_OFFER_CLOSE, label: 'Offers: close finished' },
+    { code: PermissionsList.USERS_READ, label: 'Users: view' },
+    { code: PermissionsList.USERS_MANAGE, label: 'Users: manage accounts' },
+    { code: PermissionsList.USERS_PERMISSIONS_MANAGE, label: 'Users: roles & permissions' },
+    { code: PermissionsList.USERS_AUDIT_READ, label: 'Users: audit / history' },
+];
 
 const UsersPage = () => {
     const router = useRouter();
@@ -31,6 +54,9 @@ const UsersPage = () => {
     const [profileModalIsOpen, setProfileModalIsOpen] = useState(false);
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileSaving, setProfileSaving] = useState(false);
+    const [profileUseDefaultPermissions, setProfileUseDefaultPermissions] = useState(true);
+    const [profileSelectedPermissions, setProfileSelectedPermissions] = useState([]);
+    const [profilePermissionsDirty, setProfilePermissionsDirty] = useState(false);
     const [profileUser, setProfileUser] = useState(null);
     const [profileForm, setProfileForm] = useState({
         fullName: '',
@@ -62,6 +88,7 @@ const UsersPage = () => {
         contractEnd: '',
         position: '',
         notes: '',
+        responsibilityAreasText: '',
     });
     const [createdClientTempPassword, setCreatedClientTempPassword] = useState('');
 
@@ -90,6 +117,7 @@ const UsersPage = () => {
             contractEnd: '',
             position: '',
             notes: '',
+            responsibilityAreasText: '',
         });
         setCreateModalIsOpen(true);
     };
@@ -153,6 +181,12 @@ const UsersPage = () => {
                     contractEnd,
                     position: createForm.position || '',
                     notes: createForm.notes,
+                    responsibilityAreas: createForm.responsibilityAreasText
+                        ? createForm.responsibilityAreasText
+                              .split(',')
+                              .map((item) => item.trim())
+                              .filter(Boolean)
+                        : [],
                 };
             }
 
@@ -313,16 +347,28 @@ const UsersPage = () => {
         });
         setProfileLoading(false);
         setProfileSaving(false);
+        setProfileUseDefaultPermissions(true);
+        setProfileSelectedPermissions([]);
+        setProfilePermissionsDirty(false);
     };
 
     const openProfileModal = async (user) => {
         setProfileUser(user);
         setProfileModalIsOpen(true);
+        setProfilePermissionsDirty(false);
         setProfileLoading(true);
         try {
             const response = await axios.get(`${URL}/users/${user.id}/profile`);
             if (response.data.code === 200 && response.data.data) {
                 const profile = response.data.data;
+                const p = profile.permissions || [];
+                if (Array.isArray(p) && p.length > 0) {
+                    setProfileUseDefaultPermissions(false);
+                    setProfileSelectedPermissions(p);
+                } else {
+                    setProfileUseDefaultPermissions(true);
+                    setProfileSelectedPermissions([]);
+                }
                 setProfileForm({
                     fullName: profile.fullName || user.fullName || '',
                     dateOfBirth: profile.dateOfBirth || '',
@@ -338,6 +384,8 @@ const UsersPage = () => {
                         : '',
                 });
             } else {
+                setProfileUseDefaultPermissions(true);
+                setProfileSelectedPermissions([]);
                 setProfileForm((prev) => ({
                     ...prev,
                     fullName: user.fullName || '',
@@ -432,6 +480,13 @@ const UsersPage = () => {
         }));
     };
 
+    const toggleProfilePermission = (code) => {
+        setProfilePermissionsDirty(true);
+        setProfileSelectedPermissions((prev) =>
+            prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
+        );
+    };
+
     const saveProfile = async () => {
         if (!profileUser) return;
         setProfileSaving(true);
@@ -455,6 +510,9 @@ const UsersPage = () => {
                 notes: profileForm.notes,
                 responsibilityAreas,
             };
+            if (profilePermissionsDirty) {
+                payload.permissions = profileUseDefaultPermissions ? [] : profileSelectedPermissions;
+            }
 
             const response = await axios.put(
                 `${URL}/users/${profileUser.id}/profile`,
@@ -462,6 +520,7 @@ const UsersPage = () => {
             );
 
             if (response.data.code === 200) {
+                setProfilePermissionsDirty(false);
                 toast.success('Employee profile saved successfully');
                 // Обновляем имя клиента в таблице, если изменили fullName
                 setUsers((prev) =>
@@ -728,6 +787,36 @@ const UsersPage = () => {
                                         Separate multiple areas with commas.
                                     </p>
                                 </div>
+                                <div className="border rounded-md p-3 space-y-2">
+                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-800">
+                                        <input
+                                            type="checkbox"
+                                            checked={profileUseDefaultPermissions}
+                                            onChange={(e) => {
+                                                setProfileUseDefaultPermissions(e.target.checked);
+                                                setProfilePermissionsDirty(true);
+                                            }}
+                                        />
+                                        Use role default permissions
+                                    </label>
+                                    {!profileUseDefaultPermissions && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pt-1">
+                                            {PROFILE_PERMISSION_OPTIONS.map((opt) => (
+                                                <label key={opt.code} className="flex items-start gap-2 text-xs text-black">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={profileSelectedPermissions.includes(opt.code)}
+                                                        onChange={() => toggleProfilePermission(opt.code)}
+                                                    />
+                                                    <span>{opt.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <p className="text-xs text-gray-500">
+                                        Clearing overrides (defaults on) resets permissions to the role template and is recorded in history.
+                                    </p>
+                                </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Notes
@@ -873,6 +962,19 @@ const UsersPage = () => {
                                         rows={3}
                                         className="w-full border rounded-md p-2 text-sm text-black"
                                         placeholder="Additional comments / remarks"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Responsibility areas
+                                    </label>
+                                    <textarea
+                                        name="responsibilityAreasText"
+                                        value={createForm.responsibilityAreasText}
+                                        onChange={handleCreateChange}
+                                        rows={2}
+                                        className="w-full border rounded-md p-2 text-sm text-black"
+                                        placeholder="e.g. engine, hydraulics — comma-separated"
                                     />
                                 </div>
                             </>

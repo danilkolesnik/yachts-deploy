@@ -14,7 +14,7 @@ import { EmployeeProfile } from './entities/employee-profile.entity';
 import getBearerToken from 'src/methods/getBearerToken';
 import * as jwt from 'jsonwebtoken';
 import { JwtPayload } from 'jsonwebtoken';
-import { PermissionsList } from 'src/constants/permissions';
+import { getEffectivePermissions, hasAllPermissions } from './effective-permissions';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -68,50 +68,13 @@ export class PermissionsGuard implements CanActivate {
       where: { userId },
     });
 
-    // If profile is missing, fall back to role defaults
-    const roleDefaults: Record<string, string[]> = {
-      manager: [
-        PermissionsList.ORDERS_READ,
-        PermissionsList.ORDERS_CREATE,
-        PermissionsList.ORDERS_STATUS_CHANGE,
-        PermissionsList.ORDERS_ASSIGNMENT_MANAGE,
-        PermissionsList.ORDERS_MEDIA_ADD,
-        PermissionsList.ORDERS_MEDIA_DELETE,
-        PermissionsList.ORDERS_COMMENT_ADD,
-        PermissionsList.USERS_READ,
-        PermissionsList.USERS_MANAGE,
-        PermissionsList.USERS_PERMISSIONS_MANAGE,
-        PermissionsList.USERS_AUDIT_READ,
-      ],
-      mechanic: [
-        PermissionsList.ORDERS_READ,
-        PermissionsList.ORDERS_STATUS_CHANGE,
-        PermissionsList.ORDERS_MEDIA_ADD,
-        PermissionsList.ORDERS_MEDIA_DELETE,
-        PermissionsList.ORDERS_COMMENT_ADD,
-      ],
-      electrician: [
-        PermissionsList.ORDERS_READ,
-        PermissionsList.ORDERS_STATUS_CHANGE,
-        PermissionsList.ORDERS_MEDIA_ADD,
-        PermissionsList.ORDERS_MEDIA_DELETE,
-        PermissionsList.ORDERS_COMMENT_ADD,
-      ],
-      user: [PermissionsList.SELF_OFFERS_READ, PermissionsList.SELF_ORDERS_READ],
-      client: [PermissionsList.SELF_OFFERS_READ, PermissionsList.SELF_ORDERS_READ],
-    };
-
-    const permissions = profile?.permissions?.length
-      ? profile.permissions
-      : (roleDefaults[user.role] || []);
+    const permissions = getEffectivePermissions(user.role, profile?.permissions);
 
     if (permissions.includes('*')) {
       return true;
     }
 
-    const hasAllRequired = requiredPermissions.every((perm) =>
-      permissions.includes(perm),
-    );
+    const hasAllRequired = hasAllPermissions(permissions, requiredPermissions);
 
     if (!hasAllRequired) {
       throw new ForbiddenException('Insufficient permissions');

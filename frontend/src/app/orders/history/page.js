@@ -9,6 +9,7 @@ import Loader from '@/ui/loader';
 import Header from '@/component/header';
 import axios from 'axios';
 import { statusStyles } from '@/utils/statusStyles';
+import { toast } from 'react-toastify';
 
 const OrdersHistoryPage = () => {
     const router = useRouter();
@@ -96,6 +97,9 @@ const OrdersHistoryPage = () => {
             setLoading(false);
         } catch (error) {
             console.log(error);
+            if (error?.response?.status === 403) {
+                toast.error('No access to global timer history for your role.');
+            }
             setLoading(false);
         }
     }

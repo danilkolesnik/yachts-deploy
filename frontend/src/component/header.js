@@ -16,7 +16,9 @@ import {
   Bars3Icon,
   XMarkIcon,
 } from "@heroicons/react/24/solid";
-import { useAppDispatch } from '@/lib/hooks';
+import { useAppDispatch, useAppSelector } from '@/lib/hooks';
+import { PermissionsList } from '@/constants/permissions';
+import { can } from '@/utils/canPermission';
 import { clearUserSession } from '@/lib/features/todos/usersDataSlice';
 import Link from 'next/link'
 import { usePathname } from 'next/navigation';
@@ -31,11 +33,13 @@ function NavList({ isOpen, setIsOpen }) {
   const [isMobile, setIsMobile] = useState(false);
   const dispatch = useAppDispatch();
   const pathname = usePathname();
+  const session = useAppSelector((s) => s.userData?.session);
+  const rRole = useAppSelector((s) => s.userData?.role);
+  const permissions = useAppSelector((s) => s.userData?.permissions || []);
 
   useEffect(() => {
-    const storedRole = localStorage.getItem('role');
-    setRole(storedRole);
-  }, []);
+    setRole(rRole || localStorage.getItem('role'));
+  }, [rRole]);
 
   useEffect(() => {
     const checkWidth = () => {
@@ -53,7 +57,7 @@ function NavList({ isOpen, setIsOpen }) {
     dispatch(clearUserSession());
   };
 
-  if (role === null) {
+  if (session === null || role === null) {
     return <Loader />;
   }
 
@@ -86,8 +90,13 @@ function NavList({ isOpen, setIsOpen }) {
     );
   }
 
+  const showOffers = can(permissions, PermissionsList.OFFERS_READ);
+  const showOrders = can(permissions, PermissionsList.ORDERS_READ);
+  const showStaffSection = can(permissions, PermissionsList.USERS_READ);
+
   return (
     <List className={`flex items-center ${isMobile ? 'flex-col' : 'flex-row'} w-full p-0`}>
+      {showOffers && (
       <Link href="/offers" onClick={handleClick} className="font-bold">
         <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium`}>
             <DocumentTextIcon className={`h-5 w-5 mr-2 text-black`} />
@@ -96,6 +105,8 @@ function NavList({ isOpen, setIsOpen }) {
           >Offers</span>
         </ListItem>
       </Link>
+      )}
+      {showOrders && (
       <Link href="/orders" onClick={handleClick} className=" font-bold">
         <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
           <ArchiveBoxIcon className={`h-5 w-5 mr-2 ${pathname === '/orders' ? 'text-[#dd3333]' : 'text-black'}`} />
@@ -104,7 +115,8 @@ function NavList({ isOpen, setIsOpen }) {
           >Orders</span>
         </ListItem>
       </Link>
-      {(role === 'admin' || role === 'manager') && (
+      )}
+      {showStaffSection && (
         <>
           <Link href="/yachts" onClick={handleClick} className=" font-bold">
             <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>

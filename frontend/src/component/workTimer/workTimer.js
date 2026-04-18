@@ -2,7 +2,7 @@ import React from 'react';
 import { useOrderTimer } from '@/hooks/useOrderTimer';
 import { PlayIcon, PauseIcon, StopIcon } from '@heroicons/react/24/solid';
 
-const OrderTimer = ({ orderId, onStop }) => {
+const OrderTimer = ({ orderId, onStop, canUseTimer = true, canStopTimer = true }) => {
   const { 
     isRunning, 
     isPaused,
@@ -61,7 +61,7 @@ const OrderTimer = ({ orderId, onStop }) => {
             (!isRunning || isPaused) ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-300'
           }`}
           onClick={handleStartOrResume}
-          disabled={isRunning && !isPaused}
+          disabled={!canUseTimer || (isRunning && !isPaused)}
           title={isPaused ? "Продолжить" : "Начать работу"}
         >
           <PlayIcon className={`h-4 w-4 ${(!isRunning || isPaused) ? 'text-white' : 'text-gray-400'}`} />
@@ -72,7 +72,7 @@ const OrderTimer = ({ orderId, onStop }) => {
             (isRunning && !isPaused) ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-300'
           }`}
           onClick={handlePause}
-          disabled={!isRunning || isPaused}
+          disabled={!canUseTimer || !isRunning || isPaused}
           title="Пауза"
         >
           <PauseIcon className={`h-4 w-4 ${(isRunning && !isPaused) ? 'text-white' : 'text-gray-400'}`} />
@@ -83,7 +83,7 @@ const OrderTimer = ({ orderId, onStop }) => {
             isRunning ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-300'
           }`}
           onClick={handleStop}
-          disabled={!isRunning}
+          disabled={!canStopTimer || !isRunning}
           title="Завершить"
         >
           <StopIcon className={`h-4 w-4 ${isRunning ? 'text-white' : 'text-gray-400'}`} />
