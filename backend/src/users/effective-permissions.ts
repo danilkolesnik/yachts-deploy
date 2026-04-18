@@ -1,5 +1,14 @@
 import { ROLE_DEFAULT_PERMISSIONS } from 'src/constants/role-default-permissions';
 
+function normalizeProfilePermissions(
+  profilePermissions?: string[] | null,
+): string[] {
+  if (!Array.isArray(profilePermissions)) return [];
+  return profilePermissions.filter(
+    (p) => typeof p === 'string' && p.trim().length > 0,
+  );
+}
+
 export function getEffectivePermissions(
   role: string,
   profilePermissions?: string[] | null,
@@ -7,8 +16,9 @@ export function getEffectivePermissions(
   if (role === 'admin') {
     return ['*'];
   }
-  if (Array.isArray(profilePermissions) && profilePermissions.length > 0) {
-    return profilePermissions;
+  const cleaned = normalizeProfilePermissions(profilePermissions);
+  if (cleaned.length > 0) {
+    return cleaned;
   }
   return ROLE_DEFAULT_PERMISSIONS[role] ? [...ROLE_DEFAULT_PERMISSIONS[role]] : [];
 }

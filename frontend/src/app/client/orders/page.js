@@ -11,12 +11,22 @@ import { PermissionsList } from "@/constants/permissions";
 import { can } from "@/utils/canPermission";
 
 export default function ClientOrdersPage() {
+  const session = useAppSelector((s) => s.userData?.session ?? null);
   const permissions = useAppSelector((s) => s.userData?.permissions || []);
   const canViewOrders = can(permissions, PermissionsList.SELF_ORDERS_READ);
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
+    if (session !== true) {
+      if (session === false) {
+        setOrders([]);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+      return;
+    }
     if (!canViewOrders) {
       setOrders([]);
       setLoading(false);
@@ -43,7 +53,7 @@ export default function ClientOrdersPage() {
     return () => {
       mounted = false;
     };
-  }, [canViewOrders]);
+  }, [session, canViewOrders]);
 
   const rows = useMemo(() => orders || [], [orders]);
 
@@ -51,9 +61,9 @@ export default function ClientOrdersPage() {
     <>
       <Header />
       <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
-        {loading ? (
+        {session === null || loading ? (
           <div className="flex justify-center items-center min-h-screen">
-            <Loader loading={loading} />
+            <Loader loading={session === null || loading} />
           </div>
         ) : !canViewOrders ? (
           <div className="w-full space-y-4 bg-white rounded shadow-md p-4">

@@ -8,6 +8,7 @@ import Loader from "@/ui/loader";
 import Image from "next/image";
 import ReactPlayer from "react-player";
 import { Tab } from "@headlessui/react";
+import { useParams } from "next/navigation";
 import { useAppSelector } from "@/lib/hooks";
 import { PermissionsList } from "@/constants/permissions";
 import { can } from "@/utils/canPermission";
@@ -16,8 +17,10 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-export default function ClientOrderDetailPage({ params }) {
-  const { id } = params;
+export default function ClientOrderDetailPage() {
+  const params = useParams();
+  const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
+  const session = useAppSelector((s) => s.userData?.session ?? null);
   const permissions = useAppSelector((s) => s.userData?.permissions || []);
   const canViewOrder = can(permissions, PermissionsList.SELF_ORDERS_READ);
   const canPostMessages = can(permissions, PermissionsList.SELF_ORDERS_MESSAGES_WRITE);
@@ -49,6 +52,23 @@ export default function ClientOrderDetailPage({ params }) {
 
   useEffect(() => {
     let mounted = true;
+    if (session !== true) {
+      if (session === false) setLoading(false);
+      else setLoading(true);
+      return () => {
+        mounted = false;
+      };
+    }
+    if (!id) {
+      setOrder(null);
+      setStatusHistory([]);
+      setTimerHistory([]);
+      setMessages([]);
+      setLoading(false);
+      return () => {
+        mounted = false;
+      };
+    }
     if (!canViewOrder) {
       setOrder(null);
       setStatusHistory([]);
@@ -67,7 +87,7 @@ export default function ClientOrderDetailPage({ params }) {
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, canViewOrder]);
+  }, [id, canViewOrder, session]);
 
   const mediaTabs = useMemo(() => {
     if (!order) return [];
@@ -101,9 +121,13 @@ export default function ClientOrderDetailPage({ params }) {
     <>
       <Header />
       <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
-        {loading ? (
+        {session === null || loading ? (
           <div className="flex justify-center items-center min-h-screen">
-            <Loader loading={loading} />
+            <Loader loading={session === null || loading} />
+          </div>
+        ) : !id ? (
+          <div className="w-full space-y-4 bg-white rounded shadow-md p-4">
+            <p className="text-gray-700 text-sm">Order not found.</p>
           </div>
         ) : !canViewOrder ? (
           <div className="w-full space-y-4 bg-white rounded shadow-md p-4">
