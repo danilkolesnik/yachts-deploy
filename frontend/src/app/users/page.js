@@ -19,7 +19,8 @@ import { PermissionsList } from '@/constants/permissions';
 /** Permissions that make sense for portal `client` accounts (staff list does not apply). */
 const CLIENT_PROFILE_PERMISSION_OPTIONS = [
     { code: PermissionsList.SELF_OFFERS_READ, label: 'Client: own offers (read)' },
-    { code: PermissionsList.SELF_ORDERS_READ, label: 'Client: own orders (read)' },
+    { code: PermissionsList.SELF_ORDERS_READ, label: 'Client: portal / orders (read)' },
+    { code: PermissionsList.SELF_ORDERS_MESSAGES_WRITE, label: 'Client: comments / requests on own orders' },
 ];
 
 const PROFILE_PERMISSION_OPTIONS = [

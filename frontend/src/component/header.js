@@ -72,14 +72,17 @@ function NavList({ isOpen, setIsOpen }) {
   }
 
   if (role === 'client') {
+    const showClientPortal = can(permissions, PermissionsList.SELF_ORDERS_READ);
     return (
       <List className={`flex items-center ${isMobile ? 'flex-col' : 'flex-row'} w-full p-0`}>
+        {showClientPortal && (
         <Link href="/client/orders" onClick={handleClick} className="font-bold">
           <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
             <ArchiveBoxIcon className={`h-5 w-5 mr-2 ${pathname?.startsWith('/client/orders') ? 'text-[#dd3333]' : 'text-black'}`} />
             <span style={{ color: pathname?.startsWith('/client/orders') ? '#dd3333' : 'black' }}>My orders</span>
           </ListItem>
         </Link>
+        )}
         <Link href="/login" onClick={() => { clearLocalStorage(); handleClick(); }} className=" font-bold">
           <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
             <LockClosedIcon className={`h-5 w-5 mr-2 ${pathname === '/auth/login' || pathname === '/login' ? 'text-[#dd3333]' : 'text-black'}`} />

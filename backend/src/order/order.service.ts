@@ -21,6 +21,9 @@ import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { OrderAssignmentHistory } from './entities/order-assignment-history.entity';
 import { OrderTimerHistory } from './entities/order-timer-history.entity';
 import { OrderClientMessage } from './entities/order-client-message.entity';
+import { EmployeeProfile } from 'src/users/entities/employee-profile.entity';
+import { PermissionsList } from 'src/constants/permissions';
+import { getEffectivePermissions, hasAllPermissions } from 'src/users/effective-permissions';
 import getBearerToken from 'src/methods/getBearerToken';
 import { JwtPayload } from 'jsonwebtoken';
 import * as jwt from 'jsonwebtoken';
@@ -53,6 +56,8 @@ export class OrderService {
     private readonly orderTimerHistoryRepository: Repository<OrderTimerHistory>,
     @InjectRepository(OrderClientMessage)
     private readonly orderClientMessageRepository: Repository<OrderClientMessage>,
+    @InjectRepository(EmployeeProfile)
+    private readonly employeeProfileRepository: Repository<EmployeeProfile>,
   ) {}
 
   private tryGetUserIdFromRequest(req?: Request): string | undefined {
@@ -93,6 +98,24 @@ export class OrderService {
     if (requester.role !== 'admin' && requester.role !== 'manager') {
       throw new ForbiddenException('Access denied');
     }
+  }
+
+  /** Portal `/client`: staff keeps existing behaviour; `client` must match profile/role defaults. */
+  private async assertClientPortalPermission(
+    requester: { id: string; role: string },
+    required: string[],
+  ): Promise<{ ok: true } | { ok: false; code: number; message: string }> {
+    if (requester.role !== 'client') {
+      return { ok: true };
+    }
+    const profile = await this.employeeProfileRepository.findOne({
+      where: { userId: requester.id },
+    });
+    const effective = getEffectivePermissions(requester.role, profile?.permissions);
+    if (!hasAllPermissions(effective, required)) {
+      return { ok: false, code: 403, message: 'Access denied' };
+    }
+    return { ok: true };
   }
 
   private async logOrderTimerEvent(
@@ -186,6 +209,13 @@ export class OrderService {
       const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
       const requester = { id: String(login.id), role: String(login.role) };
 
+      const portalGate = await this.assertClientPortalPermission(requester, [
+        PermissionsList.SELF_ORDERS_READ,
+      ]);
+      if (!portalGate.ok) {
+        return { code: portalGate.code, message: portalGate.message };
+      }
+
       // client: only own, staff/admin: same logic as existing allOrder but without Permissions decorator
       const base = await this.allOrder(req);
       if (base?.code !== 200) return base;
@@ -208,6 +238,13 @@ export class OrderService {
     try {
       const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
       const requester = { id: String(login.id), role: String(login.role) };
+
+      const portalGate = await this.assertClientPortalPermission(requester, [
+        PermissionsList.SELF_ORDERS_READ,
+      ]);
+      if (!portalGate.ok) {
+        return { code: portalGate.code, message: portalGate.message };
+      }
 
       const access = await this.canAccessOrder(orderId, requester);
       if (!access.ok) return { code: access.code, message: access.message };
@@ -232,6 +269,12 @@ export class OrderService {
 
       if (requester.role !== 'client') {
         return { code: 403, message: 'Only client can add messages' };
+      }
+      const portalGate = await this.assertClientPortalPermission(requester, [
+        PermissionsList.SELF_ORDERS_MESSAGES_WRITE,
+      ]);
+      if (!portalGate.ok) {
+        return { code: portalGate.code, message: portalGate.message };
       }
       if (!payload?.message || !payload.message.trim()) {
         return { code: 400, message: 'Message is required' };
@@ -272,6 +315,13 @@ export class OrderService {
       const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
       const requester = { id: String(login.id), role: String(login.role) };
 
+      const portalGate = await this.assertClientPortalPermission(requester, [
+        PermissionsList.SELF_ORDERS_READ,
+      ]);
+      if (!portalGate.ok) {
+        return { code: portalGate.code, message: portalGate.message };
+      }
+
       const access = await this.canAccessOrder(orderId, requester);
       if (!access.ok) return { code: access.code, message: access.message };
 
@@ -292,6 +342,13 @@ export class OrderService {
       const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
       const requester = { id: String(login.id), role: String(login.role) };
 
+      const portalGate = await this.assertClientPortalPermission(requester, [
+        PermissionsList.SELF_ORDERS_READ,
+      ]);
+      if (!portalGate.ok) {
+        return { code: portalGate.code, message: portalGate.message };
+      }
+
       const access = await this.canAccessOrder(orderId, requester);
       if (!access.ok) return { code: access.code, message: access.message };
 
@@ -311,6 +368,13 @@ export class OrderService {
     try {
       const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
       const requester = { id: String(login.id), role: String(login.role) };
+
+      const portalGate = await this.assertClientPortalPermission(requester, [
+        PermissionsList.SELF_ORDERS_READ,
+      ]);
+      if (!portalGate.ok) {
+        return { code: portalGate.code, message: portalGate.message };
+      }
 
       const access = await this.canAccessOrder(orderId, requester);
       if (!access.ok) return { code: access.code, message: access.message };

@@ -21,4 +21,5 @@ export const PermissionsList = {
   USERS_AUDIT_READ: 'users.audit.read',
   SELF_OFFERS_READ: 'self.offers.read',
   SELF_ORDERS_READ: 'self.orders.read',
+  SELF_ORDERS_MESSAGES_WRITE: 'self.orders.messages.write',
 };

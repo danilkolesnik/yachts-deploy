@@ -8,6 +8,9 @@ import Loader from "@/ui/loader";
 import Image from "next/image";
 import ReactPlayer from "react-player";
 import { Tab } from "@headlessui/react";
+import { useAppSelector } from "@/lib/hooks";
+import { PermissionsList } from "@/constants/permissions";
+import { can } from "@/utils/canPermission";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -15,6 +18,9 @@ function classNames(...classes) {
 
 export default function ClientOrderDetailPage({ params }) {
   const { id } = params;
+  const permissions = useAppSelector((s) => s.userData?.permissions || []);
+  const canViewOrder = can(permissions, PermissionsList.SELF_ORDERS_READ);
+  const canPostMessages = can(permissions, PermissionsList.SELF_ORDERS_MESSAGES_WRITE);
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState(null);
   const [statusHistory, setStatusHistory] = useState([]);
@@ -25,6 +31,7 @@ export default function ClientOrderDetailPage({ params }) {
   const [sending, setSending] = useState(false);
 
   const refreshAll = async () => {
+    if (!canViewOrder) return;
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const authHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
     const [o, sh, th, msgs] = await Promise.allSettled([
@@ -42,6 +49,16 @@ export default function ClientOrderDetailPage({ params }) {
 
   useEffect(() => {
     let mounted = true;
+    if (!canViewOrder) {
+      setOrder(null);
+      setStatusHistory([]);
+      setTimerHistory([]);
+      setMessages([]);
+      setLoading(false);
+      return () => {
+        mounted = false;
+      };
+    }
     setLoading(true);
     refreshAll()
       .catch(() => {})
@@ -50,7 +67,7 @@ export default function ClientOrderDetailPage({ params }) {
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, canViewOrder]);
 
   const mediaTabs = useMemo(() => {
     if (!order) return [];
@@ -62,7 +79,7 @@ export default function ClientOrderDetailPage({ params }) {
   }, [order]);
 
   const sendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!canPostMessages || !newMessage.trim()) return;
     setSending(true);
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -87,6 +104,12 @@ export default function ClientOrderDetailPage({ params }) {
         {loading ? (
           <div className="flex justify-center items-center min-h-screen">
             <Loader loading={loading} />
+          </div>
+        ) : !canViewOrder ? (
+          <div className="w-full space-y-4 bg-white rounded shadow-md p-4">
+            <p className="text-gray-700 text-sm">
+              You do not have permission to view this order in the client portal. Contact the office if you need access.
+            </p>
           </div>
         ) : (
           <div className="w-full space-y-4 bg-white rounded shadow-md p-4">
@@ -211,6 +234,8 @@ export default function ClientOrderDetailPage({ params }) {
 
             <div className="border-t pt-4">
               <h2 className="text-lg font-semibold text-black mb-2">Request additional work / comments</h2>
+              {canPostMessages ? (
+                <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <select
                   value={newKind}
@@ -236,6 +261,10 @@ export default function ClientOrderDetailPage({ params }) {
                   {sending ? "Sending..." : "Send"}
                 </button>
               </div>
+                </>
+              ) : (
+                <p className="text-sm text-gray-600 mb-3">Sending messages is disabled for your account. You can still read the thread below.</p>
+              )}
 
               <div className="mt-4 space-y-2">
                 {(messages || []).map((m) => (

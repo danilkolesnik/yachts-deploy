@@ -23,9 +23,11 @@ export const PermissionsList = {
   USERS_PERMISSIONS_MANAGE: 'users.permissions.manage', // edit responsibility & permission overrides
   USERS_AUDIT_READ: 'users.audit.read', // view history/audit
 
-  // Self-access for clients
+  // Self-access for clients (portal `/client`, API `/orders/client/*`)
   SELF_OFFERS_READ: 'self.offers.read',
   SELF_ORDERS_READ: 'self.orders.read',
+  /** Client portal: post comments / additional-work on own orders */
+  SELF_ORDERS_MESSAGES_WRITE: 'self.orders.messages.write',
 } as const;
 
 export type PermissionCode = (typeof PermissionsList)[keyof typeof PermissionsList] | '*';

@@ -6,12 +6,22 @@ import { URL } from "@/utils/constants";
 import Header from "@/component/header";
 import Loader from "@/ui/loader";
 import Link from "next/link";
+import { useAppSelector } from "@/lib/hooks";
+import { PermissionsList } from "@/constants/permissions";
+import { can } from "@/utils/canPermission";
 
 export default function ClientOrdersPage() {
+  const permissions = useAppSelector((s) => s.userData?.permissions || []);
+  const canViewOrders = can(permissions, PermissionsList.SELF_ORDERS_READ);
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
+    if (!canViewOrders) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
     let mounted = true;
     setLoading(true);
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -33,7 +43,7 @@ export default function ClientOrdersPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [canViewOrders]);
 
   const rows = useMemo(() => orders || [], [orders]);
 
@@ -44,6 +54,13 @@ export default function ClientOrdersPage() {
         {loading ? (
           <div className="flex justify-center items-center min-h-screen">
             <Loader loading={loading} />
+          </div>
+        ) : !canViewOrders ? (
+          <div className="w-full space-y-4 bg-white rounded shadow-md p-4">
+            <h1 className="text-xl font-semibold text-black">My orders</h1>
+            <p className="text-gray-700 text-sm">
+              Your account does not include access to the client orders portal. If you think this is a mistake, contact the office.
+            </p>
           </div>
         ) : (
           <div className="w-full space-y-4 bg-white rounded shadow-md p-4">

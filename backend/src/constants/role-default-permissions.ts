@@ -53,5 +53,9 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     PermissionsList.SELF_OFFERS_READ,
     PermissionsList.SELF_ORDERS_READ,
   ],
-  client: [PermissionsList.SELF_OFFERS_READ, PermissionsList.SELF_ORDERS_READ],
+  client: [
+    PermissionsList.SELF_OFFERS_READ,
+    PermissionsList.SELF_ORDERS_READ,
+    PermissionsList.SELF_ORDERS_MESSAGES_WRITE,
+  ],
 };
