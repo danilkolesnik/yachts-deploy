@@ -16,6 +16,12 @@ import Input from '@/ui/Input';
 import { useRouter } from 'next/navigation';
 import { PermissionsList } from '@/constants/permissions';
 
+/** Permissions that make sense for portal `client` accounts (staff list does not apply). */
+const CLIENT_PROFILE_PERMISSION_OPTIONS = [
+    { code: PermissionsList.SELF_OFFERS_READ, label: 'Client: own offers (read)' },
+    { code: PermissionsList.SELF_ORDERS_READ, label: 'Client: own orders (read)' },
+];
+
 const PROFILE_PERMISSION_OPTIONS = [
     { code: PermissionsList.OFFERS_READ, label: 'Offers: view' },
     { code: PermissionsList.ORDERS_READ, label: 'Orders: view' },
@@ -307,7 +313,7 @@ const UsersPage = () => {
                     <button
                         onClick={() => openProfileModal(row)}
                         className="text-green-500 hover:text-green-700"
-                        title="Edit employee profile"
+                        title="Edit profile / access"
                     >
                         <PencilIcon className="w-5 h-5" />
                     </button>
@@ -486,6 +492,9 @@ const UsersPage = () => {
             prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
         );
     };
+
+    const profilePermissionOptionList =
+        profileUser?.role === 'client' ? CLIENT_PROFILE_PERMISSION_OPTIONS : PROFILE_PERMISSION_OPTIONS;
 
     const saveProfile = async () => {
         if (!profileUser) return;
@@ -702,8 +711,8 @@ const UsersPage = () => {
                     onClose={closeProfileModal}
                     title={
                         profileUser
-                            ? `Employee profile: ${profileUser.fullName || profileUser.email}`
-                            : 'Employee profile'
+                            ? `${profileUser.role === 'client' ? 'Client' : 'Employee'} profile: ${profileUser.fullName || profileUser.email}`
+                            : 'Profile'
                     }
                 >
                     <div className="space-y-4 max-h-[70vh] overflow-y-auto">
@@ -801,7 +810,7 @@ const UsersPage = () => {
                                     </label>
                                     {!profileUseDefaultPermissions && (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pt-1">
-                                            {PROFILE_PERMISSION_OPTIONS.map((opt) => (
+                                            {profilePermissionOptionList.map((opt) => (
                                                 <label key={opt.code} className="flex items-start gap-2 text-xs text-black">
                                                     <input
                                                         type="checkbox"

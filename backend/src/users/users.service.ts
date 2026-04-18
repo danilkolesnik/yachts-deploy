@@ -297,11 +297,34 @@ export class UsersService {
 
   async getEmployeeProfile(userId: string) {
     try {
+      const user = await this.usersRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        return { code: 404, message: 'User not found' };
+      }
+
       const profile = await this.employeeProfileRepository.findOne({
         where: { userId },
       });
       if (!profile) {
-        return { code: 404, message: 'Employee profile not found' };
+        // Clients (and other users) may not have a row yet — same shape as saved profile so
+        // admins can open "access / responsibility" UI and persist via PUT profile.
+        return {
+          code: 200,
+          data: {
+            userId,
+            fullName: user.fullName || '',
+            phone: '',
+            secondaryPhone: '',
+            address: '',
+            position: '',
+            notes: '',
+            dateOfBirth: null,
+            contractStart: null,
+            contractEnd: null,
+            responsibilityAreas: [],
+            permissions: [],
+          },
+        };
       }
       return { code: 200, data: profile };
     } catch (err) {
