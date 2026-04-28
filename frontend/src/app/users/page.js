@@ -501,6 +501,8 @@ const UsersPage = () => {
         if (!profileUser) return;
         setProfileSaving(true);
         try {
+            const isClient = profileUser.role === 'client';
+
             const responsibilityAreas = profileForm.responsibilityAreasText
                 ? profileForm.responsibilityAreasText
                       .split(',')
@@ -508,18 +510,26 @@ const UsersPage = () => {
                       .filter((item) => item.length > 0)
                 : [];
 
-            const payload = {
-                fullName: profileForm.fullName,
-                dateOfBirth: profileForm.dateOfBirth || null,
-                phone: profileForm.phone,
-                secondaryPhone: profileForm.secondaryPhone,
-                address: profileForm.address,
-                contractStart: profileForm.contractStart || null,
-                contractEnd: profileForm.contractEnd || null,
-                position: profileForm.position,
-                notes: profileForm.notes,
-                responsibilityAreas,
-            };
+            const payload = isClient
+                ? {
+                      fullName: profileForm.fullName,
+                      phone: profileForm.phone,
+                      secondaryPhone: profileForm.secondaryPhone,
+                      address: profileForm.address,
+                      notes: profileForm.notes,
+                  }
+                : {
+                      fullName: profileForm.fullName,
+                      dateOfBirth: profileForm.dateOfBirth || null,
+                      phone: profileForm.phone,
+                      secondaryPhone: profileForm.secondaryPhone,
+                      address: profileForm.address,
+                      contractStart: profileForm.contractStart || null,
+                      contractEnd: profileForm.contractEnd || null,
+                      position: profileForm.position,
+                      notes: profileForm.notes,
+                      responsibilityAreas,
+                  };
             if (profilePermissionsDirty) {
                 payload.permissions = profileUseDefaultPermissions ? [] : profileSelectedPermissions;
             }
@@ -531,7 +541,7 @@ const UsersPage = () => {
 
             if (response.data.code === 200) {
                 setProfilePermissionsDirty(false);
-                toast.success('Employee profile saved successfully');
+                toast.success(`${profileUser.role === 'client' ? 'Client' : 'Employee'} profile saved successfully`);
                 // Обновляем имя клиента в таблице, если изменили fullName
                 setUsers((prev) =>
                     prev.map((u) =>
@@ -730,6 +740,38 @@ const UsersPage = () => {
                                     onChange={handleProfileChange}
                                     required
                                 />
+                        {profileUser?.role === 'client' ? (
+                            <>
+                                <Input
+                                    label="Email"
+                                    name="email"
+                                    value={profileUser?.email || ''}
+                                    disabled
+                                    onChange={() => {}}
+                                />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Input
+                                        label="Phone"
+                                        name="phone"
+                                        value={profileForm.phone}
+                                        onChange={handleProfileChange}
+                                    />
+                                    <Input
+                                        label="Secondary phone"
+                                        name="secondaryPhone"
+                                        value={profileForm.secondaryPhone}
+                                        onChange={handleProfileChange}
+                                    />
+                                </div>
+                                <Input
+                                    label="Address"
+                                    name="address"
+                                    value={profileForm.address}
+                                    onChange={handleProfileChange}
+                                />
+                            </>
+                        ) : (
+                            <>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Input
                                         label="Date of birth"
@@ -797,6 +839,8 @@ const UsersPage = () => {
                                         Separate multiple areas with commas.
                                     </p>
                                 </div>
+                            </>
+                        )}
                                 <div className="border rounded-md p-3 space-y-2">
                                     <label className="flex items-center gap-2 text-sm font-medium text-gray-800">
                                         <input
