@@ -11,10 +11,13 @@ import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import Loader from '@/ui/loader';
 import { ClipLoader } from 'react-spinners';
+import ReactSelect from 'react-select';
 
 const YachtsPage = () => {
     const [yachts, setYachts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [users, setUsers] = useState([]);
+    const [userOptions, setUserOptions] = useState([]);
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [editModalIsOpen, setEditModalIsOpen] = useState(false);
     const [editingYacht, setEditingYacht] = useState(null);
@@ -45,7 +48,9 @@ const YachtsPage = () => {
         hasAirConditioners: '',
         airConditionerCount: '',
         airConditioners: [],
-        description:''
+        description:'',
+        userId: '',
+        userName: ''
     });
 
     // Manual/Help content in English
@@ -235,6 +240,10 @@ const YachtsPage = () => {
         fetchYachts();
     }, []);
 
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
     const fetchYachts = async () => {
         try {
             const response = await axios.get(`${URL}/yachts`);
@@ -248,9 +257,32 @@ const YachtsPage = () => {
         }
     };
 
+    const fetchUsers = async () => {
+        try {
+            const res = await axios.get(`${URL}/users/role/user`);
+            const list = res?.data?.data || [];
+            setUsers(Array.isArray(list) ? list : []);
+        } catch (error) {
+            console.error('Error fetching users:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (users.length > 0) {
+            const options = users.map(user => ({ value: user.id, label: user.fullName }));
+            setUserOptions(options);
+        } else {
+            setUserOptions([]);
+        }
+    }, [users]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            if(!formData.userId){
+                toast.error("Error: Customer is required");
+                return;
+            }
             if(formData.name.trim() === ''){
                 toast.error("Error: Name is required");
                 return;
@@ -282,7 +314,9 @@ const YachtsPage = () => {
                     hasAirConditioners: '',
                     airConditionerCount: '',
                     airConditioners: [],
-                    description:''
+                    description:'',
+                    userId: '',
+                    userName: ''
                 });
                 setModalIsOpen(false);
                 fetchYachts();
@@ -307,6 +341,8 @@ const YachtsPage = () => {
             ownerEmail: yacht.ownerEmail || '',
             ownerPhone: yacht.ownerPhone || '',
             ownerAddress: yacht.ownerAddress || '',
+            userId: yacht.userId || '',
+            userName: yacht.userName || '',
             engineCount: yacht.engineCount || (yacht.engines?.length ? String(yacht.engines.length) : ''),
             engines: yacht.engines || [],
             hasGenerators: yacht.hasGenerators || '',
@@ -753,7 +789,9 @@ const YachtsPage = () => {
                         hasAirConditioners: '',
                         airConditionerCount: '',
                         airConditioners: [],
-                        description:''
+                        description:'',
+                        userId: '',
+                        userName: ''
                     });
                 }} title="Add New Yacht">
                     <div className="max-h-[70vh] overflow-y-auto pr-2 text-black">
@@ -762,6 +800,37 @@ const YachtsPage = () => {
                             <p className="text-sm text-blue-700">
                                 <span className="font-semibold">Required Fields:</span> Yacht Name, Model, and Boat Registration
                             </p>
+                        </div>
+                        <div className="mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Select Customer *
+                            </label>
+                            <ReactSelect
+                                options={userOptions}
+                                value={userOptions.find(o => String(o.value) === String(formData.userId)) || null}
+                                onChange={(selectedOption) => {
+                                    const id = selectedOption?.value ? String(selectedOption.value) : '';
+                                    const name = selectedOption?.label || '';
+                                    setFormData(prev => ({ ...prev, userId: id, userName: name }));
+                                }}
+                                placeholder="Select a customer..."
+                                isClearable
+                                isSearchable
+                                menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                                menuPlacement="auto"
+                                menuPosition="fixed"
+                                menuShouldScrollIntoView={false}
+                                styles={{
+                                    control: (provided) => ({ ...provided }),
+                                    singleValue: (provided) => ({ ...provided, color: 'black' }),
+                                    option: (provided, state) => ({
+                                        ...provided,
+                                        color: 'black',
+                                        backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                                    }),
+                                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                }}
+                            />
                         </div>
                         <Input
                             label="Yacht Name *"
@@ -1006,6 +1075,37 @@ const YachtsPage = () => {
                             <p className="text-sm text-blue-700">
                                 <span className="font-semibold">Required Fields:</span> Yacht Name, Model, and Boat Registration
                             </p>
+                        </div>
+                        <div className="mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Select Customer
+                            </label>
+                            <ReactSelect
+                                options={userOptions}
+                                value={userOptions.find(o => String(o.value) === String(editingYacht?.userId || '')) || null}
+                                onChange={(selectedOption) => {
+                                    const id = selectedOption?.value ? String(selectedOption.value) : '';
+                                    const name = selectedOption?.label || '';
+                                    setEditingYacht(prev => ({ ...prev, userId: id, userName: name }));
+                                }}
+                                placeholder="Select a customer..."
+                                isClearable
+                                isSearchable
+                                menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                                menuPlacement="auto"
+                                menuPosition="fixed"
+                                menuShouldScrollIntoView={false}
+                                styles={{
+                                    control: (provided) => ({ ...provided }),
+                                    singleValue: (provided) => ({ ...provided, color: 'black' }),
+                                    option: (provided, state) => ({
+                                        ...provided,
+                                        color: 'black',
+                                        backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                                    }),
+                                    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                }}
+                            />
                         </div>
                         <Input
                             label="Yacht Name *"
