@@ -29,6 +29,43 @@ export class Yacht {
   @Column({ type: 'int', nullable: true })
   engineHours: number;
 
+  @Column({ nullable: true })
+  owner: string;
+
+  @Column({ nullable: true })
+  ownerEmail: string;
+
+  @Column({ nullable: true })
+  ownerPhone: string;
+
+  @Column({ nullable: true })
+  ownerAddress: string;
+
+  @Column({ nullable: true })
+  engineCount: string;
+
+  // Stored as TEXT in Postgres via TypeORM "simple-json" (and works in sqlite too)
+  @Column({ type: 'simple-json', nullable: true })
+  engines: Array<{ model?: string; hours?: string | number }>;
+
+  @Column({ nullable: true })
+  hasGenerators: string;
+
+  @Column({ nullable: true })
+  generatorCount: string;
+
+  @Column({ type: 'simple-json', nullable: true })
+  generators: Array<{ model?: string; hours?: string | number }>;
+
+  @Column({ nullable: true })
+  hasAirConditioners: string;
+
+  @Column({ nullable: true })
+  airConditionerCount: string;
+
+  @Column({ type: 'simple-json', nullable: true })
+  airConditioners: Array<{ model?: string; hours?: string | number }>;
+
   @Column({ type: 'text', nullable: true })
   description: string;
 
