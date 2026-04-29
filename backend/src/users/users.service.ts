@@ -450,14 +450,25 @@ export class UsersService {
     actorName?: string;
     actorRole?: string;
     type?: string;
+    page?: string;
+    limit?: string;
   }) {
     try {
+      const pageNum = Math.max(1, parseInt(String(opts.page ?? '1'), 10) || 1);
+      const limitNumRaw = parseInt(String(opts.limit ?? '50'), 10) || 50;
+      const limitNum = Math.min(200, Math.max(1, limitNumRaw)); // guardrail
+      const skip = (pageNum - 1) * limitNum;
+
       const fromDate = opts.from ? new Date(opts.from) : undefined;
       const toDate = opts.to ? new Date(opts.to) : undefined;
       const type = (opts.type || '').trim().toLowerCase();
       const targetUserId = (opts.targetUserId || '').trim();
 
-      const auditQ = this.userAuditHistoryRepository.createQueryBuilder('a');
+      const auditQ = this.userAuditHistoryRepository
+        .createQueryBuilder('a')
+        .orderBy('a.createdAt', 'DESC')
+        .skip(skip)
+        .take(limitNum);
       if (targetUserId) {
         auditQ.where('a.userId = :userId', { userId: targetUserId });
       }
@@ -471,7 +482,11 @@ export class UsersService {
         auditQ.andWhere('LOWER(a.entityType) LIKE :type', { type: `%${type}%` });
       }
 
-      const permQ = this.userPermissionHistoryRepository.createQueryBuilder('p');
+      const permQ = this.userPermissionHistoryRepository
+        .createQueryBuilder('p')
+        .orderBy('p.changedAt', 'DESC')
+        .skip(skip)
+        .take(limitNum);
       if (targetUserId) {
         permQ.where('p.userId = :userId', { userId: targetUserId });
       }
@@ -482,18 +497,88 @@ export class UsersService {
         permQ.andWhere('p.changedAt <= :to', { to: toDate.toISOString() });
       }
 
-      const [audits, perms] = await Promise.all([auditQ.getMany(), permQ.getMany()]);
+      // In addition to the page slice, fetch total counts (cheap enough and useful for UI).
+      // Note: total is an approximation of combined sources (audit + permissions + order histories).
+      const auditCountQ = this.userAuditHistoryRepository.createQueryBuilder('a');
+      if (targetUserId) auditCountQ.where('a.userId = :userId', { userId: targetUserId });
+      if (fromDate && !Number.isNaN(fromDate.getTime())) {
+        auditCountQ.andWhere('a.createdAt >= :from', { from: fromDate.toISOString() });
+      }
+      if (toDate && !Number.isNaN(toDate.getTime())) {
+        auditCountQ.andWhere('a.createdAt <= :to', { to: toDate.toISOString() });
+      }
+      if (type) auditCountQ.andWhere('LOWER(a.entityType) LIKE :type', { type: `%${type}%` });
 
-      const [orderStatuses, orderAssignments, orderTimerHistories] = await Promise.all([
-        this.orderStatusHistoryRepository.find({
-          order: { changedAt: 'DESC' },
-        }),
-        this.orderAssignmentHistoryRepository.find({
-          order: { changedAt: 'DESC' },
-        }),
-        this.orderTimerHistoryRepository.find({
-          order: { changedAt: 'DESC' },
-        }),
+      const permCountQ = this.userPermissionHistoryRepository.createQueryBuilder('p');
+      if (targetUserId) permCountQ.where('p.userId = :userId', { userId: targetUserId });
+      if (fromDate && !Number.isNaN(fromDate.getTime())) {
+        permCountQ.andWhere('p.changedAt >= :from', { from: fromDate.toISOString() });
+      }
+      if (toDate && !Number.isNaN(toDate.getTime())) {
+        permCountQ.andWhere('p.changedAt <= :to', { to: toDate.toISOString() });
+      }
+
+      const [audits, perms, auditCount, permCount] = await Promise.all([
+        auditQ.getMany(),
+        permQ.getMany(),
+        auditCountQ.getCount(),
+        permCountQ.getCount(),
+      ]);
+
+      // Paginate order-history sources too to avoid loading massive tables.
+      // These sources are merged and then sliced again below.
+      const orderStatusQ = this.orderStatusHistoryRepository
+        .createQueryBuilder('s')
+        .orderBy('s.changedAt', 'DESC')
+        .skip(skip)
+        .take(limitNum);
+      const orderAssignQ = this.orderAssignmentHistoryRepository
+        .createQueryBuilder('a')
+        .orderBy('a.changedAt', 'DESC')
+        .skip(skip)
+        .take(limitNum);
+      const orderTimerQ = this.orderTimerHistoryRepository
+        .createQueryBuilder('t')
+        .orderBy('t.changedAt', 'DESC')
+        .skip(skip)
+        .take(limitNum);
+
+      const orderStatusCountQ = this.orderStatusHistoryRepository.createQueryBuilder('s');
+      const orderAssignCountQ = this.orderAssignmentHistoryRepository.createQueryBuilder('a');
+      const orderTimerCountQ = this.orderTimerHistoryRepository.createQueryBuilder('t');
+
+      // Date range only (target user filter is applied later due to payload shape differences)
+      if (fromDate && !Number.isNaN(fromDate.getTime())) {
+        orderStatusQ.andWhere('s.changedAt >= :from', { from: fromDate.toISOString() });
+        orderAssignQ.andWhere('a.changedAt >= :from', { from: fromDate.toISOString() });
+        orderTimerQ.andWhere('t.changedAt >= :from', { from: fromDate.toISOString() });
+        orderStatusCountQ.andWhere('s.changedAt >= :from', { from: fromDate.toISOString() });
+        orderAssignCountQ.andWhere('a.changedAt >= :from', { from: fromDate.toISOString() });
+        orderTimerCountQ.andWhere('t.changedAt >= :from', { from: fromDate.toISOString() });
+      }
+      if (toDate && !Number.isNaN(toDate.getTime())) {
+        orderStatusQ.andWhere('s.changedAt <= :to', { to: toDate.toISOString() });
+        orderAssignQ.andWhere('a.changedAt <= :to', { to: toDate.toISOString() });
+        orderTimerQ.andWhere('t.changedAt <= :to', { to: toDate.toISOString() });
+        orderStatusCountQ.andWhere('s.changedAt <= :to', { to: toDate.toISOString() });
+        orderAssignCountQ.andWhere('a.changedAt <= :to', { to: toDate.toISOString() });
+        orderTimerCountQ.andWhere('t.changedAt <= :to', { to: toDate.toISOString() });
+      }
+
+      const [
+        orderStatuses,
+        orderAssignments,
+        orderTimerHistories,
+        orderStatusCount,
+        orderAssignCount,
+        orderTimerCount,
+      ] = await Promise.all([
+        orderStatusQ.getMany(),
+        orderAssignQ.getMany(),
+        orderTimerQ.getMany(),
+        orderStatusCountQ.getCount(),
+        orderAssignCountQ.getCount(),
+        orderTimerCountQ.getCount(),
       ]);
 
       const timerOwnerIds: string[] = [];
@@ -687,7 +772,22 @@ export class UsersService {
       // newest first for global history view
       events.sort((x, y) => new Date(y.at).getTime() - new Date(x.at).getTime());
 
-      return { code: 200, data: events };
+      // Final slice for this page (merge sources can produce > limitNum).
+      const pageItems = events.slice(0, limitNum);
+
+      const total = auditCount + permCount + orderStatusCount + orderAssignCount + orderTimerCount;
+      const hasMore = skip + limitNum < total;
+
+      return {
+        code: 200,
+        data: pageItems,
+        meta: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          hasMore,
+        },
+      };
     } catch (err) {
       return { code: 500, message: err instanceof Error ? err.message : 'Internal server error' };
     }

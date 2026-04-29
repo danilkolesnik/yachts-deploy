@@ -12,6 +12,7 @@ import ReactSelect from "react-select";
 import { ClipLoader } from "react-spinners";
 import { renderUserHistoryPayload } from "@/utils/userHistoryRender";
 import { toast } from "react-toastify";
+import PaginationBar from "@/ui/PaginationBar";
 
 const UsersHistoryPage = () => {
   const router = useRouter();
@@ -20,6 +21,9 @@ const UsersHistoryPage = () => {
   const [items, setItems] = useState([]);
   const [users, setUsers] = useState([]);
   const [userOptions, setUserOptions] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const [meta, setMeta] = useState({ page: 1, limit: 50, total: 0, hasMore: false });
 
   const [filters, setFilters] = useState({
     from: "",
@@ -38,8 +42,10 @@ const UsersHistoryPage = () => {
     if (filters.actorName) qs.set("actorName", filters.actorName);
     if (filters.actorRole) qs.set("actorRole", filters.actorRole);
     if (filters.type) qs.set("type", filters.type);
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
     return qs.toString();
-  }, [filters]);
+  }, [filters, page, limit]);
 
   const fetchUsers = async () => {
     try {
@@ -69,15 +75,18 @@ const UsersHistoryPage = () => {
       });
       if (res.data?.code === 200) {
         setItems(res.data.data || []);
+        setMeta(res.data.meta || { page, limit, total: 0, hasMore: false });
       } else {
         toast.error(res.data?.message || "Failed to load history");
         setItems([]);
+        setMeta({ page, limit, total: 0, hasMore: false });
       }
     } catch (e) {
       console.error("Error loading users history:", e);
       if (e?.response?.status === 401) toast.error("Authorization required");
       else toast.error("Error loading history");
       setItems([]);
+      setMeta({ page, limit, total: 0, hasMore: false });
     } finally {
       setLoading(false);
     }
@@ -89,9 +98,16 @@ const UsersHistoryPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    // refetch when page/limit changes
+    fetchHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit]);
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((p) => ({ ...p, [name]: value }));
+    setPage(1);
   };
 
   const selectedTarget = useMemo(() => {
@@ -147,7 +163,10 @@ const UsersHistoryPage = () => {
                 <ReactSelect
                   options={userOptions}
                   value={selectedTarget}
-                  onChange={(opt) => setFilters((p) => ({ ...p, targetUserId: opt ? String(opt.value) : "" }))}
+                  onChange={(opt) => {
+                    setFilters((p) => ({ ...p, targetUserId: opt ? String(opt.value) : "" }));
+                    setPage(1);
+                  }}
                   isClearable
                   isSearchable
                   placeholder="All users"
@@ -204,20 +223,33 @@ const UsersHistoryPage = () => {
                 variant="text"
                 color="red"
                 onClick={() =>
-                  setFilters({
+                  (setFilters({
                     from: "",
                     to: "",
                     targetUserId: "",
                     actorName: "",
                     actorRole: "",
                     type: "",
-                  })
+                  }),
+                  setPage(1))
                 }
                 className="w-full md:w-auto"
               >
                 Clear filters
               </Button>
             </div>
+
+            <PaginationBar
+              page={meta?.page ?? page}
+              limit={meta?.limit ?? limit}
+              total={meta?.total ?? 0}
+              hasMore={meta?.hasMore ?? false}
+              onPageChange={(p) => setPage(Math.max(1, Number(p) || 1))}
+              onLimitChange={(n) => {
+                setLimit(Math.max(1, Number(n) || 50));
+                setPage(1);
+              }}
+            />
 
             {items.length === 0 ? (
               <div className="text-gray-700">No history.</div>

@@ -26,6 +26,8 @@ export class UsersController {
     @Query('actorName') actorName?: string,
     @Query('actorRole') actorRole?: string,
     @Query('type') type?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.usersService.getAllUsersHistory({
       from,
@@ -34,6 +36,8 @@ export class UsersController {
       actorName,
       actorRole,
       type,
+      page,
+      limit,
     });
   }
 
