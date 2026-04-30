@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Param, Body, Req, UploadedFile, UseInterceptors, Query } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderItemsDto } from './dto/update-order-items.dto';
 import { Request } from 'express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -112,6 +113,16 @@ export class OrderController {
   @Permissions(PermissionsList.ORDERS_STATUS_CHANGE)
   async updateOrderStatus(@Param('id') orderId: string, @Body('status') newStatus: string, @Req() req: Request) {
     return this.orderService.updateOrderStatus(orderId, newStatus, req);
+  }
+
+  @Post(':id/items')
+  @Permissions(PermissionsList.ORDERS_UPDATE)
+  async updateOrderItems(
+    @Param('id') orderId: string,
+    @Body() body: UpdateOrderItemsDto,
+    @Req() req: Request,
+  ) {
+    return this.orderService.updateOrderItems(orderId, body, req);
   }
 
   @Post(':id/close')

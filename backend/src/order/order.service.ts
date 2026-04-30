@@ -457,6 +457,8 @@ export class OrderService {
           customerId: data.customerId,
           status: 'created',
           startedAt: new Date(),
+          services: Array.isArray(checkOffer.services) ? checkOffer.services : [],
+          parts: Array.isArray(checkOffer.parts) ? checkOffer.parts : [],
         })
       );
 
@@ -477,6 +479,37 @@ export class OrderService {
     } catch (err) {
       return { code: 500, message: err };
     }
+  }
+
+  async updateOrderItems(
+    orderId: string,
+    items: { services?: any[]; parts?: any[] },
+    req: Request,
+  ) {
+    await this.assertCanAccessOrder(orderId, req);
+    const changedBy = this.tryGetUserIdFromRequest(req);
+
+    const orderEntity = await this.orderRepository.findOne({ where: { id: orderId } });
+    if (!orderEntity) return { code: 404, message: 'Order not found' };
+
+    const nextServices = items.services !== undefined ? (Array.isArray(items.services) ? items.services : []) : orderEntity.services;
+    const nextParts = items.parts !== undefined ? (Array.isArray(items.parts) ? items.parts : []) : orderEntity.parts;
+
+    orderEntity.services = nextServices as any;
+    orderEntity.parts = nextParts as any;
+    const saved = await this.orderRepository.save(orderEntity);
+
+    await this.auditOrderItems(orderId, changedBy, {
+      servicesCount: Array.isArray(nextServices) ? nextServices.length : 0,
+      partsCount: Array.isArray(nextParts) ? nextParts.length : 0,
+    });
+
+    return { code: 200, data: saved };
+  }
+
+  private async auditOrderItems(orderId: string, changedBy?: string, meta?: Record<string, unknown>) {
+    // reuse order timer history table as lightweight audit stream (non-breaking)
+    await this.logOrderTimerEvent(orderId, null, 'items.updated', changedBy, meta);
   }
 
   async allOrder(req: Request) {

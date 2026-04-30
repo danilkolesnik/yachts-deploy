@@ -19,6 +19,16 @@ export class order {
   @Column({ default: 'created' }) // created, in_progress, paused, finished, completed
   status: string;
 
+  /**
+   * Snapshot of offer items at the moment the order is created.
+   * These are editable on the order without mutating the original offer.
+   */
+  @Column('json', { default: [] })
+  services: any[];
+
+  @Column('json', { default: [] })
+  parts: any[];
+
   @Column('simple-array', { nullable: true })
   processImageUrls: string[];
 
