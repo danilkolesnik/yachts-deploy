@@ -68,7 +68,7 @@ const OrderDetail = ({ params }) => {
     };
 
     const getOrderServices = () => {
-        const services = normalizeArray(order?.services);
+        const services = normalizeArray(order?.services?.length ? order?.services : order?.offer?.services);
         return services
             .map((s) => ({
                 serviceName: s?.serviceName ?? s?.label ?? s?.name ?? '',
@@ -80,7 +80,7 @@ const OrderDetail = ({ params }) => {
     };
 
     const getOrderParts = () => {
-        const parts = normalizeArray(order?.parts);
+        const parts = normalizeArray(order?.parts?.length ? order?.parts : order?.offer?.parts);
         return parts
             .map((p) => ({
                 partName: p?.partName ?? p?.label ?? p?.name ?? '',
@@ -103,8 +103,21 @@ const OrderDetail = ({ params }) => {
                         label: worker.fullName,
                     }));
                     setSelectedWorkers(initialSelected);
-                    setDraftServices(Array.isArray(data?.services) ? data.services : []);
-                    setDraftParts(Array.isArray(data?.parts) ? data.parts : []);
+                    // Source of truth is still offer; order snapshots (if present) override it.
+                    setDraftServices(
+                        Array.isArray(data?.services) && data.services.length > 0
+                            ? data.services
+                            : Array.isArray(data?.offer?.services)
+                              ? data.offer.services
+                              : [],
+                    );
+                    setDraftParts(
+                        Array.isArray(data?.parts) && data.parts.length > 0
+                            ? data.parts
+                            : Array.isArray(data?.offer?.parts)
+                              ? data.offer.parts
+                              : [],
+                    );
                 })
                 .catch(error => console.error('Error fetching order:', error));
 
@@ -451,8 +464,20 @@ const OrderDetail = ({ params }) => {
                                     <>
                                         <Button variant="outlined" color="gray" onClick={() => {
                                             setItemsEditMode(false);
-                                            setDraftServices(Array.isArray(order?.services) ? order.services : []);
-                                            setDraftParts(Array.isArray(order?.parts) ? order.parts : []);
+                                            setDraftServices(
+                                                Array.isArray(order?.services) && order.services.length > 0
+                                                    ? order.services
+                                                    : Array.isArray(order?.offer?.services)
+                                                      ? order.offer.services
+                                                      : [],
+                                            );
+                                            setDraftParts(
+                                                Array.isArray(order?.parts) && order.parts.length > 0
+                                                    ? order.parts
+                                                    : Array.isArray(order?.offer?.parts)
+                                                      ? order.offer.parts
+                                                      : [],
+                                            );
                                         }}>
                                             Cancel
                                         </Button>
