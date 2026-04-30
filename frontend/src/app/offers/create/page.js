@@ -1,11 +1,17 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Button } from '@material-tailwind/react';
 import { useRouter } from 'next/navigation';
+import { useAppSelector } from '@/lib/hooks';
+import { PermissionsList } from '@/constants/permissions';
+import { can } from '@/utils/canPermission';
 
 export default function CreateOffer() {
     const router = useRouter();
+    const session = useAppSelector((s) => s.userData?.session);
+    const permissions = useAppSelector((s) => s.userData?.permissions || []);
+    const role = useAppSelector((s) => s.userData?.role) || (typeof window !== 'undefined' ? localStorage.getItem('role') : '');
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -15,6 +21,21 @@ export default function CreateOffer() {
         yachtName: '',
         yachtModel: '',
     });
+
+    useEffect(() => {
+        if (session !== true) return;
+        if (role === 'client') {
+            router.replace('/client/orders');
+            return;
+        }
+        if (!can(permissions, PermissionsList.OFFERS_READ)) {
+            const landing =
+                can(permissions, PermissionsList.ORDERS_READ) ? '/orders'
+                : can(permissions, PermissionsList.USERS_READ) ? '/yachts'
+                : '/login';
+            router.replace(landing);
+        }
+    }, [session, role, permissions, router]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;

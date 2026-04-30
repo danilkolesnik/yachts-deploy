@@ -5,6 +5,8 @@ import { statusStyles } from '@/utils/statusStyles';
 import { Button, Select, Option } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import { useAppSelector } from '@/lib/hooks';
+import { PermissionsList } from '@/constants/permissions';
+import { can } from '@/utils/canPermission';
 import axios from 'axios';
 import DataTable from 'react-data-table-component';
 import Loader from '@/ui/loader';
@@ -25,6 +27,9 @@ const ConfirmedOffersPage = () => {
     const [emailAddress, setEmailAddress] = useState('');
     const [selectedOfferId, setSelectedOfferId] = useState(null);
     const [emailSendingLoading, setEmailSendingLoading] = useState({});
+    const session = useAppSelector((s) => s.userData?.session);
+    const permissions = useAppSelector((s) => s.userData?.permissions || []);
+    const reduxRole = useAppSelector((s) => s.userData?.role);
 
     const [filters, setFilters] = useState({
         searchCriteria: 'id',
@@ -357,6 +362,22 @@ const ConfirmedOffersPage = () => {
             setRole(storedRole);
         }
     }, []);
+
+    useEffect(() => {
+        if (session !== true) return;
+        const effectiveRole = reduxRole || role || localStorage.getItem('role');
+        if (effectiveRole === 'client') {
+            router.replace('/client/orders');
+            return;
+        }
+        if (!can(permissions, PermissionsList.OFFERS_READ)) {
+            const landing =
+                can(permissions, PermissionsList.ORDERS_READ) ? '/orders'
+                : can(permissions, PermissionsList.USERS_READ) ? '/yachts'
+                : '/login';
+            router.replace(landing);
+        }
+    }, [session, reduxRole, role, permissions, router]);
 
     return (
         <>

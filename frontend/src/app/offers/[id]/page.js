@@ -12,6 +12,9 @@ import ReactPlayer from 'react-player';
 import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
 import { statusStyles } from '@/utils/statusStyles';
+import { useAppSelector } from '@/lib/hooks';
+import { PermissionsList } from '@/constants/permissions';
+import { can } from '@/utils/canPermission';
 
 const OfferDetail = ({ params }) => {
     const { id } = use(params);
@@ -26,12 +29,31 @@ const OfferDetail = ({ params }) => {
     const [emailLoading, setEmailLoading] = useState(false);
     const [emailAddress, setEmailAddress] = useState('');
     const router = useRouter();
+    const session = useAppSelector((s) => s.userData?.session);
+    const permissions = useAppSelector((s) => s.userData?.permissions || []);
+    const reduxRole = useAppSelector((s) => s.userData?.role);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
             setRole(localStorage.getItem('role'));
         }
     }, []);
+
+    useEffect(() => {
+        if (session !== true) return;
+        const effectiveRole = reduxRole || role || localStorage.getItem('role');
+        if (effectiveRole === 'client') {
+            router.replace('/client/orders');
+            return;
+        }
+        if (!can(permissions, PermissionsList.OFFERS_READ)) {
+            const landing =
+                can(permissions, PermissionsList.ORDERS_READ) ? '/orders'
+                : can(permissions, PermissionsList.USERS_READ) ? '/yachts'
+                : '/login';
+            router.replace(landing);
+        }
+    }, [session, reduxRole, role, permissions, router]);
 
     useEffect(() => {
         if (id) {

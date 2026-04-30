@@ -10,7 +10,7 @@ const PaginationBar = ({
   hasMore,
   onPageChange,
   onLimitChange,
-  limitOptions = [25, 50, 100, 200],
+  limitOptions = [10, 25, 50, 100, 200],
   className = "",
 }) => {
   const safePage = Math.max(1, Number(page) || 1);

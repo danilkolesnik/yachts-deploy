@@ -8,12 +8,33 @@ import axios from 'axios';
 import DataTable from 'react-data-table-component';
 import Loader from '@/ui/loader';
 import { statusStyles } from '@/utils/statusStyles';
+import { useAppSelector } from '@/lib/hooks';
+import { PermissionsList } from '@/constants/permissions';
+import { can } from '@/utils/canPermission';
 
 
 const OffersHistoryPage = () => {
     const [offerHistory, setOfferHistory] = useState([]);
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const session = useAppSelector((s) => s.userData?.session);
+    const permissions = useAppSelector((s) => s.userData?.permissions || []);
+    const role = useAppSelector((s) => s.userData?.role) || (typeof window !== 'undefined' ? localStorage.getItem('role') : '');
+
+    useEffect(() => {
+        if (session !== true) return;
+        if (role === 'client') {
+            router.replace('/client/orders');
+            return;
+        }
+        if (!can(permissions, PermissionsList.OFFERS_READ)) {
+            const landing =
+                can(permissions, PermissionsList.ORDERS_READ) ? '/orders'
+                : can(permissions, PermissionsList.USERS_READ) ? '/yachts'
+                : '/login';
+            router.replace(landing);
+        }
+    }, [session, role, permissions, router]);
 
     const getOfferHistory = async () => {
         try {

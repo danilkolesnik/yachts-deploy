@@ -6,6 +6,8 @@ import axios from 'axios';
 import Link from 'next/link';
 import { useAppDispatch } from '@/lib/hooks';
 import { setUserFromVerify, clearUserSession } from '@/lib/features/todos/usersDataSlice';
+import { PermissionsList } from '@/constants/permissions';
+import { can } from '@/utils/canPermission';
 
 const Login = () => {
     const router = useRouter();
@@ -13,6 +15,15 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+
+    const getLandingRoute = (role, permissions) => {
+        if (role === 'client') return '/client/orders';
+        if (can(permissions, PermissionsList.OFFERS_READ)) return '/offers';
+        if (can(permissions, PermissionsList.ORDERS_READ)) return '/orders';
+        // "Staff section" is gated by USERS_READ in the header; pick a reasonable first page there.
+        if (can(permissions, PermissionsList.USERS_READ)) return '/yachts';
+        return '/login';
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -38,11 +49,7 @@ const Login = () => {
                             responsibilityAreas: me.responsibilityAreas,
                         }),
                     );
-                    if (me.role === 'client') {
-                        router.push('/client/orders');
-                    } else {
-                        router.push('/offers');
-                    }
+                    router.push(getLandingRoute(me.role, me.permissions || []));
                     return;
                 }
                 localStorage.removeItem('token');
