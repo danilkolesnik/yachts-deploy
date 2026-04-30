@@ -35,6 +35,34 @@ const OrderDetail = ({ params }) => {
     const [updatingWorkers, setUpdatingWorkers] = useState(false);
     const router = useRouter();
 
+    const normalizeArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+
+    const getOfferServices = () => {
+        const services = normalizeArray(order?.offer?.services);
+        return services
+            .map((s) => ({
+                name: s?.label ?? s?.serviceName ?? s?.name ?? '',
+                qty: s?.quantity ?? s?.qty ?? '',
+                unit: s?.value?.unitsOfMeasurement ?? s?.unitsOfMeasurement ?? s?.unit ?? '',
+                price: s?.value?.priceInEuroWithoutVAT ?? s?.priceInEuroWithoutVAT ?? s?.price ?? '',
+            }))
+            .filter((x) => x.name);
+    };
+
+    const getOfferParts = () => {
+        const parts = normalizeArray(order?.offer?.parts);
+        return parts
+            .map((p) => ({
+                name: p?.label ?? p?.name ?? '',
+                qty: p?.quantity ?? p?.qty ?? '',
+                unit: p?.unitsOfMeasurement ?? p?.unit ?? '',
+                price: p?.pricePerUnit ?? p?.price ?? '',
+                articleNumber: p?.articleNumber ?? '',
+                warehouse: p?.warehouse ?? '',
+            }))
+            .filter((x) => x.name);
+    };
+
     useEffect(() => {
         if (id) {
             axios.get(`${URL}/orders/${id}`)
@@ -355,6 +383,67 @@ const OrderDetail = ({ params }) => {
                                 >
                                     {updatingWorkers ? 'Saving...' : 'Save employees'}
                                 </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="border rounded-lg p-4 bg-gray-50">
+                        <h2 className="text-xl font-bold text-black mb-3">Offer services</h2>
+                        {getOfferServices().length === 0 ? (
+                            <div className="text-sm text-gray-600">No services in offer</div>
+                        ) : (
+                            <div className="space-y-2 text-sm text-black">
+                                {getOfferServices().map((s, idx) => (
+                                    <div key={`${s.name}-${idx}`} className="flex items-start justify-between gap-3">
+                                        <div className="font-medium">{s.name}</div>
+                                        <div className="text-right text-gray-700 whitespace-nowrap">
+                                            {(s.qty || s.unit) ? (
+                                                <span>{String(s.qty || 1)} {s.unit || ''}</span>
+                                            ) : (
+                                                <span />
+                                            )}
+                                            {s.price !== '' && s.price !== null && s.price !== undefined && (
+                                                <span className="ml-3">{String(s.price)} €</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="border rounded-lg p-4 bg-gray-50">
+                        <h2 className="text-xl font-bold text-black mb-3">Offer parts / materials</h2>
+                        {getOfferParts().length === 0 ? (
+                            <div className="text-sm text-gray-600">No parts in offer</div>
+                        ) : (
+                            <div className="space-y-2 text-sm text-black">
+                                {getOfferParts().map((p, idx) => (
+                                    <div key={`${p.name}-${idx}`} className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <div className="font-medium">{p.name}</div>
+                                            {(p.articleNumber || p.warehouse) && (
+                                                <div className="text-xs text-gray-600">
+                                                    {p.articleNumber ? <span>#{p.articleNumber}</span> : null}
+                                                    {p.articleNumber && p.warehouse ? <span> · </span> : null}
+                                                    {p.warehouse ? <span>{p.warehouse}</span> : null}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="text-right text-gray-700 whitespace-nowrap">
+                                            {(p.qty || p.unit) ? (
+                                                <span>{String(p.qty || 1)} {p.unit || ''}</span>
+                                            ) : (
+                                                <span />
+                                            )}
+                                            {p.price !== '' && p.price !== null && p.price !== undefined && (
+                                                <span className="ml-3">{String(p.price)} €</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>

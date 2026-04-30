@@ -118,6 +118,17 @@ export class UsersService {
         };
       }
 
+      // Safety: prevent self-demotion and "no admins left" scenarios.
+      if (user.role === 'admin' && newRole !== 'admin') {
+        if (changedBy && String(changedBy) === String(id)) {
+          return { code: 403, message: 'Admin cannot change own role' };
+        }
+        const adminCount = await this.usersRepository.count({ where: { role: 'admin' } });
+        if (adminCount <= 1) {
+          return { code: 403, message: 'Cannot demote the last admin' };
+        }
+      }
+
       const oldRole = user.role;
       user.role = newRole;
       const updatedUser = await this.usersRepository.save(user);
@@ -287,6 +298,15 @@ export class UsersService {
     try {
       const user = await this.usersRepository.findOne({ where: { id } });
       if (!user) return { code: 404, message: 'User not found' };
+      if (changedBy && String(changedBy) === String(id)) {
+        return { code: 403, message: 'User cannot delete own account' };
+      }
+      if (user.role === 'admin') {
+        const adminCount = await this.usersRepository.count({ where: { role: 'admin' } });
+        if (adminCount <= 1) {
+          return { code: 403, message: 'Cannot delete the last admin' };
+        }
+      }
       await this.usersRepository.delete(id);
       await this.audit(id, 'user', { deleted: true }, changedBy);
       return { code: 200, message: 'User deleted successfully' };

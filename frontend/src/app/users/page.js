@@ -26,14 +26,12 @@ const CLIENT_PROFILE_PERMISSION_OPTIONS = [
 const PROFILE_PERMISSION_OPTIONS = [
     { code: PermissionsList.OFFERS_READ, label: 'Offers: view' },
     { code: PermissionsList.ORDERS_READ, label: 'Orders: view' },
-    { code: PermissionsList.ORDERS_CREATE, label: 'Orders: create' },
-    { code: PermissionsList.ORDERS_UPDATE, label: 'Orders: edit / supplement' },
-    { code: PermissionsList.ORDERS_MATERIALS_ADD, label: 'Orders: add materials' },
+    // Note: Orders are created from confirmed offers; there is no standalone "create order" UI in the admin panel.
+    // Keep permission codes in backend, but do not expose unused ones in UI to avoid confusion.
     { code: PermissionsList.ORDERS_STATUS_CHANGE, label: 'Orders: change status' },
     { code: PermissionsList.ORDERS_ASSIGNMENT_MANAGE, label: 'Orders: assign staff' },
     { code: PermissionsList.ORDERS_MEDIA_ADD, label: 'Orders: upload photos/videos' },
     { code: PermissionsList.ORDERS_MEDIA_DELETE, label: 'Orders: delete media' },
-    { code: PermissionsList.ORDERS_COMMENT_ADD, label: 'Orders: comments' },
     { code: PermissionsList.ORDERS_TIMER_USE, label: 'Timer: start / pause / resume' },
     { code: PermissionsList.ORDERS_TIMER_STOP, label: 'Timer: stop / clear (completes order)' },
     { code: PermissionsList.ORDERS_TIMERS_GLOBAL_READ, label: 'Timers: global list' },
