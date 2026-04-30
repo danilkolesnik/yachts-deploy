@@ -33,6 +33,10 @@ const OrderDetail = ({ params }) => {
     const [availableWorkers, setAvailableWorkers] = useState([]);
     const [selectedWorkers, setSelectedWorkers] = useState([]);
     const [updatingWorkers, setUpdatingWorkers] = useState(false);
+    const [itemsEditMode, setItemsEditMode] = useState(false);
+    const [itemsSaving, setItemsSaving] = useState(false);
+    const [draftServices, setDraftServices] = useState([]);
+    const [draftParts, setDraftParts] = useState([]);
     const router = useRouter();
 
     const normalizeArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
@@ -63,6 +67,31 @@ const OrderDetail = ({ params }) => {
             .filter((x) => x.name);
     };
 
+    const getOrderServices = () => {
+        const services = normalizeArray(order?.services);
+        return services
+            .map((s) => ({
+                serviceName: s?.serviceName ?? s?.label ?? s?.name ?? '',
+                priceInEuroWithoutVAT: s?.priceInEuroWithoutVAT ?? s?.value?.priceInEuroWithoutVAT ?? s?.price ?? null,
+                unitsOfMeasurement: s?.unitsOfMeasurement ?? s?.value?.unitsOfMeasurement ?? s?.unit ?? '',
+                quantity: s?.quantity ?? s?.qty ?? 1,
+            }))
+            .filter((x) => x.serviceName);
+    };
+
+    const getOrderParts = () => {
+        const parts = normalizeArray(order?.parts);
+        return parts
+            .map((p) => ({
+                partName: p?.partName ?? p?.label ?? p?.name ?? '',
+                quantity: p?.quantity ?? p?.qty ?? 1,
+                articleNumber: p?.articleNumber ?? '',
+                warehouse: p?.warehouse ?? '',
+                pricePerUnit: p?.pricePerUnit ?? p?.price ?? null,
+            }))
+            .filter((x) => x.partName);
+    };
+
     useEffect(() => {
         if (id) {
             axios.get(`${URL}/orders/${id}`)
@@ -74,6 +103,8 @@ const OrderDetail = ({ params }) => {
                         label: worker.fullName,
                     }));
                     setSelectedWorkers(initialSelected);
+                    setDraftServices(Array.isArray(data?.services) ? data.services : []);
+                    setDraftParts(Array.isArray(data?.parts) ? data.parts : []);
                 })
                 .catch(error => console.error('Error fetching order:', error));
 
@@ -112,6 +143,25 @@ const OrderDetail = ({ params }) => {
             }
         }
     }, [id, permissions]);
+
+    const saveOrderItems = async () => {
+        if (!order) return;
+        setItemsSaving(true);
+        try {
+            const res = await axios.post(`${URL}/orders/${order.id}/items`, {
+                services: Array.isArray(draftServices) ? draftServices : [],
+                parts: Array.isArray(draftParts) ? draftParts : [],
+            });
+            if (res.data?.code === 200) {
+                setOrder(res.data.data);
+                setItemsEditMode(false);
+            }
+        } catch (error) {
+            console.error('Error saving order items:', error);
+        } finally {
+            setItemsSaving(false);
+        }
+    };
 
     const handleFileChange = (event) => {
         setSelectedFile(event.target.files[0]);
@@ -388,64 +438,189 @@ const OrderDetail = ({ params }) => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="border rounded-lg p-4 bg-gray-50">
-                        <h2 className="text-xl font-bold text-black mb-3">Offer services</h2>
-                        {getOfferServices().length === 0 ? (
-                            <div className="text-sm text-gray-600">No services in offer</div>
-                        ) : (
-                            <div className="space-y-2 text-sm text-black">
-                                {getOfferServices().map((s, idx) => (
-                                    <div key={`${s.name}-${idx}`} className="flex items-start justify-between gap-3">
-                                        <div className="font-medium">{s.name}</div>
-                                        <div className="text-right text-gray-700 whitespace-nowrap">
-                                            {(s.qty || s.unit) ? (
-                                                <span>{String(s.qty || 1)} {s.unit || ''}</span>
-                                            ) : (
-                                                <span />
-                                            )}
-                                            {s.price !== '' && s.price !== null && s.price !== undefined && (
-                                                <span className="ml-3">{String(s.price)} €</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
+                <div className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+                        <h2 className="text-xl font-bold text-black">Order works & materials</h2>
+                        {can(permissions, PermissionsList.ORDERS_UPDATE) && (
+                            <div className="flex gap-2">
+                                {!itemsEditMode ? (
+                                    <Button color="blue" onClick={() => setItemsEditMode(true)}>
+                                        Edit
+                                    </Button>
+                                ) : (
+                                    <>
+                                        <Button variant="outlined" color="gray" onClick={() => {
+                                            setItemsEditMode(false);
+                                            setDraftServices(Array.isArray(order?.services) ? order.services : []);
+                                            setDraftParts(Array.isArray(order?.parts) ? order.parts : []);
+                                        }}>
+                                            Cancel
+                                        </Button>
+                                        <Button color="green" onClick={saveOrderItems} disabled={itemsSaving}>
+                                            {itemsSaving ? 'Saving...' : 'Save'}
+                                        </Button>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
 
-                    <div className="border rounded-lg p-4 bg-gray-50">
-                        <h2 className="text-xl font-bold text-black mb-3">Offer parts / materials</h2>
-                        {getOfferParts().length === 0 ? (
-                            <div className="text-sm text-gray-600">No parts in offer</div>
-                        ) : (
-                            <div className="space-y-2 text-sm text-black">
-                                {getOfferParts().map((p, idx) => (
-                                    <div key={`${p.name}-${idx}`} className="flex items-start justify-between gap-3">
-                                        <div>
-                                            <div className="font-medium">{p.name}</div>
-                                            {(p.articleNumber || p.warehouse) && (
-                                                <div className="text-xs text-gray-600">
-                                                    {p.articleNumber ? <span>#{p.articleNumber}</span> : null}
-                                                    {p.articleNumber && p.warehouse ? <span> · </span> : null}
-                                                    {p.warehouse ? <span>{p.warehouse}</span> : null}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-white border rounded-lg p-4">
+                            <div className="font-semibold text-black mb-2">Works / services</div>
+                            {!itemsEditMode ? (
+                                getOrderServices().length === 0 ? (
+                                    <div className="text-sm text-gray-600">No services in order</div>
+                                ) : (
+                                    <div className="space-y-2 text-sm text-black">
+                                        {getOrderServices().map((s, idx) => (
+                                            <div key={`${s.serviceName}-${idx}`} className="flex items-start justify-between gap-3">
+                                                <div className="font-medium">{s.serviceName}</div>
+                                                <div className="text-right text-gray-700 whitespace-nowrap">
+                                                    <span>{String(s.quantity || 1)} {s.unitsOfMeasurement || ''}</span>
+                                                    {s.priceInEuroWithoutVAT !== null && s.priceInEuroWithoutVAT !== undefined && s.priceInEuroWithoutVAT !== '' && (
+                                                        <span className="ml-3">{String(s.priceInEuroWithoutVAT)} €</span>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
-                                        <div className="text-right text-gray-700 whitespace-nowrap">
-                                            {(p.qty || p.unit) ? (
-                                                <span>{String(p.qty || 1)} {p.unit || ''}</span>
-                                            ) : (
-                                                <span />
-                                            )}
-                                            {p.price !== '' && p.price !== null && p.price !== undefined && (
-                                                <span className="ml-3">{String(p.price)} €</span>
-                                            )}
-                                        </div>
+                                            </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                        )}
+                                )
+                            ) : (
+                                <div className="space-y-2">
+                                    {(draftServices || []).map((s, idx) => (
+                                        <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                                            <input
+                                                value={s?.serviceName ?? ''}
+                                                onChange={(e) => {
+                                                    const next = [...draftServices];
+                                                    next[idx] = { ...(next[idx] || {}), serviceName: e.target.value };
+                                                    setDraftServices(next);
+                                                }}
+                                                className="border p-2 rounded text-black md:col-span-2"
+                                                placeholder="Service name"
+                                            />
+                                            <input
+                                                value={String(s?.quantity ?? 1)}
+                                                onChange={(e) => {
+                                                    const next = [...draftServices];
+                                                    next[idx] = { ...(next[idx] || {}), quantity: Number(e.target.value) || 1 };
+                                                    setDraftServices(next);
+                                                }}
+                                                className="border p-2 rounded text-black"
+                                                placeholder="Qty"
+                                            />
+                                            <div className="flex gap-2">
+                                                <input
+                                                    value={String(s?.priceInEuroWithoutVAT ?? '')}
+                                                    onChange={(e) => {
+                                                        const next = [...draftServices];
+                                                        next[idx] = { ...(next[idx] || {}), priceInEuroWithoutVAT: e.target.value === '' ? null : Number(e.target.value) };
+                                                        setDraftServices(next);
+                                                    }}
+                                                    className="border p-2 rounded text-black w-full"
+                                                    placeholder="Price €"
+                                                />
+                                                <button
+                                                    onClick={() => setDraftServices(draftServices.filter((_, i) => i !== idx))}
+                                                    className="px-3 border rounded text-red-600"
+                                                    type="button"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={() => setDraftServices([...(draftServices || []), { serviceName: '', quantity: 1, priceInEuroWithoutVAT: null }])}
+                                        className="text-sm text-blue-600 hover:underline"
+                                        type="button"
+                                    >
+                                        + Add service
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="bg-white border rounded-lg p-4">
+                            <div className="font-semibold text-black mb-2">Parts / materials</div>
+                            {!itemsEditMode ? (
+                                getOrderParts().length === 0 ? (
+                                    <div className="text-sm text-gray-600">No parts in order</div>
+                                ) : (
+                                    <div className="space-y-2 text-sm text-black">
+                                        {getOrderParts().map((p, idx) => (
+                                            <div key={`${p.partName}-${idx}`} className="flex items-start justify-between gap-3">
+                                                <div className="font-medium">{p.partName}</div>
+                                                <div className="text-right text-gray-700 whitespace-nowrap">
+                                                    <span>{String(p.quantity || 1)}</span>
+                                                    {p.pricePerUnit !== null && p.pricePerUnit !== undefined && p.pricePerUnit !== '' && (
+                                                        <span className="ml-3">{String(p.pricePerUnit)} €</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )
+                            ) : (
+                                <div className="space-y-2">
+                                    {(draftParts || []).map((p, idx) => (
+                                        <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                                            <input
+                                                value={p?.partName ?? ''}
+                                                onChange={(e) => {
+                                                    const next = [...draftParts];
+                                                    next[idx] = { ...(next[idx] || {}), partName: e.target.value };
+                                                    setDraftParts(next);
+                                                }}
+                                                className="border p-2 rounded text-black md:col-span-2"
+                                                placeholder="Part name"
+                                            />
+                                            <input
+                                                value={String(p?.quantity ?? 1)}
+                                                onChange={(e) => {
+                                                    const next = [...draftParts];
+                                                    next[idx] = { ...(next[idx] || {}), quantity: Number(e.target.value) || 1 };
+                                                    setDraftParts(next);
+                                                }}
+                                                className="border p-2 rounded text-black"
+                                                placeholder="Qty"
+                                            />
+                                            <div className="flex gap-2">
+                                                <input
+                                                    value={String(p?.pricePerUnit ?? '')}
+                                                    onChange={(e) => {
+                                                        const next = [...draftParts];
+                                                        next[idx] = { ...(next[idx] || {}), pricePerUnit: e.target.value === '' ? null : Number(e.target.value) };
+                                                        setDraftParts(next);
+                                                    }}
+                                                    className="border p-2 rounded text-black w-full"
+                                                    placeholder="Price €"
+                                                />
+                                                <button
+                                                    onClick={() => setDraftParts(draftParts.filter((_, i) => i !== idx))}
+                                                    className="px-3 border rounded text-red-600"
+                                                    type="button"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={() => setDraftParts([...(draftParts || []), { partName: '', quantity: 1, pricePerUnit: null }])}
+                                        className="text-sm text-blue-600 hover:underline"
+                                        type="button"
+                                    >
+                                        + Add part
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="mt-4 text-xs text-gray-600">
+                        Offer snapshot (read-only): {getOfferServices().length} services, {getOfferParts().length} parts.
                     </div>
                 </div>
 
