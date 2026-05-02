@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { Tab } from '@headlessui/react';
 import Header from '@/component/header';
 import Loader from '@/ui/loader';
-import Image from 'next/image';
 import ReactPlayer from 'react-player';
 import axios from 'axios';
 import { useAppSelector } from '@/lib/hooks';
@@ -302,7 +301,7 @@ const OrderDetail = ({ params }) => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                             {order[imageKey].map((url, index) => (
                                 <div key={index} className="relative group cursor-pointer" onClick={() => handleImageClick(index)}>
-                                    <Image
+                                    <img
                                         src={url}
                                         alt={`Order Image ${index + 1}`}
                                         width={500}
