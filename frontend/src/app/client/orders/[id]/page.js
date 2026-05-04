@@ -38,6 +38,55 @@ export default function ClientOrderDetailPage() {
   const [galleryItems, setGalleryItems] = useState([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
+  const normalizeArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
+
+  const getOfferServices = () => {
+    const services = normalizeArray(order?.offer?.services);
+    return services
+      .map((s) => ({
+        name: s?.label ?? s?.serviceName ?? s?.name ?? "",
+        qty: s?.quantity ?? s?.qty ?? "",
+        unit: s?.value?.unitsOfMeasurement ?? s?.unitsOfMeasurement ?? s?.unit ?? "",
+      }))
+      .filter((x) => x.name);
+  };
+
+  const getOfferParts = () => {
+    const parts = normalizeArray(order?.offer?.parts);
+    return parts
+      .map((p) => ({
+        name: p?.label ?? p?.name ?? "",
+        qty: p?.quantity ?? p?.qty ?? "",
+        unit: p?.unitsOfMeasurement ?? p?.unit ?? "",
+        articleNumber: p?.articleNumber ?? "",
+        warehouse: p?.warehouse ?? "",
+      }))
+      .filter((x) => x.name);
+  };
+
+  const getOrderServices = () => {
+    const services = normalizeArray(order?.services?.length ? order?.services : order?.offer?.services);
+    return services
+      .map((s) => ({
+        serviceName: s?.serviceName ?? s?.label ?? s?.name ?? "",
+        unitsOfMeasurement: s?.unitsOfMeasurement ?? s?.value?.unitsOfMeasurement ?? s?.unit ?? "",
+        quantity: s?.quantity ?? s?.qty ?? 1,
+      }))
+      .filter((x) => x.serviceName);
+  };
+
+  const getOrderParts = () => {
+    const parts = normalizeArray(order?.parts?.length ? order?.parts : order?.offer?.parts);
+    return parts
+      .map((p) => ({
+        partName: p?.partName ?? p?.label ?? p?.name ?? "",
+        quantity: p?.quantity ?? p?.qty ?? 1,
+        articleNumber: p?.articleNumber ?? "",
+        warehouse: p?.warehouse ?? "",
+      }))
+      .filter((x) => x.partName);
+  };
+
   const refreshAll = async () => {
     if (!canViewOrder) return;
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -178,6 +227,55 @@ export default function ClientOrderDetailPage() {
                   <div className="font-semibold">
                     {order?.createdAt ? new Date(order.createdAt).toLocaleString() : "—"}
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <h2 className="text-lg font-semibold text-black mb-2">Order works & materials</h2>
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white border rounded-lg p-4">
+                    <div className="font-semibold text-black mb-2">Works / services</div>
+                    {getOrderServices().length === 0 ? (
+                      <div className="text-sm text-gray-600">No services in order</div>
+                    ) : (
+                      <div className="space-y-2 text-sm text-black">
+                        {getOrderServices().map((s, idx) => (
+                          <div key={`${s.serviceName}-${idx}`} className="flex items-start justify-between gap-3">
+                            <div className="font-medium">{s.serviceName}</div>
+                            <div className="text-right text-gray-700 whitespace-nowrap">
+                              <span>
+                                {String(s.quantity || 1)} {s.unitsOfMeasurement || ""}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-white border rounded-lg p-4">
+                    <div className="font-semibold text-black mb-2">Parts / materials</div>
+                    {getOrderParts().length === 0 ? (
+                      <div className="text-sm text-gray-600">No parts in order</div>
+                    ) : (
+                      <div className="space-y-2 text-sm text-black">
+                        {getOrderParts().map((p, idx) => (
+                          <div key={`${p.partName}-${idx}`} className="flex items-start justify-between gap-3">
+                            <div className="font-medium">{p.partName}</div>
+                            <div className="text-right text-gray-700 whitespace-nowrap">
+                              <span>{String(p.quantity || 1)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-4 text-xs text-gray-600">
+                  Offer snapshot (read-only): {getOfferServices().length} services, {getOfferParts().length} parts.
                 </div>
               </div>
             </div>
