@@ -15,6 +15,7 @@ import { can } from '@/utils/canPermission';
 import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
 import ReactSelect from 'react-select';
+import { Role } from '@/../backend/src/constants/roles';
 
 const OrderDetail = ({ params }) => {
     const { id } = use(params);
@@ -23,6 +24,9 @@ const OrderDetail = ({ params }) => {
     const [uploading, setUploading] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const permissions = useAppSelector((s) => s.userData?.permissions || []);
+    const reduxRole = useAppSelector((s) => s.userData?.role) || (typeof window !== 'undefined' ? localStorage.getItem('role') : '');
+    const role = String(reduxRole || '').toLowerCase();
+    const hidePrices = [Role.MECHANIC, Role.ELECTRICIAN, Role.USER, Role.CLIENT].includes(role);
     const [selectedTab, setSelectedTab] = useState('Before');
     const [showGallery, setShowGallery] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -502,7 +506,7 @@ const OrderDetail = ({ params }) => {
                                                 <div className="font-medium">{s.serviceName}</div>
                                                 <div className="text-right text-gray-700 whitespace-nowrap">
                                                     <span>{String(s.quantity || 1)} {s.unitsOfMeasurement || ''}</span>
-                                                    {s.priceInEuroWithoutVAT !== null && s.priceInEuroWithoutVAT !== undefined && s.priceInEuroWithoutVAT !== '' && (
+                                                    {!hidePrices && s.priceInEuroWithoutVAT !== null && s.priceInEuroWithoutVAT !== undefined && s.priceInEuroWithoutVAT !== '' && (
                                                         <span className="ml-3">{String(s.priceInEuroWithoutVAT)} €</span>
                                                     )}
                                                 </div>
@@ -578,7 +582,7 @@ const OrderDetail = ({ params }) => {
                                                 <div className="font-medium">{p.partName}</div>
                                                 <div className="text-right text-gray-700 whitespace-nowrap">
                                                     <span>{String(p.quantity || 1)}</span>
-                                                    {p.pricePerUnit !== null && p.pricePerUnit !== undefined && p.pricePerUnit !== '' && (
+                                                    {!hidePrices && p.pricePerUnit !== null && p.pricePerUnit !== undefined && p.pricePerUnit !== '' && (
                                                         <span className="ml-3">{String(p.pricePerUnit)} €</span>
                                                     )}
                                                 </div>
