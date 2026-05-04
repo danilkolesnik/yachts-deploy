@@ -5,13 +5,15 @@ import axios from "axios";
 import { URL } from "@/utils/constants";
 import Header from "@/component/header";
 import Loader from "@/ui/loader";
-import Image from "next/image";
 import ReactPlayer from "react-player";
 import { Tab } from "@headlessui/react";
 import { useParams } from "next/navigation";
 import { useAppSelector } from "@/lib/hooks";
 import { PermissionsList } from "@/constants/permissions";
 import { can } from "@/utils/canPermission";
+import ImageGallery from "react-image-gallery";
+import "react-image-gallery/styles/css/image-gallery.css";
+import { XMarkIcon } from "@heroicons/react/24/solid";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -32,6 +34,9 @@ export default function ClientOrderDetailPage() {
   const [newMessage, setNewMessage] = useState("");
   const [newKind, setNewKind] = useState("comment");
   const [sending, setSending] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const refreshAll = async () => {
     if (!canViewOrder) return;
@@ -97,6 +102,20 @@ export default function ClientOrderDetailPage() {
       { name: "Result", images: order.tabImageUrls || [], videos: order.tabVideoUrls || [] },
     ];
   }, [order]);
+
+  const openGallery = (images, startIndex) => {
+    const items = (Array.isArray(images) ? images : [])
+      .filter(Boolean)
+      .map((url) => ({
+        original: url,
+        thumbnail: url,
+        originalAlt: "Order image",
+        thumbnailAlt: "Order image thumbnail",
+      }));
+    setGalleryItems(items);
+    setSelectedImageIndex(Math.max(0, Math.min(startIndex ?? 0, Math.max(0, items.length - 1))));
+    setShowGallery(true);
+  };
 
   const sendMessage = async () => {
     if (!canPostMessages || !newMessage.trim()) return;
@@ -188,13 +207,21 @@ export default function ClientOrderDetailPage() {
                         {t.images.length > 0 ? (
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                             {t.images.map((url, idx) => (
-                              <div key={idx} className="relative">
-                                <Image
+                              <div
+                                key={idx}
+                                className="relative cursor-pointer group"
+                                onClick={() => openGallery(t.images, idx)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") openGallery(t.images, idx);
+                                }}
+                              >
+                                <img
                                   src={url}
                                   alt="Order image"
-                                  width={800}
-                                  height={600}
-                                  className="w-full h-auto rounded shadow"
+                                  loading="lazy"
+                                  className="w-full h-auto rounded shadow transition-transform group-hover:scale-[1.01]"
                                 />
                               </div>
                             ))}
@@ -308,6 +335,35 @@ export default function ClientOrderDetailPage() {
           </div>
         )}
       </div>
+
+      {showGallery && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+          <div className="w-full h-full p-4">
+            <div className="relative w-full h-full">
+              <ImageGallery
+                items={galleryItems}
+                startIndex={selectedImageIndex}
+                showFullscreenButton={true}
+                showPlayButton={false}
+                showThumbnails={true}
+                showNav={true}
+                showBullets={true}
+                infinite={true}
+                thumbnailPosition="bottom"
+                onClick={() => setShowGallery(false)}
+              />
+              <button
+                onClick={() => setShowGallery(false)}
+                className="absolute top-4 right-4 text-white z-50 bg-black/50 rounded-full p-2 hover:bg-black/70"
+                aria-label="Close gallery"
+                type="button"
+              >
+                <XMarkIcon className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
