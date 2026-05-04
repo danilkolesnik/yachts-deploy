@@ -15,7 +15,6 @@ import { can } from '@/utils/canPermission';
 import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
 import ReactSelect from 'react-select';
-import { Role } from '@/../backend/src/constants/roles';
 
 const OrderDetail = ({ params }) => {
     const { id } = use(params);
@@ -26,7 +25,7 @@ const OrderDetail = ({ params }) => {
     const permissions = useAppSelector((s) => s.userData?.permissions || []);
     const reduxRole = useAppSelector((s) => s.userData?.role) || (typeof window !== 'undefined' ? localStorage.getItem('role') : '');
     const role = String(reduxRole || '').toLowerCase();
-    const hidePrices = [Role.MECHANIC, Role.ELECTRICIAN, Role.USER, Role.CLIENT].includes(role);
+    const hidePrices = ['mechanic', 'electrician', 'user', 'client'].includes(role);
     const [selectedTab, setSelectedTab] = useState('Before');
     const [showGallery, setShowGallery] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
