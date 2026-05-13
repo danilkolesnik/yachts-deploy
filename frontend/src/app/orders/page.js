@@ -51,6 +51,7 @@ const OrderPage = () => {
     const [editWorkersModalIsOpen, setEditWorkersModalIsOpen] = useState(false);
     const [availableWorkers, setAvailableWorkers] = useState([]);
     const [selectedWorkersForEdit, setSelectedWorkersForEdit] = useState([]);
+    const [timersModalOrder, setTimersModalOrder] = useState(null);
 
     // Manual/Help content in English
     const helpSections = {
@@ -71,7 +72,7 @@ const OrderPage = () => {
                 "**Yacht** - Yacht name associated with the order",
                 "**Responsible** - Assigned employee(s) for this order",
                 "**Status** - Current workflow status (color-coded for quick identification)",
-                "**Timers** — separate timer per work line from the order (each employee can run their own line); legacy single timer still supported",
+                "**Timers** — click **Open timers** to run or pause time per work line (or a single line if the order has no service list)",
                 "**Actions** - Edit status or delete orders (admin only)"
             ]
         },
@@ -119,9 +120,10 @@ const OrderPage = () => {
                 "• Permanently removes the order",
                 "• Use with caution - action cannot be undone",
                 "",
-                "**Work Timers (Admin only):**",
-                "• Start / pause / resume per **service line** from the work order",
-                "• Stopping a line timer does **not** auto-close the whole order (use status when all work is done)",
+                "**Work Timers:**",
+                "• Click **Open timers** in the Timers column to open the timer panel for that order",
+                "• One timer per service line (or one generic line if the order has no services yet)",
+                "• Stopping a line timer does **not** auto-close the whole order (change status when all work is done)",
                 "• Useful when different employees work on different lines",
             ]
         },
@@ -411,36 +413,19 @@ const OrderPage = () => {
         ...(can(permissions, PermissionsList.ORDERS_TIMER_USE) || can(permissions, PermissionsList.ORDERS_TIMER_STOP)
             ? [{
             name: 'Timers',
-            cell: row => {
-                const lines = getOrderServiceLinesForTimers(row);
-                return (
-                    <div className="flex flex-col gap-2 items-stretch py-1 min-w-[150px]" onClick={(e) => e.stopPropagation()}>
-                        {lines.length === 0 ? (
-                            <WorkTimer
-                                orderId={row.id}
-                                serviceLineIndex={0}
-                                serviceLabel="Work (no lines)"
-                                onStop={fetchOrders}
-                                canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
-                                canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
-                            />
-                        ) : (
-                            lines.map((line) => (
-                                <div key={line.idx} className="border border-gray-200 rounded-md px-1 pt-1 bg-gray-50">
-                                    <WorkTimer
-                                        orderId={row.id}
-                                        serviceLineIndex={line.idx}
-                                        serviceLabel={line.name}
-                                        onStop={fetchOrders}
-                                        canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
-                                        canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
-                                    />
-                                </div>
-                            ))
-                        )}
-                    </div>
-                );
-            },
+            cell: row => (
+                <div className="flex justify-center py-1" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                        size="sm"
+                        variant="outlined"
+                        color="blue"
+                        className="normal-case text-xs px-3 py-1"
+                        onClick={() => setTimersModalOrder(row)}
+                    >
+                        Open timers
+                    </Button>
+                </div>
+            ),
             ignoreRowClick: true,
         }] : []),
         ...((can(permissions, PermissionsList.ORDERS_STATUS_CHANGE) ||
@@ -1025,6 +1010,58 @@ const OrderPage = () => {
                             </Button>
                         </div>
                     </div>
+                </Modal>
+
+                <Modal
+                    isOpen={!!timersModalOrder}
+                    onClose={() => setTimersModalOrder(null)}
+                    title={timersModalOrder ? `Timers · Order ${timersModalOrder.id}` : 'Timers'}
+                    bodyClassName="max-h-[70vh] overflow-y-auto"
+                >
+                    {timersModalOrder && (() => {
+                        const lines = getOrderServiceLinesForTimers(timersModalOrder);
+                        return (
+                            <div className="space-y-4 text-black">
+                                <div className="text-sm text-gray-700 border-b border-gray-200 pb-3">
+                                    <div><span className="font-semibold">Customer:</span> {timersModalOrder.offer?.customerFullName || 'N/A'}</div>
+                                    <div><span className="font-semibold">Yacht:</span> {timersModalOrder.offer?.yachtName || '—'}</div>
+                                    <div><span className="font-semibold">Status:</span> {timersModalOrder.status}</div>
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    {lines.length === 0 ? (
+                                        <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
+                                            <WorkTimer
+                                                orderId={timersModalOrder.id}
+                                                serviceLineIndex={0}
+                                                serviceLabel="Work (no lines)"
+                                                onStop={fetchOrders}
+                                                canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
+                                                canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
+                                            />
+                                        </div>
+                                    ) : (
+                                        lines.map((line) => (
+                                            <div key={line.idx} className="border border-gray-200 rounded-md p-3 bg-gray-50">
+                                                <WorkTimer
+                                                    orderId={timersModalOrder.id}
+                                                    serviceLineIndex={line.idx}
+                                                    serviceLabel={line.name}
+                                                    onStop={fetchOrders}
+                                                    canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
+                                                    canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
+                                                />
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                                <div className="flex justify-end pt-2 border-t border-gray-200">
+                                    <Button variant="text" color="gray" onClick={() => setTimersModalOrder(null)}>
+                                        Close
+                                    </Button>
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </Modal>
 
                 {/* Delete Confirmation Modal */}
