@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Tab } from '@headlessui/react';
 import Header from '@/component/header';
 import Loader from '@/ui/loader';
+import Modal from '@/ui/Modal';
 import ReactPlayer from 'react-player';
 import axios from 'axios';
 import { useAppSelector } from '@/lib/hooks';
@@ -39,6 +40,15 @@ const OrderDetail = ({ params }) => {
     const [itemsSaving, setItemsSaving] = useState(false);
     const [draftServices, setDraftServices] = useState([]);
     const [draftParts, setDraftParts] = useState([]);
+    const [timerSessions, setTimerSessions] = useState([]);
+    const [timerSessionsLoading, setTimerSessionsLoading] = useState(false);
+    const [adjustOpen, setAdjustOpen] = useState(false);
+    const [adjustTimer, setAdjustTimer] = useState(null);
+    const [adjustTotalSeconds, setAdjustTotalSeconds] = useState('');
+    const [adjustNote, setAdjustNote] = useState('');
+    const [adjustSaving, setAdjustSaving] = useState(false);
+    const [clearTimersOpen, setClearTimersOpen] = useState(false);
+    const [clearTimersLoading, setClearTimersLoading] = useState(false);
     const router = useRouter();
 
     const normalizeArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
@@ -93,6 +103,98 @@ const OrderDetail = ({ params }) => {
             }))
             .filter((x) => x.partName);
     };
+
+    const formatMsHms = (ms) => {
+        if (ms == null || Number.isNaN(Number(ms))) return '—';
+        const totalS = Math.floor(Number(ms) / 1000);
+        const h = Math.floor(totalS / 3600);
+        const m = Math.floor((totalS % 3600) / 60);
+        const s = totalS % 60;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    };
+
+    const loadTimerSessions = async () => {
+        if (!id || !can(permissions, PermissionsList.ORDERS_TIMERS_HISTORY_READ)) {
+            setTimerSessions([]);
+            return;
+        }
+        setTimerSessionsLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${URL}/orders/${id}/timer/history`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+            setTimerSessions(Array.isArray(list) ? list : []);
+        } catch (error) {
+            console.error('Error fetching timer sessions:', error);
+            setTimerSessions([]);
+        } finally {
+            setTimerSessionsLoading(false);
+        }
+    };
+
+    const openAdjustTimer = (t) => {
+        const sec = t.totalDuration != null ? Math.floor(Number(t.totalDuration) / 1000) : 0;
+        setAdjustTimer(t);
+        setAdjustTotalSeconds(String(sec));
+        setAdjustNote('');
+        setAdjustOpen(true);
+    };
+
+    const saveAdjustTimer = async () => {
+        if (!order || !adjustTimer) return;
+        const sec = Number(adjustTotalSeconds);
+        if (!Number.isFinite(sec) || sec < 0) return;
+        setAdjustSaving(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.patch(
+                `${URL}/orders/${order.id}/timers/${adjustTimer.id}`,
+                { totalDurationMs: Math.floor(sec * 1000), note: adjustNote.trim() || undefined },
+                { headers: { Authorization: `Bearer ${token}` } },
+            );
+            if (res.data?.code === 200) {
+                setAdjustOpen(false);
+                setAdjustTimer(null);
+                await loadTimerSessions();
+            }
+        } catch (error) {
+            console.error('Error adjusting timer:', error);
+        } finally {
+            setAdjustSaving(false);
+        }
+    };
+
+    const canClearAllOrderTimers =
+        can(permissions, PermissionsList.ORDERS_TIMER_CLEAR_ALL) &&
+        ['admin', 'manager'].includes(role);
+
+    const confirmClearAllTimers = async () => {
+        if (!order || !canClearAllOrderTimers) return;
+        setClearTimersLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post(
+                `${URL}/orders/${order.id}/timers/clear`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } },
+            );
+            if (res.data?.code === 200) {
+                setClearTimersOpen(false);
+                await loadTimerSessions();
+                await refreshOrderData();
+            }
+        } catch (error) {
+            console.error('Error clearing timers:', error);
+        } finally {
+            setClearTimersLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadTimerSessions();
+    }, [id, permissions]);
 
     useEffect(() => {
         if (id) {
@@ -202,7 +304,7 @@ const OrderDetail = ({ params }) => {
                 },
             });
             
-            // Используем URL из ответа сервера
+            // Use the file URL returned by the server
             const newFileUrl = response.data.file.url;
             
             const isVideo = selectedFile.type.startsWith('video/');
@@ -231,13 +333,13 @@ const OrderDetail = ({ params }) => {
             const response = await axios.post(`${URL}/orders/${id}/delete/${tabName}`, { fileUrl: url });
             
             if (response.data.code === 200) {
-                // Обновляем данные с сервера
+                // Refresh order from server
                 const orderResponse = await axios.get(`${URL}/orders/${id}`);
                 setOrder(orderResponse.data.data);
             }
         } catch (error) {
             console.error('Error deleting file:', error);
-            // В случае ошибки обновляем данные с сервера
+            // On error, still try to refresh order from server
             try {
                 const orderResponse = await axios.get(`${URL}/orders/${id}`);
                 setOrder(orderResponse.data.data);
@@ -249,7 +351,7 @@ const OrderDetail = ({ params }) => {
         }
     };
 
-    // Добавляем функцию для обновления данных
+    // Refresh order payload from API
     const refreshOrderData = async () => {
         try {
             const response = await axios.get(`${URL}/orders/${id}`);
@@ -259,11 +361,10 @@ const OrderDetail = ({ params }) => {
         }
     };
 
-    // Добавляем useEffect для периодического обновления данных
+    // Poll order details every 5 seconds
     useEffect(() => {
         if (id) {
             refreshOrderData();
-            // Обновляем данные каждые 5 секунд
             const interval = setInterval(refreshOrderData, 5000);
             return () => clearInterval(interval);
         }
@@ -696,6 +797,71 @@ const OrderDetail = ({ params }) => {
                     </div>
                 )}
 
+                {(can(permissions, PermissionsList.ORDERS_TIMERS_HISTORY_READ) || canClearAllOrderTimers) && (
+                    <div className="mb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                            <h2 className="text-2xl font-bold text-black">Timer sessions</h2>
+                            {canClearAllOrderTimers && (
+                                <button
+                                    type="button"
+                                    onClick={() => setClearTimersOpen(true)}
+                                    className="text-sm px-3 py-1.5 rounded border border-red-300 text-red-700 bg-red-50 hover:bg-red-100 w-fit"
+                                >
+                                    Clear all timers…
+                                </button>
+                            )}
+                        </div>
+                        <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 max-h-72 overflow-y-auto">
+                            {!can(permissions, PermissionsList.ORDERS_TIMERS_HISTORY_READ) ? (
+                                <div className="text-sm text-gray-600">
+                                    You do not have permission to view the session list. You can still clear all timer rows using the button above (manager / administrator only).
+                                </div>
+                            ) : timerSessionsLoading ? (
+                                <div className="text-sm text-gray-600">Loading…</div>
+                            ) : (timerSessions || []).length === 0 ? (
+                                <div className="text-sm text-gray-600">No timer records for this order.</div>
+                            ) : (
+                                <ul className="space-y-2 text-sm text-black">
+                                    {(timerSessions || []).map((t) => {
+                                        const workerName = (order?.assignedWorkers || []).find(
+                                            (w) => String(w.id) === String(t.userId),
+                                        )?.fullName;
+                                        const lineLabel =
+                                            t.serviceLineIndex == null
+                                                ? '—'
+                                                : `#${Number(t.serviceLineIndex) + 1}`;
+                                        const canAdjust = can(permissions, PermissionsList.ORDERS_TIMER_ADJUST);
+                                        return (
+                                            <li key={t.id} className="border rounded p-3 bg-white space-y-1">
+                                                <div className="flex flex-wrap justify-between gap-2">
+                                                    <span className="font-medium">{t.status}</span>
+                                                    <span className="text-gray-500 text-xs">
+                                                        {t.startTime ? new Date(t.startTime).toLocaleString() : ''}
+                                                    </span>
+                                                </div>
+                                                <div className="text-xs text-gray-600 flex flex-wrap gap-x-3 gap-y-1">
+                                                    <span>Line: {lineLabel}</span>
+                                                    <span>Worker: {workerName || t.userId || '—'}</span>
+                                                    <span>Duration: {formatMsHms(t.totalDuration)}</span>
+                                                </div>
+                                                {t.status === 'Completed' && canAdjust && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openAdjustTimer(t)}
+                                                        className="text-xs text-blue-600 hover:underline mt-1"
+                                                    >
+                                                        Adjust duration
+                                                    </button>
+                                                )}
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {clientMessages && clientMessages.length > 0 && (
                     <div className="mb-4">
                         <h2 className="text-2xl font-bold mb-3 text-black">Client messages</h2>
@@ -759,6 +925,80 @@ const OrderDetail = ({ params }) => {
                     </div>
                 )}
             </div>
+
+            <Modal
+                isOpen={adjustOpen}
+                onClose={() => {
+                    if (!adjustSaving) setAdjustOpen(false);
+                }}
+                title="Adjust timer duration"
+                bodyClassName="max-h-[80vh] overflow-y-auto"
+            >
+                <div className="space-y-3 text-black">
+                    <p className="text-sm text-gray-600">
+                        Total logged time for this completed session (seconds). An audit entry is recorded.
+                    </p>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">Total seconds</label>
+                        <input
+                            type="number"
+                            min={0}
+                            step={1}
+                            className="border rounded p-2 w-full text-black"
+                            value={adjustTotalSeconds}
+                            onChange={(e) => setAdjustTotalSeconds(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">Note (optional)</label>
+                        <textarea
+                            className="border rounded p-2 w-full text-black text-sm"
+                            rows={2}
+                            value={adjustNote}
+                            onChange={(e) => setAdjustNote(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button variant="text" color="gray" onClick={() => !adjustSaving && setAdjustOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button color="green" onClick={saveAdjustTimer} disabled={adjustSaving}>
+                            {adjustSaving ? 'Saving…' : 'Save'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal
+                isOpen={clearTimersOpen}
+                onClose={() => {
+                    if (!clearTimersLoading) setClearTimersOpen(false);
+                }}
+                title="Delete all timer data?"
+                bodyClassName="max-h-[80vh] overflow-y-auto"
+            >
+                <div className="space-y-3 text-black">
+                    <p className="text-sm text-gray-700">
+                        All timer records for work order{' '}
+                        <span className="font-mono font-semibold">{order?.id}</span> will be permanently deleted from the database.
+                        This cannot be undone. The action is written to the audit log (user, time, work order id).
+                    </p>
+                    {can(permissions, PermissionsList.ORDERS_TIMERS_HISTORY_READ) &&
+                        (timerSessions || []).length > 0 && (
+                        <p className="text-sm text-gray-600">
+                            Sessions to remove: <strong>{timerSessions.length}</strong>
+                        </p>
+                    )}
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button variant="text" color="gray" onClick={() => !clearTimersLoading && setClearTimersOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button color="red" onClick={confirmClearAllTimers} disabled={clearTimersLoading}>
+                            {clearTimersLoading ? 'Deleting…' : 'Yes, delete all'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
 
             {showGallery && (
                 <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">

@@ -2,18 +2,24 @@ import React from 'react';
 import { useOrderTimer } from '@/hooks/useOrderTimer';
 import { PlayIcon, PauseIcon, StopIcon } from '@heroicons/react/24/solid';
 
-const OrderTimer = ({ orderId, onStop, canUseTimer = true, canStopTimer = true }) => {
-  const { 
-    isRunning, 
+const OrderTimer = ({
+  orderId,
+  serviceLineIndex,
+  serviceLabel,
+  onStop,
+  canUseTimer = true,
+  canStopTimer = true,
+}) => {
+  const {
+    isRunning,
     isPaused,
-    startTimer, 
+    startTimer,
     pauseTimer,
     resumeTimer,
-    stopTimer, 
-    elapsedTime, 
-    formatTime, 
-    status 
-  } = useOrderTimer(orderId);
+    stopTimer,
+    elapsedTime,
+    formatTime,
+  } = useOrderTimer(orderId, serviceLineIndex);
 
   const notifyParent = () => {
     if (typeof onStop === 'function') {
@@ -51,7 +57,10 @@ const OrderTimer = ({ orderId, onStop, canUseTimer = true, canStopTimer = true }
   };
 
   return (
-    <div className="gap-4 p-2 rounded-lg shadow-sm">
+    <div className="gap-4 p-2 rounded-lg shadow-sm" title={serviceLabel || undefined}>
+      {serviceLabel && (
+        <div className="text-xs text-gray-600 truncate max-w-[140px] mb-1">{serviceLabel}</div>
+      )}
       <div className="text-base font-mono font-medium text-black tracking-wider">
         {formatTime(elapsedTime)}
       </div>

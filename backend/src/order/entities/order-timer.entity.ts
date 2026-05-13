@@ -9,6 +9,10 @@ export class OrderTimer {
   @Column()
   orderId: string;
 
+  /** 0-based index into order.services (or offer.services snapshot); null = legacy single timer per order */
+  @Column({ type: 'int', nullable: true })
+  serviceLineIndex: number | null;
+
   @Column({ default: '' })
   userId: string;
 

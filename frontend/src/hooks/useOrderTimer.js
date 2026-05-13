@@ -4,7 +4,7 @@ import { URL } from '@/utils/constants';
 
 import axios from 'axios';
 
-export const useOrderTimer = (orderId) => {
+export const useOrderTimer = (orderId, serviceLineIndex) => {
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -12,12 +12,25 @@ export const useOrderTimer = (orderId) => {
 
   const API_URL = `${URL}/orders`;
 
+  const hasLine =
+    serviceLineIndex !== undefined &&
+    serviceLineIndex !== null &&
+    !Number.isNaN(Number(serviceLineIndex));
+
+  const lineQueryConfig = hasLine
+    ? { params: { serviceLineIndex: Number(serviceLineIndex) } }
+    : {};
+
   const fetchTimerStatus = async () => {
     try {
-      const { data } = await axios.get(`${API_URL}/${orderId}/timer`);
+      const token = localStorage.getItem('token');
+      const { data } = await axios.get(`${API_URL}/${orderId}/timer`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        ...lineQueryConfig,
+      });
       if (data) {
         setStatus(data.status);
-        
+
         if (data.status === 'In Progress') {
           setIsRunning(true);
           setIsPaused(false);
@@ -45,9 +58,10 @@ export const useOrderTimer = (orderId) => {
 
 
   const startTimer = async () => {
-    const token = localStorage.getItem('token');   
+    const token = localStorage.getItem('token');
     try {
-      await axios.post(`${API_URL}/${orderId}/timer/start`,{},{
+      const body = hasLine ? { serviceLineIndex: Number(serviceLineIndex) } : {};
+      await axios.post(`${API_URL}/${orderId}/timer/start`, body, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -58,7 +72,6 @@ export const useOrderTimer = (orderId) => {
     }
   };
 
-  // Пауза таймера
   const pauseTimer = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -67,6 +80,7 @@ export const useOrderTimer = (orderId) => {
         {},
         {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          ...lineQueryConfig,
         },
       );
       await fetchTimerStatus();
@@ -75,7 +89,6 @@ export const useOrderTimer = (orderId) => {
     }
   };
 
-  // Возобновление таймера
   const resumeTimer = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -84,6 +97,7 @@ export const useOrderTimer = (orderId) => {
         {},
         {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          ...lineQueryConfig,
         },
       );
       await fetchTimerStatus();
@@ -92,15 +106,15 @@ export const useOrderTimer = (orderId) => {
     }
   };
 
-  // Остановка таймера
   const stopTimer = async () => {
     const token = localStorage.getItem('token');
     try {
-      const { data } = await axios.post(
+      await axios.post(
         `${API_URL}/${orderId}/timer/stop`,
         {},
         {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          ...lineQueryConfig,
         },
       );
       await fetchTimerStatus();
@@ -129,7 +143,7 @@ export const useOrderTimer = (orderId) => {
 
   useEffect(() => {
     fetchTimerStatus();
-  }, [orderId]);
+  }, [orderId, serviceLineIndex]);
 
   const formatTime = (ms) => {
     const seconds = Math.floor((ms / 1000) % 60);

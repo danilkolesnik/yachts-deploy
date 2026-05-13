@@ -38,9 +38,16 @@ const OrdersHistoryPage = () => {
             }
         },    
         {
-            name:'Responsible',
+            name: 'Work line',
+            selector: row =>
+                row.serviceLineIndex === null || row.serviceLineIndex === undefined
+                    ? '—'
+                    : `#${Number(row.serviceLineIndex) + 1}`,
+        },
+        {
+            name: 'Responsible',
             selector: row => row.worker ? row.worker.fullName : '-'
-        }, 
+        },
         {
             name: 'Status',
             selector: row => row.order?.status || row.status,
@@ -82,18 +89,12 @@ const OrdersHistoryPage = () => {
             const res = await axios.get(`${URL}/orders/timers/all`);
             const timers = res.data.data || [];
 
-            // Keep only records related to finished orders and collapse duplicates by orderId
-            const finishedOrdersMap = new Map();
-            timers.forEach((timerItem) => {
-                if (timerItem.order?.status === 'finished' && !finishedOrdersMap.has(timerItem.orderId)) {
-                    finishedOrdersMap.set(timerItem.orderId, timerItem);
-                }
-            });
+            const finishedTimers = timers.filter(
+                (timerItem) => timerItem.order?.status === 'finished',
+            );
 
-            const finishedOrdersHistory = Array.from(finishedOrdersMap.values());
-
-            setOrdersHistory(finishedOrdersHistory);
-            setFilteredHistory(finishedOrdersHistory);
+            setOrdersHistory(finishedTimers);
+            setFilteredHistory(finishedTimers);
             setLoading(false);
         } catch (error) {
             console.log(error);

@@ -89,7 +89,8 @@ CREATE TABLE IF NOT EXISTS order_timer (
     "pauseTime" TIMESTAMP,
     "totalPausedTime" BIGINT,
     "totalDuration" BIGINT,
-    status VARCHAR DEFAULT 'In Progress'
+    status VARCHAR DEFAULT 'In Progress',
+    "serviceLineIndex" INTEGER
 );
 
 -- Create yacht table

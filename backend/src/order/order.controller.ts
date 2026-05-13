@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, Body, Req, UploadedFile, UseInterceptors, Query } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, Req, UploadedFile, UseInterceptors, Query } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderItemsDto } from './dto/update-order-items.dto';
@@ -21,6 +21,13 @@ interface UploadResponse {
 @Controller('orders')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
+
+  private parseOptServiceLineIndex(q?: string): number | undefined {
+    if (q === undefined || q === '') return undefined;
+    const n = Number.parseInt(String(q), 10);
+    if (Number.isNaN(n)) return undefined;
+    return n;
+  }
 
   // ===== Client API (separate from Permissions decorators) =====
   @Get('/client')
@@ -135,38 +142,91 @@ export class OrderController {
 
   @Post(':orderId/timer/start')
   @Permissions(PermissionsList.ORDERS_TIMER_USE)
-  async startTimer(@Param('orderId') orderId: string, @Req() request: Request) {
-    return this.orderService.startTimer(orderId, request);
+  async startTimer(
+    @Param('orderId') orderId: string,
+    @Req() request: Request,
+    @Body() body: { serviceLineIndex?: number },
+  ) {
+    return this.orderService.startTimer(orderId, request, body?.serviceLineIndex);
   }
  
   @Post(':orderId/timer/pause')
   @Permissions(PermissionsList.ORDERS_TIMER_USE)
-  async pauseTimer(@Param('orderId') orderId: string, @Req() request: Request) {
-    return this.orderService.pauseTimer(orderId, request);
+  async pauseTimer(
+    @Param('orderId') orderId: string,
+    @Req() request: Request,
+    @Query('serviceLineIndex') serviceLineIndex?: string,
+  ) {
+    return this.orderService.pauseTimer(
+      orderId,
+      request,
+      this.parseOptServiceLineIndex(serviceLineIndex),
+    );
   }
 
   @Post(':orderId/timer/resume') 
   @Permissions(PermissionsList.ORDERS_TIMER_USE)
-  async resumeTimer(@Param('orderId') orderId: string, @Req() request: Request) {
-    return this.orderService.resumeTimer(orderId, request);
+  async resumeTimer(
+    @Param('orderId') orderId: string,
+    @Req() request: Request,
+    @Query('serviceLineIndex') serviceLineIndex?: string,
+  ) {
+    return this.orderService.resumeTimer(
+      orderId,
+      request,
+      this.parseOptServiceLineIndex(serviceLineIndex),
+    );
   }
 
   @Post(':orderId/timer/stop')
   @Permissions(PermissionsList.ORDERS_TIMER_STOP)
-  async stopTimer(@Param('orderId') orderId: string, @Req() request: Request) {
-    return this.orderService.stopTimer(orderId, request);
+  async stopTimer(
+    @Param('orderId') orderId: string,
+    @Req() request: Request,
+    @Query('serviceLineIndex') serviceLineIndex?: string,
+  ) {
+    return this.orderService.stopTimer(
+      orderId,
+      request,
+      this.parseOptServiceLineIndex(serviceLineIndex),
+    );
   }
 
   @Get(':orderId/timer')
   @Permissions(PermissionsList.ORDERS_READ)
-  async getTimerStatus(@Param('orderId') orderId: string, @Req() req: Request) {
-    return this.orderService.getTimerStatus(orderId, req);
+  async getTimerStatus(
+    @Param('orderId') orderId: string,
+    @Req() req: Request,
+    @Query('serviceLineIndex') serviceLineIndex?: string,
+  ) {
+    return this.orderService.getTimerStatus(
+      orderId,
+      req,
+      this.parseOptServiceLineIndex(serviceLineIndex),
+    );
   }
 
   @Get(':orderId/timer/history')
-  @Permissions(PermissionsList.ORDERS_READ)
+  @Permissions(PermissionsList.ORDERS_TIMERS_HISTORY_READ)
   async getTimerHistory(@Param('orderId') orderId: string, @Req() req: Request) {
     return this.orderService.getTimerHistory(orderId, req);
+  }
+
+  @Patch(':orderId/timers/:timerId')
+  @Permissions(PermissionsList.ORDERS_TIMER_ADJUST)
+  async adjustOrderTimer(
+    @Param('orderId') orderId: string,
+    @Param('timerId') timerId: string,
+    @Body() body: { totalDurationMs?: number; note?: string },
+    @Req() req: Request,
+  ) {
+    return this.orderService.adjustOrderTimer(orderId, timerId, body, req);
+  }
+
+  @Post(':orderId/timers/clear')
+  @Permissions(PermissionsList.ORDERS_TIMER_CLEAR_ALL)
+  async clearOrderTimers(@Param('orderId') orderId: string, @Req() req: Request) {
+    return this.orderService.clearOrderTimers(orderId, req);
   }
 
   @Get(':orderId/status-history')

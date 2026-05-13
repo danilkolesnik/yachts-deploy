@@ -71,7 +71,7 @@ const OrderPage = () => {
                 "**Yacht** - Yacht name associated with the order",
                 "**Responsible** - Assigned employee(s) for this order",
                 "**Status** - Current workflow status (color-coded for quick identification)",
-                "**Timers** - Track working time for each order (admin only)",
+                "**Timers** — separate timer per work line from the order (each employee can run their own line); legacy single timer still supported",
                 "**Actions** - Edit status or delete orders (admin only)"
             ]
         },
@@ -120,9 +120,9 @@ const OrderPage = () => {
                 "• Use with caution - action cannot be undone",
                 "",
                 "**Work Timers (Admin only):**",
-                "• Start/stop timer to track working hours",
-                "• Track time spent on each order",
-                "• Useful for billing and productivity analysis"
+                "• Start / pause / resume per **service line** from the work order",
+                "• Stopping a line timer does **not** auto-close the whole order (use status when all work is done)",
+                "• Useful when different employees work on different lines",
             ]
         },
         workflow: {
@@ -372,6 +372,19 @@ const OrderPage = () => {
         setOrderToDelete(null);
     };
 
+    const getOrderServiceLinesForTimers = (order) => {
+        const services =
+            Array.isArray(order?.services) && order.services.length > 0
+                ? order.services
+                : Array.isArray(order?.offer?.services)
+                  ? order.offer.services
+                  : [];
+        return services.map((s, idx) => ({
+            idx,
+            name: (String(s?.serviceName ?? s?.label ?? s?.name ?? '').trim()) || `Service ${idx + 1}`,
+        }));
+    };
+
     const columns = [
         { name: 'Order Number', selector: row => (
             <Link href={`/orders/${row.id}`} className="text-black">
@@ -398,16 +411,36 @@ const OrderPage = () => {
         ...(can(permissions, PermissionsList.ORDERS_TIMER_USE) || can(permissions, PermissionsList.ORDERS_TIMER_STOP)
             ? [{
             name: 'Timers',
-            cell: row => (
-                <div className="flex justify-center">
-                    <WorkTimer
-                        orderId={row.id}
-                        onStop={fetchOrders}
-                        canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
-                        canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
-                    />
-                </div>
-            ),
+            cell: row => {
+                const lines = getOrderServiceLinesForTimers(row);
+                return (
+                    <div className="flex flex-col gap-2 items-stretch py-1 min-w-[150px]" onClick={(e) => e.stopPropagation()}>
+                        {lines.length === 0 ? (
+                            <WorkTimer
+                                orderId={row.id}
+                                serviceLineIndex={0}
+                                serviceLabel="Work (no lines)"
+                                onStop={fetchOrders}
+                                canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
+                                canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
+                            />
+                        ) : (
+                            lines.map((line) => (
+                                <div key={line.idx} className="border border-gray-200 rounded-md px-1 pt-1 bg-gray-50">
+                                    <WorkTimer
+                                        orderId={row.id}
+                                        serviceLineIndex={line.idx}
+                                        serviceLabel={line.name}
+                                        onStop={fetchOrders}
+                                        canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
+                                        canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
+                                    />
+                                </div>
+                            ))
+                        )}
+                    </div>
+                );
+            },
             ignoreRowClick: true,
         }] : []),
         ...((can(permissions, PermissionsList.ORDERS_STATUS_CHANGE) ||

@@ -367,7 +367,12 @@ export default function ClientOrderDetailPage() {
                   <div className="space-y-2">
                     {(timerHistory || []).map((t) => (
                       <div key={t.id} className="text-sm text-black flex justify-between gap-2">
-                        <span>{t.status}</span>
+                        <span>
+                          {t.status}
+                          {t.serviceLineIndex != null && (
+                            <span className="text-gray-500"> · line #{Number(t.serviceLineIndex) + 1}</span>
+                          )}
+                        </span>
                         <span className="text-gray-600">
                           {t.startTime ? new Date(t.startTime).toLocaleString() : ""}
                         </span>

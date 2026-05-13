@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, Not } from 'typeorm';
+import { Repository, In, Not, IsNull } from 'typeorm';
 import { Request } from 'express';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { offer } from 'src/offer/entities/offer.entity';
@@ -97,6 +97,17 @@ export class OrderService {
     const requester = this.getRequesterFromReq(req);
     if (requester.role !== 'admin' && requester.role !== 'manager') {
       throw new ForbiddenException('Access denied');
+    }
+  }
+
+  /** Full timer wipe: only administrator / manager roles (in addition to route permission). */
+  private assertTimerClearAllowedByRole(req: Request): void {
+    const requester = this.getRequesterFromReq(req);
+    const r = String(requester.role || '').toLowerCase();
+    if (r !== 'admin' && r !== 'manager') {
+      throw new ForbiddenException(
+        'Удаление данных таймеров по заказу доступно только администратору или менеджеру',
+      );
     }
   }
 
@@ -759,9 +770,63 @@ export class OrderService {
   }
 
   // =============== ТАЙМЕРЫ ===============
-  async startTimer(orderId: string, req: Request): Promise<any> {
+  /** Количество строк услуг в ЗН (order.services или снимок из offer.services). */
+  private countOrderServiceLines(orderEntity: order, offer: offer | null): number {
+    const o = orderEntity as any;
+    if (Array.isArray(o?.services) && o.services.length > 0) {
+      return o.services.length;
+    }
+    const off = offer as any;
+    if (Array.isArray(off?.services) && off.services.length > 0) {
+      return off.services.length;
+    }
+    return 0;
+  }
+
+  private perLineWhere(orderId: string, serviceLineIndex: number) {
+    return { orderId, serviceLineIndex, isRunning: true } as const;
+  }
+
+  private legacyActiveWhere(orderId: string) {
+    return { orderId, serviceLineIndex: IsNull(), isRunning: true } as const;
+  }
+
+  async startTimer(
+    orderId: string,
+    req: Request,
+    serviceLineIndex?: number | null,
+  ): Promise<any> {
     try {
-      await this.assertCanAccessOrder(orderId, req);
+      const order = await this.assertCanAccessOrder(orderId, req);
+      const offer = await this.offerRepository.findOne({ where: { id: order.offerId } });
+      const lineCount = this.countOrderServiceLines(order, offer);
+      const isPerLine = serviceLineIndex !== undefined && serviceLineIndex !== null;
+
+      if (isPerLine) {
+        if (serviceLineIndex! < 0) {
+          return { code: 400, message: 'Invalid service line index' };
+        }
+        if (lineCount === 0) {
+          if (serviceLineIndex !== 0) {
+            return { code: 400, message: 'Invalid service line index' };
+          }
+        } else if (serviceLineIndex! >= lineCount) {
+          return { code: 400, message: 'Invalid service line index' };
+        }
+        const conflict = await this.orderTimerRepository.findOne({
+          where: this.perLineWhere(orderId, serviceLineIndex as number),
+        });
+        if (conflict) {
+          return { code: 409, message: 'A timer is already running for this service line' };
+        }
+      } else {
+        const conflict = await this.orderTimerRepository.findOne({
+          where: this.legacyActiveWhere(orderId),
+        });
+        if (conflict) {
+          return { code: 409, message: 'A timer is already running for this order' };
+        }
+      }
 
       const token = getBearerToken(req);
       if (!token) {
@@ -777,10 +842,9 @@ export class OrderService {
         status: 'In Progress',
         isRunning: true,
         isPaused: false,
+        serviceLineIndex: isPerLine ? (serviceLineIndex as number) : null,
       });
 
-      // Обновляем статус заказа
-      const order = await this.orderRepository.findOne({ where: { id: orderId } });
       const previousStatus = order?.status ?? null;
       await this.orderRepository.update(orderId, { status: 'in-progress' });
       await this.logOrderStatusChange(orderId, previousStatus, 'in-progress', String(login.id));
@@ -791,6 +855,7 @@ export class OrderService {
         timerStatus: savedTimer.status,
         isRunning: savedTimer.isRunning,
         isPaused: savedTimer.isPaused,
+        serviceLineIndex: savedTimer.serviceLineIndex,
       });
       return { code: 200, data: savedTimer };
     } catch (err) {
@@ -808,54 +873,71 @@ export class OrderService {
     }
   }
 
-  async pauseTimer(orderId: string, req: Request): Promise<any> {
+  async pauseTimer(
+    orderId: string,
+    req: Request,
+    serviceLineIndex?: number | null,
+  ): Promise<any> {
     await this.assertCanAccessOrder(orderId, req);
 
+    const isPerLine = serviceLineIndex !== undefined && serviceLineIndex !== null;
     const timer = await this.orderTimerRepository.findOne({
-      where: { orderId, isRunning: true, isPaused: false },
+      where: isPerLine
+        ? { ...this.perLineWhere(orderId, serviceLineIndex as number), isPaused: false }
+        : { orderId, serviceLineIndex: IsNull(), isRunning: true, isPaused: false },
     });
-  
+
     if (!timer) {
       return { code: 404, message: 'No active timer found for this order' };
     }
 
     const changedBy = this.tryGetUserIdFromRequest(req);
-  
+
     const now = new Date();
     timer.isPaused = true;
     timer.status = 'Paused';
     timer.pauseTime = now;
-    
+
     let totalDuration = now.getTime() - timer.startTime.getTime();
     if (timer.totalPausedTime) {
       totalDuration -= timer.totalPausedTime;
     }
-    
+
     timer.totalDuration = Math.max(0, totalDuration);
-  
-    // Обновляем статус заказа
-    const order = await this.orderRepository.findOne({ where: { id: orderId } });
-    const previousStatus = order?.status ?? null;
-    await this.orderRepository.update(orderId, { status: 'waiting' });
-    await this.logOrderStatusChange(orderId, previousStatus, 'waiting', changedBy);
-  
+
+    const perLine = timer.serviceLineIndex !== null && timer.serviceLineIndex !== undefined;
+    if (!perLine) {
+      const orderRow = await this.orderRepository.findOne({ where: { id: orderId } });
+      const previousStatus = orderRow?.status ?? null;
+      await this.orderRepository.update(orderId, { status: 'waiting' });
+      await this.logOrderStatusChange(orderId, previousStatus, 'waiting', changedBy);
+    }
+
     const savedTimer = await this.orderTimerRepository.save(timer);
     await this.logOrderTimerEvent(orderId, savedTimer.id, 'pause', changedBy, {
       timerUserId: String(timer.userId || ''),
       timerStatus: savedTimer.status,
       totalDurationMs: savedTimer.totalDuration != null ? Number(savedTimer.totalDuration) : null,
-      orderStatusSideEffect: 'waiting',
+      orderStatusSideEffect: perLine ? null : 'waiting',
+      serviceLineIndex: savedTimer.serviceLineIndex,
     });
     return { code: 200, data: savedTimer };
   }
 
-  async resumeTimer(orderId: string, req: Request): Promise<any> {
+  async resumeTimer(
+    orderId: string,
+    req: Request,
+    serviceLineIndex?: number | null,
+  ): Promise<any> {
     await this.assertCanAccessOrder(orderId, req);
 
+    const isPerLine = serviceLineIndex !== undefined && serviceLineIndex !== null;
     const timer = await this.orderTimerRepository.findOne({
-      where: { orderId, isRunning: true, isPaused: true },
+      where: isPerLine
+        ? { ...this.perLineWhere(orderId, serviceLineIndex as number), isPaused: true }
+        : { orderId, serviceLineIndex: IsNull(), isRunning: true, isPaused: true },
     });
- 
+
     if (!timer) {
       return { code: 404, message: 'No paused timer found for this order' };
     }
@@ -866,60 +948,73 @@ export class OrderService {
       const pauseDuration = new Date().getTime() - timer.pauseTime.getTime();
       const currentTotal = Number(timer.totalPausedTime || 0);
       const newTotal = currentTotal + pauseDuration;
-      const MAX_BIGINT_SAFE = 9_000_000_000_000_000_000; // ~9e18, меньше максимума bigint PostgreSQL
+      const MAX_BIGINT_SAFE = 9_000_000_000_000_000_000;
       timer.totalPausedTime = Math.min(newTotal, MAX_BIGINT_SAFE);
     }
 
     timer.isPaused = false;
     timer.status = 'In Progress';
-    
-    // Обновляем статус заказа
-    const order = await this.orderRepository.findOne({ where: { id: orderId } });
-    const previousStatus = order?.status ?? null;
-    await this.orderRepository.update(orderId, { status: 'in-progress' });
-    await this.logOrderStatusChange(orderId, previousStatus, 'in-progress', changedBy);
+
+    const perLine = timer.serviceLineIndex !== null && timer.serviceLineIndex !== undefined;
+    if (!perLine) {
+      const orderRow = await this.orderRepository.findOne({ where: { id: orderId } });
+      const previousStatus = orderRow?.status ?? null;
+      await this.orderRepository.update(orderId, { status: 'in-progress' });
+      await this.logOrderStatusChange(orderId, previousStatus, 'in-progress', changedBy);
+    }
 
     const savedTimer = await this.orderTimerRepository.save(timer);
     await this.logOrderTimerEvent(orderId, savedTimer.id, 'resume', changedBy, {
       timerUserId: String(timer.userId || ''),
       timerStatus: savedTimer.status,
       totalPausedTimeMs: savedTimer.totalPausedTime != null ? Number(savedTimer.totalPausedTime) : null,
-      orderStatusSideEffect: 'in-progress',
+      orderStatusSideEffect: perLine ? null : 'in-progress',
+      serviceLineIndex: savedTimer.serviceLineIndex,
     });
     return { code: 200, data: savedTimer };
   }
 
-  async stopTimer(orderId: string, req: Request): Promise<any> {
+  async stopTimer(
+    orderId: string,
+    req: Request,
+    serviceLineIndex?: number | null,
+  ): Promise<any> {
     await this.assertCanAccessOrder(orderId, req);
 
+    const isPerLine = serviceLineIndex !== undefined && serviceLineIndex !== null;
     const timer = await this.orderTimerRepository.findOne({
-      where: { orderId, isRunning: true }
+      where: isPerLine
+        ? this.perLineWhere(orderId, serviceLineIndex as number)
+        : { orderId, serviceLineIndex: IsNull(), isRunning: true },
     });
-  
+
     if (!timer) {
       return { code: 404, message: 'No active timer found for this order' };
     }
 
     const changedBy = this.tryGetUserIdFromRequest(req);
-  
+
     const now = new Date();
     timer.endTime = now;
     timer.isRunning = false;
     timer.isPaused = false;
     timer.status = 'Completed';
     timer.totalDuration = now.getTime() - timer.startTime.getTime();
-  
+
     const saved = await this.orderTimerRepository.save(timer);
+    const perLine = saved.serviceLineIndex !== null && saved.serviceLineIndex !== undefined;
     await this.logOrderTimerEvent(orderId, saved.id, 'stop', changedBy, {
       timerUserId: String(timer.userId || ''),
       timerStatus: saved.status,
       totalDurationMs: saved.totalDuration != null ? Number(saved.totalDuration) : null,
       endTime: saved.endTime ? saved.endTime.toISOString() : null,
+      serviceLineIndex: saved.serviceLineIndex,
     });
- 
-    // АВТОМАТИЧЕСКОЕ ИЗМЕНЕНИЕ СТАТУСА ORDER И OFFER НА FINISHED
-    await this.updateOrderStatus(orderId, 'finished', req);
- 
+
+    if (!perLine) {
+      await this.updateOrderStatus(orderId, 'finished', req);
+    }
+
     return { code: 200, data: saved };
   }
 
@@ -1208,7 +1303,11 @@ export class OrderService {
     return { message: 'Файл успешно удалён.', code: 200 };
   }
 
-  async getTimerStatus(orderId: string, req: Request): Promise<{
+  async getTimerStatus(
+    orderId: string,
+    req: Request,
+    serviceLineIndex?: number | null,
+  ): Promise<{
     status: string;
     startTime: Date;
     currentDuration?: number;
@@ -1218,44 +1317,63 @@ export class OrderService {
   } | null> {
     await this.assertCanAccessOrder(orderId, req);
 
-    const timer = await this.orderTimerRepository.findOne({
-      where: { orderId },
-      order: { startTime: 'DESC' }
-    });
-  
+    const isPerLine =
+      serviceLineIndex !== undefined &&
+      serviceLineIndex !== null &&
+      !Number.isNaN(Number(serviceLineIndex));
+
+    let timer: OrderTimer | null = null;
+
+    if (isPerLine) {
+      timer = await this.orderTimerRepository.findOne({
+        where: this.perLineWhere(orderId, serviceLineIndex as number),
+        order: { startTime: 'DESC' },
+      });
+      if (!timer) {
+        timer = await this.orderTimerRepository.findOne({
+          where: { orderId, serviceLineIndex: serviceLineIndex as number },
+          order: { startTime: 'DESC' },
+        });
+      }
+    } else {
+      timer = await this.orderTimerRepository.findOne({
+        where: { orderId },
+        order: { startTime: 'DESC' },
+      });
+    }
+
     if (!timer) {
       return null;
     }
-  
+
     const result: any = {
       status: timer.status,
       startTime: timer.startTime,
-      isPaused: timer.isPaused
+      isPaused: timer.isPaused,
     };
-  
+
     if (timer.isRunning) {
       const now = new Date().getTime();
       const sinceStart = now - timer.startTime.getTime();
 
-      // totalPausedTime может быть "испорчена" старыми значениями,Clamp
       const effectiveTotalPaused = Math.min(
         Number(timer.totalPausedTime || 0),
         Math.max(sinceStart, 0),
       );
 
       let currentDuration = sinceStart - effectiveTotalPaused;
-      
+
       if (timer.isPaused && timer.pauseTime) {
         const currentPauseDuration = now - timer.pauseTime.getTime();
         currentDuration -= currentPauseDuration;
       }
- 
+
       result.currentDuration = Math.max(0, currentDuration);
     } else {
       result.endTime = timer.endTime;
       result.totalDuration = timer.totalDuration;
     }
-  
+
     return result;
   }
 
@@ -1273,6 +1391,113 @@ export class OrderService {
       where: { orderId },
       order: { startTime: 'DESC' }
     });
+  }
+
+  async adjustOrderTimer(
+    orderId: string,
+    timerId: string,
+    body: { totalDurationMs?: number; note?: string },
+    req: Request,
+  ): Promise<{ code: number; message?: string; data?: OrderTimer }> {
+    try {
+      await this.assertCanAccessOrder(orderId, req);
+      if (body?.totalDurationMs == null || Number.isNaN(Number(body.totalDurationMs))) {
+        return { code: 400, message: 'totalDurationMs is required (milliseconds)' };
+      }
+      const nextMs = Math.floor(Number(body.totalDurationMs));
+      if (nextMs < 0) {
+        return { code: 400, message: 'totalDurationMs must be non-negative' };
+      }
+      const MAX_MS = 14 * 24 * 60 * 60 * 1000;
+      if (nextMs > MAX_MS) {
+        return { code: 400, message: 'totalDurationMs exceeds allowed maximum' };
+      }
+
+      const timer = await this.orderTimerRepository.findOne({
+        where: { id: timerId, orderId },
+      });
+      if (!timer) {
+        return { code: 404, message: 'Timer not found' };
+      }
+      if (timer.isRunning) {
+        return { code: 400, message: 'Stop the timer before adjusting duration' };
+      }
+      if (timer.status !== 'Completed') {
+        return { code: 400, message: 'Only completed timers can be adjusted' };
+      }
+
+      const oldTotal = timer.totalDuration != null ? Number(timer.totalDuration) : null;
+      timer.totalDuration = nextMs;
+      const saved = await this.orderTimerRepository.save(timer);
+      const changedBy = this.tryGetUserIdFromRequest(req);
+      await this.logOrderTimerEvent(orderId, saved.id, 'adjusted', changedBy, {
+        timerUserId: String(saved.userId || ''),
+        oldTotalDurationMs: oldTotal,
+        newTotalDurationMs: saved.totalDuration != null ? Number(saved.totalDuration) : null,
+        note: body.note?.trim() || undefined,
+        serviceLineIndex: saved.serviceLineIndex,
+      });
+      return { code: 200, data: saved };
+    } catch (err) {
+      if (
+        err instanceof ForbiddenException ||
+        err instanceof NotFoundException ||
+        err instanceof UnauthorizedException
+      ) {
+        throw err;
+      }
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
+  async clearOrderTimers(
+    orderId: string,
+    req: Request,
+  ): Promise<{ code: number; message?: string; data?: { deletedCount: number } }> {
+    try {
+      await this.assertCanAccessOrder(orderId, req);
+      this.assertTimerClearAllowedByRole(req);
+
+      const existing = await this.orderTimerRepository.find({
+        where: { orderId },
+        order: { startTime: 'ASC' },
+      });
+
+      const changedBy = this.tryGetUserIdFromRequest(req);
+      const requester = this.getRequesterFromReq(req);
+
+      if (existing.length > 0) {
+        await this.orderTimerRepository.delete({ orderId });
+      }
+
+      const deletedIds = existing.map((t) => t.id);
+      await this.logOrderTimerEvent(orderId, null, 'cleared', changedBy, {
+        workOrderId: orderId,
+        orderId,
+        clearedAt: new Date().toISOString(),
+        clearedByUserId: changedBy ?? null,
+        clearedByRole: requester.role,
+        deletedCount: existing.length,
+        removedTimerIds: deletedIds.slice(0, 200),
+      });
+
+      return { code: 200, data: { deletedCount: existing.length } };
+    } catch (err) {
+      if (
+        err instanceof ForbiddenException ||
+        err instanceof NotFoundException ||
+        err instanceof UnauthorizedException
+      ) {
+        throw err;
+      }
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
   }
 
   async getAllTimers(req: Request) {

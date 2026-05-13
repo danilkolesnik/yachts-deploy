@@ -140,7 +140,8 @@ export const renderUserHistoryPayload = (it) => {
   }
 
   if (it?.type === 'order_timer' && parsed && typeof parsed === 'object') {
-    const action = parsed.action != null ? String(parsed.action) : '';
+    const action =
+      it.action != null ? String(it.action) : parsed.action != null ? String(parsed.action) : '';
     const actionLabel =
       action === 'start'
         ? 'Start'
@@ -150,7 +151,11 @@ export const renderUserHistoryPayload = (it) => {
             ? 'Resume'
             : action === 'stop'
               ? 'Stop'
-              : action || '—';
+              : action === 'adjusted'
+                ? 'Adjust'
+                : action === 'cleared'
+                  ? 'Clear all'
+                  : action || '—';
     return (
       <div className="space-y-2">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -158,8 +163,17 @@ export const renderUserHistoryPayload = (it) => {
           <FieldRow label="Timer id" value={parsed.timerId ?? null} />
           <FieldRow label="Timer owner (user id)" value={parsed.timerUserId ?? null} />
           <FieldRow label="Timer status" value={parsed.timerStatus ?? null} />
+          <FieldRow label="Service line (#)" value={parsed.serviceLineIndex ?? null} />
+          <FieldRow label="Work order (ZN) id" value={parsed.workOrderId ?? parsed.orderId ?? null} />
+          <FieldRow label="Cleared at (UTC)" value={parsed.clearedAt ?? null} />
+          <FieldRow label="Cleared by (user id)" value={parsed.clearedByUserId ?? null} />
+          <FieldRow label="Cleared by role" value={parsed.clearedByRole ?? null} />
+          <FieldRow label="Deleted sessions count" value={parsed.deletedCount ?? null} />
           <FieldRow label="Order status (side effect)" value={parsed.orderStatusSideEffect ?? null} />
           <FieldRow label="Total duration (ms)" value={parsed.totalDurationMs ?? null} />
+          <FieldRow label="Previous total (ms)" value={parsed.oldTotalDurationMs ?? null} />
+          <FieldRow label="New total (ms)" value={parsed.newTotalDurationMs ?? null} />
+          <FieldRow label="Note" value={parsed.note ?? null} />
           <FieldRow label="Total paused (ms)" value={parsed.totalPausedTimeMs ?? null} />
           <FieldRow label="End time" value={parsed.endTime ?? null} />
         </div>

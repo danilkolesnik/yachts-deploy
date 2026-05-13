@@ -13,7 +13,14 @@ export const PermissionsList = {
   ORDERS_COMMENT_ADD: 'orders.comment.add',
   ORDERS_TIMER_USE: 'orders.timer.use',
   ORDERS_TIMER_STOP: 'orders.timer.stop',
+  /** All timers / exports (admin oversight) */
   ORDERS_TIMERS_GLOBAL_READ: 'orders.timers.global.read',
+  /** Full timer session list for a single order (staff) */
+  ORDERS_TIMERS_HISTORY_READ: 'orders.timers.history.read',
+  /** Manually correct stored timer duration (admin) */
+  ORDERS_TIMER_ADJUST: 'orders.timer.adjust',
+  /** Delete all timer session rows for an order (managers / admins only; audited) */
+  ORDERS_TIMER_CLEAR_ALL: 'orders.timer.clear_all',
   ORDERS_DELETE: 'orders.delete',
   ORDERS_OFFER_CLOSE: 'orders.offer.close',
 
