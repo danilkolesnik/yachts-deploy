@@ -29,7 +29,7 @@ export class OrderTimer {
   isPaused: boolean;
 
   @Column({ type: 'timestamp', nullable: true })
-  pauseTime: Date;
+  pauseTime: Date | null;
 
   @Column({ nullable: true, type: 'bigint' })
   totalPausedTime: number;
@@ -39,4 +39,8 @@ export class OrderTimer {
 
   @Column({ default: 'In Progress' })
   status: string;
+
+  /** Start of current active-work segment (after start or last resume); used for per-segment duration in audit */
+  @Column({ type: 'timestamp', nullable: true })
+  segmentStartedAt: Date | null;
 }

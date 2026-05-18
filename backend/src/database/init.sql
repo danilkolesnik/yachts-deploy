@@ -74,7 +74,8 @@ CREATE TABLE IF NOT EXISTS "order" (
     "resultVideoUrls" VARCHAR[],
     "tabImageUrls" VARCHAR[],
     "tabVideoUrls" VARCHAR[],
-    "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "createdBy" VARCHAR
 );
 
 -- Create order_timer table
@@ -90,7 +91,8 @@ CREATE TABLE IF NOT EXISTS order_timer (
     "totalPausedTime" BIGINT,
     "totalDuration" BIGINT,
     status VARCHAR DEFAULT 'In Progress',
-    "serviceLineIndex" INTEGER
+    "serviceLineIndex" INTEGER,
+    "segmentStartedAt" TIMESTAMP
 );
 
 -- Create yacht table

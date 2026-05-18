@@ -21,6 +21,13 @@ export const useOrderTimer = (orderId, serviceLineIndex) => {
     ? { params: { serviceLineIndex: Number(serviceLineIndex) } }
     : {};
 
+  const resetTimerDisplay = () => {
+    setIsRunning(false);
+    setIsPaused(false);
+    setElapsedTime(0);
+    setStatus('');
+  };
+
   const fetchTimerStatus = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -28,31 +35,36 @@ export const useOrderTimer = (orderId, serviceLineIndex) => {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         ...lineQueryConfig,
       });
-      if (data) {
-        setStatus(data.status);
 
-        if (data.status === 'In Progress') {
-          setIsRunning(true);
-          setIsPaused(false);
-          if (data.currentDuration) {
-            setElapsedTime(data.currentDuration);
-          }
-        } else if (data.status === 'Paused') {
-          setIsRunning(true);
-          setIsPaused(true);
-          if (data.currentDuration) {
-            setElapsedTime(data.currentDuration);
-          }
-        } else {
-          setIsRunning(false);
-          setIsPaused(false);
-          if (data.totalDuration) {
-            setElapsedTime(data.totalDuration);
-          }
-        }
+      if (!data || data.status == null) {
+        resetTimerDisplay();
+        return;
+      }
+
+      const active =
+        data.status === 'In Progress' ||
+        data.status === 'Paused' ||
+        data.isPaused === true;
+
+      if (!active) {
+        resetTimerDisplay();
+        return;
+      }
+
+      setStatus(data.status);
+
+      if (data.status === 'Paused' || data.isPaused) {
+        setIsRunning(true);
+        setIsPaused(true);
+        setElapsedTime(Number(data.currentDuration) || 0);
+      } else {
+        setIsRunning(true);
+        setIsPaused(false);
+        setElapsedTime(Number(data.currentDuration) || 0);
       }
     } catch (error) {
-      console.error('Ошибка при получении статуса таймера:', error);
+      console.error('Error fetching timer status:', error);
+      resetTimerDisplay();
     }
   };
 
@@ -68,7 +80,7 @@ export const useOrderTimer = (orderId, serviceLineIndex) => {
       });
       await fetchTimerStatus();
     } catch (error) {
-      console.error('Ошибка при запуске таймера:', error);
+      console.error('Error starting timer:', error);
     }
   };
 
@@ -85,7 +97,7 @@ export const useOrderTimer = (orderId, serviceLineIndex) => {
       );
       await fetchTimerStatus();
     } catch (error) {
-      console.error('Ошибка при постановке таймера на паузу:', error);
+      console.error('Error pausing timer:', error);
     }
   };
 
@@ -102,7 +114,7 @@ export const useOrderTimer = (orderId, serviceLineIndex) => {
       );
       await fetchTimerStatus();
     } catch (error) {
-      console.error('Ошибка при возобновлении таймера:', error);
+      console.error('Error resuming timer:', error);
     }
   };
 
@@ -117,10 +129,11 @@ export const useOrderTimer = (orderId, serviceLineIndex) => {
           ...lineQueryConfig,
         },
       );
+      resetTimerDisplay();
       await fetchTimerStatus();
       return true;
     } catch (error) {
-      console.error('Ошибка при остановке таймера:', error);
+      console.error('Error stopping timer:', error);
       return false;
     }
   };

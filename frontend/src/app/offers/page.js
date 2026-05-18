@@ -2094,9 +2094,10 @@ const OfferPage = () => {
                     isOpen={historyModalOpen} 
                     onClose={closeHistoryModal} 
                     title="Offer History"
-                    size="xl"
+                    size="2xl"
+                    bodyClassName="overflow-y-auto max-h-[85vh]"
                 >
-                    <div className="space-y-6 h-full" style={{ height: '400px', overflowY: 'auto' }}>
+                    <div className="space-y-6 min-h-[520px]">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg w-full">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">

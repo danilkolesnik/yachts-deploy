@@ -66,18 +66,23 @@ export class OrderController {
 
   @Post('create')
   @Permissions(PermissionsList.ORDERS_CREATE)
-  async createOrder(@Body() createOrderDto: CreateOrderDto) {
-    return this.orderService.create(createOrderDto);
+  async createOrder(@Body() createOrderDto: CreateOrderDto, @Req() request: Request) {
+    return this.orderService.create(createOrderDto, request);
   }
 
   @Post(':id/workers')
   @Permissions(PermissionsList.ORDERS_ASSIGNMENT_MANAGE)
   async updateOrderWorkers(
     @Param('id') orderId: string,
-    @Body('userIds') userIds: string[],
+    @Body() body: { userIds: string[]; changeReason?: string },
     @Req() request: Request,
   ) {
-    return this.orderService.updateOrderWorkers(orderId, userIds, request);
+    return this.orderService.updateOrderWorkers(
+      orderId,
+      body?.userIds || [],
+      body?.changeReason,
+      request,
+    );
   }
 
   @Get('')
@@ -108,6 +113,12 @@ export class OrderController {
   @Permissions(PermissionsList.ORDERS_DELETE)
   async deleteOrder(@Param('id') orderId: string, @Req() req: Request) {
     return this.orderService.deleteOrder(orderId, req);
+  }
+
+  @Get(':id/report')
+  @Permissions(PermissionsList.ORDERS_READ)
+  async getOrderReport(@Param('id') orderId: string, @Req() req: Request) {
+    return this.orderService.getOrderReport(orderId, req);
   }
 
   @Get(':id')
@@ -210,6 +221,12 @@ export class OrderController {
   @Permissions(PermissionsList.ORDERS_TIMERS_HISTORY_READ)
   async getTimerHistory(@Param('orderId') orderId: string, @Req() req: Request) {
     return this.orderService.getTimerHistory(orderId, req);
+  }
+
+  @Get(':orderId/timer/events')
+  @Permissions(PermissionsList.ORDERS_TIMERS_HISTORY_READ)
+  async getTimerEvents(@Param('orderId') orderId: string, @Req() req: Request) {
+    return this.orderService.getTimerEvents(orderId, req);
   }
 
   @Patch(':orderId/timers/:timerId')

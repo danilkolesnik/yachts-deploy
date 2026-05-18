@@ -40,6 +40,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     PermissionsList.ORDERS_COMMENT_ADD,
     PermissionsList.ORDERS_TIMER_USE,
     PermissionsList.ORDERS_TIMER_STOP,
+    PermissionsList.ORDERS_TIMERS_HISTORY_READ,
   ],
   electrician: [
     PermissionsList.ORDERS_READ,
@@ -51,6 +52,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     PermissionsList.ORDERS_COMMENT_ADD,
     PermissionsList.ORDERS_TIMER_USE,
     PermissionsList.ORDERS_TIMER_STOP,
+    PermissionsList.ORDERS_TIMERS_HISTORY_READ,
   ],
   user: [
     PermissionsList.OFFERS_READ,

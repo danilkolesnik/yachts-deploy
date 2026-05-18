@@ -17,6 +17,10 @@ export class OrderAssignmentHistory {
   @Column({ nullable: true })
   changedBy?: string;
 
+  /** Required when assigned workers are changed after initial assignment */
+  @Column({ type: 'text', nullable: true })
+  changeReason?: string;
+
   @CreateDateColumn()
   changedAt: Date;
 }

@@ -12,6 +12,11 @@ import ReactPlayer from 'react-player';
 import axios from 'axios';
 import { useAppSelector } from '@/lib/hooks';
 import { PermissionsList } from '@/constants/permissions';
+import {
+    ASSIGNMENT_CHANGE_REASONS,
+    buildAssignmentChangeReason,
+    assignmentChangeRequiresReason,
+} from '@/constants/orderAssignment';
 import { can } from '@/utils/canPermission';
 import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
@@ -41,6 +46,7 @@ const OrderDetail = ({ params }) => {
     const [draftServices, setDraftServices] = useState([]);
     const [draftParts, setDraftParts] = useState([]);
     const [timerSessions, setTimerSessions] = useState([]);
+    const [timerEvents, setTimerEvents] = useState([]);
     const [timerSessionsLoading, setTimerSessionsLoading] = useState(false);
     const [adjustOpen, setAdjustOpen] = useState(false);
     const [adjustTimer, setAdjustTimer] = useState(null);
@@ -49,6 +55,10 @@ const OrderDetail = ({ params }) => {
     const [adjustSaving, setAdjustSaving] = useState(false);
     const [clearTimersOpen, setClearTimersOpen] = useState(false);
     const [clearTimersLoading, setClearTimersLoading] = useState(false);
+    const [assignmentReasonOpen, setAssignmentReasonOpen] = useState(false);
+    const [assignmentReasonPreset, setAssignmentReasonPreset] = useState('');
+    const [assignmentReasonOther, setAssignmentReasonOther] = useState('');
+    const [assignmentError, setAssignmentError] = useState('');
     const router = useRouter();
 
     const normalizeArray = (v) => (Array.isArray(v) ? v : v ? [v] : []);
@@ -113,22 +123,74 @@ const OrderDetail = ({ params }) => {
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     };
 
+    const formatUserList = (users, fallbackIds) => {
+        if (Array.isArray(users) && users.length > 0) {
+            return users.map((u) => u?.fullName || u?.id).filter(Boolean).join(', ');
+        }
+        if (Array.isArray(fallbackIds) && fallbackIds.length > 0) {
+            return fallbackIds.map(String).join(', ');
+        }
+        return '—';
+    };
+
+    const displayUser = (userRef, fallbackId) => {
+        if (userRef?.fullName) return userRef.fullName;
+        if (fallbackId) return String(fallbackId);
+        return '—';
+    };
+
+    const timerEventActionLabel = (action) => {
+        const a = String(action || '');
+        const map = {
+            start: 'Start',
+            pause: 'Pause',
+            resume: 'Resume',
+            stop: 'Stop',
+            adjusted: 'Adjust duration',
+            cleared: 'Clear all',
+            'items.updated': 'Items updated',
+        };
+        return map[a] || a || '—';
+    };
+
+    const formatMetaMs = (ms) => {
+        if (ms == null || Number.isNaN(Number(ms))) return null;
+        return formatMsHms(ms);
+    };
+
     const loadTimerSessions = async () => {
         if (!id || !can(permissions, PermissionsList.ORDERS_TIMERS_HISTORY_READ)) {
             setTimerSessions([]);
+            setTimerEvents([]);
             return;
         }
         setTimerSessionsLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`${URL}/orders/${id}/timer/history`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
-            const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-            setTimerSessions(Array.isArray(list) ? list : []);
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const [histResult, evResult] = await Promise.allSettled([
+                axios.get(`${URL}/orders/${id}/timer/history`, { headers }),
+                axios.get(`${URL}/orders/${id}/timer/events`, { headers }),
+            ]);
+            if (histResult.status === 'fulfilled') {
+                const res = histResult.value;
+                const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+                setTimerSessions(Array.isArray(list) ? list : []);
+            } else {
+                console.error('Error fetching timer sessions:', histResult.reason);
+                setTimerSessions([]);
+            }
+            if (evResult.status === 'fulfilled') {
+                const res = evResult.value;
+                const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+                setTimerEvents(Array.isArray(list) ? list : []);
+            } else {
+                setTimerEvents([]);
+            }
         } catch (error) {
             console.error('Error fetching timer sessions:', error);
             setTimerSessions([]);
+            setTimerEvents([]);
         } finally {
             setTimerSessionsLoading(false);
         }
@@ -460,30 +522,65 @@ const OrderDetail = ({ params }) => {
         );
     };
 
-    const handleWorkersUpdate = async () => {
+    const handleWorkersUpdate = async (changeReason) => {
         if (!order) return;
-        const userIds = (selectedWorkers || []).map(w => w.value);
+        const userIds = (selectedWorkers || []).map((w) => w.value);
         setUpdatingWorkers(true);
+        setAssignmentError('');
         try {
             const token = localStorage.getItem('token');
-            await axios.post(
+            const res = await axios.post(
                 `${URL}/orders/${order.id}/workers`,
-                { userIds },
+                { userIds, changeReason: changeReason || undefined },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
-                }
+                },
             );
+            if (res.data?.code === 400) {
+                setAssignmentError(res.data.message || 'Validation failed');
+                return;
+            }
+            setAssignmentReasonOpen(false);
+            setAssignmentReasonPreset('');
+            setAssignmentReasonOther('');
             const updatedOrderRes = await axios.get(`${URL}/orders/${order.id}`);
             setOrder(updatedOrderRes.data.data);
             const historyRes = await axios.get(`${URL}/orders/${order.id}/assignment-history`);
             setAssignmentHistory(historyRes.data.data || []);
         } catch (error) {
+            const msg = error.response?.data?.message || 'Error updating workers';
+            setAssignmentError(msg);
             console.error('Error updating workers:', error);
         } finally {
             setUpdatingWorkers(false);
         }
+    };
+
+    const onSaveWorkersClick = () => {
+        if (assignmentChangeRequiresReason(order, selectedWorkers)) {
+            setAssignmentReasonPreset('');
+            setAssignmentReasonOther('');
+            setAssignmentError('');
+            setAssignmentReasonOpen(true);
+            return;
+        }
+        handleWorkersUpdate();
+    };
+
+    const confirmAssignmentReason = () => {
+        const reason = buildAssignmentChangeReason(assignmentReasonPreset, assignmentReasonOther);
+        if (!reason) {
+            setAssignmentError('Please select or enter a reason for the assignment change.');
+            return;
+        }
+        handleWorkersUpdate(reason);
+    };
+
+    const openOrderReport = () => {
+        if (!id) return;
+        window.open(`/orders/${id}/report`, '_blank', 'noopener,noreferrer,width=960,height=900');
     };
 
     if (!order) {
@@ -498,11 +595,22 @@ const OrderDetail = ({ params }) => {
         <div className="min-h-screen bg-gray-100">
             <Header />
             <div className="max-w-4xl mx-auto p-8 bg-white shadow-lg rounded-lg space-y-8">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                     <Button color="blue" onClick={() => router.push('/orders')}>Back</Button>
-                    <span className="text-sm text-gray-500">
-                        Order ID: <span className="font-mono">{order.id}</span>
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {can(permissions, PermissionsList.ORDERS_READ) && (
+                            <button
+                                type="button"
+                                onClick={openOrderReport}
+                                className="text-sm px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 text-black"
+                            >
+                                Work order report
+                            </button>
+                        )}
+                        <span className="text-sm text-gray-500">
+                            Order ID: <span className="font-mono">{order.id}</span>
+                        </span>
+                    </div>
                 </div>
                 <h1 className="text-4xl font-extrabold text-black">Order Details</h1>
 
@@ -512,6 +620,12 @@ const OrderDetail = ({ params }) => {
                         <div><span className="font-semibold">Yacht:</span> {order.offer?.yachtName || 'N/A'}</div>
                         <div><span className="font-semibold">Status:</span> {order.status}</div>
                         <div><span className="font-semibold">Created at:</span> {order.createdAt ? new Date(order.createdAt).toLocaleString() : ''}</div>
+                        {(order.createdByUser?.fullName || order.createdBy) && (
+                            <div>
+                                <span className="font-semibold">Created by:</span>{' '}
+                                {order.createdByUser?.fullName || order.createdBy}
+                            </div>
+                        )}
                     </div>
                     <div className="space-y-3">
                         <h3 className="text-lg font-semibold text-black">Assigned employees</h3>
@@ -543,7 +657,7 @@ const OrderDetail = ({ params }) => {
                         {can(permissions, PermissionsList.ORDERS_ASSIGNMENT_MANAGE) && (
                             <div className="flex justify-end">
                                 <button
-                                    onClick={handleWorkersUpdate}
+                                    onClick={onSaveWorkersClick}
                                     disabled={updatingWorkers}
                                     className="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 disabled:opacity-60"
                                 >
@@ -776,14 +890,19 @@ const OrderDetail = ({ params }) => {
                         <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 max-h-60 overflow-y-auto">
                             <ul className="space-y-2 text-sm text-black">
                                 {assignmentHistory.map((item, index) => (
-                                    <li key={item.id || index} className="flex justify-between">
+                                    <li key={item.id || index} className="flex justify-between gap-2">
                                         <div>
                                             <span className="font-medium">
-                                                [{(item.oldWorkerIds || []).join(', ') || '—'}] → [{(item.newWorkerIds || []).join(', ')}]
+                                                [{formatUserList(item.oldWorkers, item.oldWorkerIds)}] → [{formatUserList(item.newWorkers, item.newWorkerIds)}]
                                             </span>
-                                            {item.changedBy && (
-                                                <span className="ml-2 text-xs text-gray-500">
-                                                    by {item.changedBy}
+                                            {item.changeReason && (
+                                                <div className="text-xs text-gray-700 mt-1">
+                                                    Reason: {item.changeReason}
+                                                </div>
+                                            )}
+                                            {(item.changedByUser || item.changedBy) && (
+                                                <span className="ml-0 block text-xs text-gray-500 mt-0.5">
+                                                    by {displayUser(item.changedByUser, item.changedBy)}
                                                 </span>
                                             )}
                                         </div>
@@ -823,9 +942,11 @@ const OrderDetail = ({ params }) => {
                             ) : (
                                 <ul className="space-y-2 text-sm text-black">
                                     {(timerSessions || []).map((t) => {
-                                        const workerName = (order?.assignedWorkers || []).find(
-                                            (w) => String(w.id) === String(t.userId),
-                                        )?.fullName;
+                                        const workerName =
+                                            t.worker?.fullName ||
+                                            (order?.assignedWorkers || []).find(
+                                                (w) => String(w.id) === String(t.userId),
+                                            )?.fullName;
                                         const lineLabel =
                                             t.serviceLineIndex == null
                                                 ? '—'
@@ -859,6 +980,90 @@ const OrderDetail = ({ params }) => {
                                 </ul>
                             )}
                         </div>
+                        {can(permissions, PermissionsList.ORDERS_TIMERS_HISTORY_READ) && (
+                            <div className="mt-6">
+                                <h3 className="text-lg font-semibold text-black mb-2">Timer event log</h3>
+                                <p className="text-xs text-gray-600 mb-2">
+                                    Start, pause, resume, and stop with segment durations and who performed each action.
+                                </p>
+                                <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 max-h-96 overflow-y-auto">
+                                    {timerSessionsLoading ? (
+                                        <div className="text-sm text-gray-600">Loading…</div>
+                                    ) : (timerEvents || []).length === 0 ? (
+                                        <div className="text-sm text-gray-600">No timer events recorded.</div>
+                                    ) : (
+                                        <ul className="space-y-2 text-sm text-black">
+                                            {(timerEvents || []).map((ev) => {
+                                                let meta = {};
+                                                try {
+                                                    if (ev.meta) meta = JSON.parse(ev.meta);
+                                                } catch (_) {
+                                                    meta = {};
+                                                }
+                                                const seg = formatMetaMs(meta.segmentWorkedMs);
+                                                const brk = formatMetaMs(meta.pauseBreakMs);
+                                                const cum = formatMetaMs(meta.cumulativeActiveWorkMs);
+                                                const wall = formatMetaMs(meta.wallClockMs);
+                                                const activeTot = formatMetaMs(meta.activeWorkTotalMs);
+                                                const pauseTot = formatMetaMs(meta.totalPausedTimeMs);
+                                                return (
+                                                    <li key={ev.id} className="border rounded p-3 bg-white space-y-1">
+                                                        <div className="flex flex-wrap justify-between gap-2">
+                                                            <span className="font-medium">{timerEventActionLabel(ev.action)}</span>
+                                                            <span className="text-gray-500 text-xs">
+                                                                {ev.changedAt ? new Date(ev.changedAt).toLocaleString() : ''}
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-xs text-gray-600 space-y-0.5">
+                                                            <div>
+                                                                By:{' '}
+                                                                <span className="text-black">
+                                                                    {displayUser(ev.changedByUser, ev.changedBy)}
+                                                                </span>
+                                                                {(ev.timerOwnerUser || meta.timerOwnerUserId) &&
+                                                                    String(ev.timerOwnerUser?.id || meta.timerOwnerUserId) !==
+                                                                        String(ev.changedByUser?.id || ev.changedBy) && (
+                                                                        <span className="ml-2">
+                                                                            · Timer owner:{' '}
+                                                                            {displayUser(
+                                                                                ev.timerOwnerUser,
+                                                                                meta.timerOwnerUserId || meta.timerUserId,
+                                                                            )}
+                                                                        </span>
+                                                                    )}
+                                                            </div>
+                                                            {meta.serviceLineIndex != null && (
+                                                                <div>Service line: #{Number(meta.serviceLineIndex) + 1}</div>
+                                                            )}
+                                                            {seg && <div>Segment worked: {seg}</div>}
+                                                            {brk && <div>Pause (break) duration: {brk}</div>}
+                                                            {cum && <div>Cumulative active work (after pause): {cum}</div>}
+                                                            {wall && activeTot && (
+                                                                <div>
+                                                                    Wall {wall} · Active total {activeTot}
+                                                                    {pauseTot ? ` · Paused total ${pauseTot}` : ''}
+                                                                </div>
+                                                            )}
+                                                            {meta.sessionStartedAt && (
+                                                                <div className="text-[11px]">Session start (UTC): {String(meta.sessionStartedAt)}</div>
+                                                            )}
+                                                            {(meta.pauseAt || meta.resumeAt || meta.stopAt) && (
+                                                                <div className="text-[11px]">
+                                                                    {[meta.pauseAt && `Pause @ ${meta.pauseAt}`, meta.resumeAt && `Resume @ ${meta.resumeAt}`, meta.stopAt && `Stop @ ${meta.stopAt}`].filter(Boolean).join(' · ')}
+                                                                </div>
+                                                            )}
+                                                            {meta.newSegmentStartedAt && (
+                                                                <div className="text-[11px]">New segment (UTC): {String(meta.newSegmentStartedAt)}</div>
+                                                            )}
+                                                        </div>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -964,6 +1169,58 @@ const OrderDetail = ({ params }) => {
                         </Button>
                         <Button color="green" onClick={saveAdjustTimer} disabled={adjustSaving}>
                             {adjustSaving ? 'Saving…' : 'Save'}
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal
+                isOpen={assignmentReasonOpen}
+                onClose={() => {
+                    if (!updatingWorkers) setAssignmentReasonOpen(false);
+                }}
+                title="Reason for worker replacement"
+                bodyClassName="max-h-[80vh] overflow-y-auto"
+            >
+                <div className="space-y-3 text-black">
+                    <p className="text-sm text-gray-600">
+                        Enter the reason for changing assigned workers. This is saved in the work order history and included in the work order report.
+                    </p>
+                    <div className="space-y-2">
+                        {ASSIGNMENT_CHANGE_REASONS.map((r) => (
+                            <label key={r.value} className="flex items-start gap-2 text-sm cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="assignmentReason"
+                                    value={r.value}
+                                    checked={assignmentReasonPreset === r.value}
+                                    onChange={() => setAssignmentReasonPreset(r.value)}
+                                    className="mt-1"
+                                />
+                                <span>{r.label}</span>
+                            </label>
+                        ))}
+                    </div>
+                    {assignmentReasonPreset === 'other' && (
+                        <textarea
+                            className="border rounded p-2 w-full text-sm text-black"
+                            rows={3}
+                            placeholder="Describe the work reason…"
+                            value={assignmentReasonOther}
+                            onChange={(e) => setAssignmentReasonOther(e.target.value)}
+                        />
+                    )}
+                    {assignmentError && <p className="text-sm text-red-600">{assignmentError}</p>}
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button
+                            variant="text"
+                            color="gray"
+                            onClick={() => !updatingWorkers && setAssignmentReasonOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button color="green" onClick={confirmAssignmentReason} disabled={updatingWorkers}>
+                            {updatingWorkers ? 'Saving…' : 'Save assignment'}
                         </Button>
                     </div>
                 </div>

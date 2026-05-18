@@ -71,7 +71,7 @@ const OrderTimer = ({
           }`}
           onClick={handleStartOrResume}
           disabled={!canUseTimer || (isRunning && !isPaused)}
-          title={isPaused ? "Продолжить" : "Начать работу"}
+          title={isPaused ? "Resume" : "Start work"}
         >
           <PlayIcon className={`h-4 w-4 ${(!isRunning || isPaused) ? 'text-white' : 'text-gray-400'}`} />
         </button>
@@ -82,7 +82,7 @@ const OrderTimer = ({
           }`}
           onClick={handlePause}
           disabled={!canUseTimer || !isRunning || isPaused}
-          title="Пауза"
+          title="Pause"
         >
           <PauseIcon className={`h-4 w-4 ${(isRunning && !isPaused) ? 'text-white' : 'text-gray-400'}`} />
         </button>
@@ -93,7 +93,7 @@ const OrderTimer = ({
           }`}
           onClick={handleStop}
           disabled={!canStopTimer || !isRunning}
-          title="Завершить"
+          title="Stop"
         >
           <StopIcon className={`h-4 w-4 ${isRunning ? 'text-white' : 'text-gray-400'}`} />
         </button>

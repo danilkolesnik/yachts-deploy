@@ -1,0 +1,13 @@
+import { MigrationInterface, QueryRunner } from 'typeorm';
+
+export class AddOrderTimerSegmentStartedAt1764000000000 implements MigrationInterface {
+  name = 'AddOrderTimerSegmentStartedAt1764000000000';
+
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`ALTER TABLE "order_timer" ADD COLUMN "segmentStartedAt" TIMESTAMP`);
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`ALTER TABLE "order_timer" DROP COLUMN IF EXISTS "segmentStartedAt"`);
+  }
+}

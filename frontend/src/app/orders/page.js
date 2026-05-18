@@ -6,6 +6,11 @@ import { Select, Option, Button } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import { useAppSelector } from '@/lib/hooks';
 import { PermissionsList } from '@/constants/permissions';
+import {
+    ASSIGNMENT_CHANGE_REASONS,
+    buildAssignmentChangeReason,
+    assignmentChangeRequiresReason,
+} from '@/constants/orderAssignment';
 import { can } from '@/utils/canPermission';
 import { PencilIcon, TrashIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/solid';
 import { ClipLoader } from 'react-spinners';
@@ -49,6 +54,10 @@ const OrderPage = () => {
     const [deleting, setDeleting] = useState(false);
     const tableRef = useRef(null);
     const [editWorkersModalIsOpen, setEditWorkersModalIsOpen] = useState(false);
+    const [assignmentReasonOpen, setAssignmentReasonOpen] = useState(false);
+    const [assignmentReasonPreset, setAssignmentReasonPreset] = useState('');
+    const [assignmentReasonOther, setAssignmentReasonOther] = useState('');
+    const [assignmentError, setAssignmentError] = useState('');
     const [availableWorkers, setAvailableWorkers] = useState([]);
     const [selectedWorkersForEdit, setSelectedWorkersForEdit] = useState([]);
     const [timersModalOrder, setTimersModalOrder] = useState(null);
@@ -316,25 +325,65 @@ const OrderPage = () => {
         setSelectedWorkersForEdit([]);
     };
 
-    const updateOrderWorkers = async () => {
+    const openOrderReport = (orderId, e) => {
+        if (e) e.stopPropagation();
+        window.open(`/orders/${orderId}/report`, '_blank', 'noopener,noreferrer,width=960,height=900');
+    };
+
+    const updateOrderWorkers = async (changeReason) => {
         if (!selectedOrder) return;
         const userIds = (selectedWorkersForEdit || []).map(w => w.value);
+        setAssignmentError('');
         try {
             setLoadingUpdate(true);
             const token = localStorage.getItem('token');
-            await axios.post(`${URL}/orders/${selectedOrder.id}/workers`, { userIds }, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
+            const res = await axios.post(
+                `${URL}/orders/${selectedOrder.id}/workers`,
+                { userIds, changeReason: changeReason || undefined },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 },
-            });
+            );
+            if (res.data?.code === 400) {
+                setAssignmentError(res.data.message || 'Validation failed');
+                toast.error(res.data.message || 'Please provide a replacement reason');
+                return;
+            }
             await fetchOrders();
+            setAssignmentReasonOpen(false);
+            setAssignmentReasonPreset('');
+            setAssignmentReasonOther('');
             closeEditWorkersModal();
         } catch (error) {
+            const msg = error.response?.data?.message || 'Error updating order workers';
+            setAssignmentError(msg);
             console.error('Error updating order workers:', error);
-            toast.error("Error updating order workers");
+            toast.error(msg);
         } finally {
             setLoadingUpdate(false);
         }
+    };
+
+    const onSaveWorkersFromList = () => {
+        if (assignmentChangeRequiresReason(selectedOrder, selectedWorkersForEdit)) {
+            setAssignmentReasonPreset('');
+            setAssignmentReasonOther('');
+            setAssignmentError('');
+            setAssignmentReasonOpen(true);
+            return;
+        }
+        updateOrderWorkers();
+    };
+
+    const confirmAssignmentReasonFromList = () => {
+        const reason = buildAssignmentChangeReason(assignmentReasonPreset, assignmentReasonOther);
+        if (!reason) {
+            setAssignmentError('Please select or enter a reason for the worker change.');
+            return;
+        }
+        updateOrderWorkers(reason);
     };
 
     const handleDelete = (id) => {
@@ -410,6 +459,24 @@ const OrderPage = () => {
                 {row.status}
             </span>
         ) },
+        ...(can(permissions, PermissionsList.ORDERS_READ)
+            ? [{
+            name: 'Report',
+            cell: row => (
+                <div className="flex justify-center py-1" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                        size="sm"
+                        variant="outlined"
+                        color="gray"
+                        className="normal-case text-xs px-3 py-1"
+                        onClick={(e) => openOrderReport(row.id, e)}
+                    >
+                        Report
+                    </Button>
+                </div>
+            ),
+            ignoreRowClick: true,
+        }] : []),
         ...(can(permissions, PermissionsList.ORDERS_TIMER_USE) || can(permissions, PermissionsList.ORDERS_TIMER_STOP)
             ? [{
             name: 'Timers',
@@ -939,8 +1006,59 @@ const OrderPage = () => {
                             <Button variant="text" color="red" onClick={closeEditWorkersModal} className="w-full md:w-auto">
                                 <span>Cancel</span>
                             </Button>
-                            <Button color="green" onClick={updateOrderWorkers} disabled={loadingUpdate} className="w-full md:w-auto">
+                            <Button color="green" onClick={onSaveWorkersFromList} disabled={loadingUpdate} className="w-full md:w-auto">
                                 {loadingUpdate ? <ClipLoader size={13} color={"#123abc"} /> : <span>Save</span>}
+                            </Button>
+                        </div>
+                    </div>
+                </Modal>
+
+                <Modal
+                    isOpen={assignmentReasonOpen}
+                    onClose={() => {
+                        if (!loadingUpdate) setAssignmentReasonOpen(false);
+                    }}
+                    title="Reason for worker replacement"
+                >
+                    <div className="space-y-3 text-black">
+                        <p className="text-sm text-gray-600">
+                            Enter the reason for the change. The update cannot be saved without a reason.
+                        </p>
+                        <div className="space-y-2">
+                            {ASSIGNMENT_CHANGE_REASONS.map((r) => (
+                                <label key={r.value} className="flex items-start gap-2 text-sm cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="listAssignmentReason"
+                                        value={r.value}
+                                        checked={assignmentReasonPreset === r.value}
+                                        onChange={() => setAssignmentReasonPreset(r.value)}
+                                        className="mt-1"
+                                    />
+                                    <span>{r.label}</span>
+                                </label>
+                            ))}
+                        </div>
+                        {assignmentReasonPreset === 'other' && (
+                            <textarea
+                                className="border rounded p-2 w-full text-sm"
+                                rows={3}
+                                placeholder="Describe the reason…"
+                                value={assignmentReasonOther}
+                                onChange={(e) => setAssignmentReasonOther(e.target.value)}
+                            />
+                        )}
+                        {assignmentError && <p className="text-sm text-red-600">{assignmentError}</p>}
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="text"
+                                color="gray"
+                                onClick={() => !loadingUpdate && setAssignmentReasonOpen(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button color="green" onClick={confirmAssignmentReasonFromList} disabled={loadingUpdate}>
+                                {loadingUpdate ? 'Saving…' : 'Save'}
                             </Button>
                         </div>
                     </div>

@@ -50,6 +50,10 @@ export class order {
   @CreateDateColumn()
   createdAt: Date;
 
+  /** User id who created the work order (ZN) */
+  @Column({ nullable: true })
+  createdBy?: string;
+
   @Column({ type: 'timestamp', nullable: true })
   startedAt?: Date;
 

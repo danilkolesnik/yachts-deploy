@@ -151,6 +151,55 @@ export class OrderService {
     }
   }
 
+  private static readonly ORDER_TIMER_MAX_PAUSED_MS = 9_000_000_000_000_000_000;
+
+  private anchorSegmentStart(timer: OrderTimer): Date {
+    const seg = timer.segmentStartedAt;
+    return seg ? new Date(seg) : new Date(timer.startTime);
+  }
+
+  /** Active-work milliseconds from segment start to endMs (wall clock ms). */
+  private segmentWorkedMsTo(timer: OrderTimer, endMs: number): number {
+    return Math.max(0, endMs - this.anchorSegmentStart(timer).getTime());
+  }
+
+  private userRef(id: string | null | undefined, byId: Map<string, users>) {
+    if (id == null || !String(id).trim()) return null;
+    const key = String(id);
+    const row = byId.get(key);
+    return {
+      id: key,
+      fullName: (row?.fullName && String(row.fullName).trim()) || key,
+    };
+  }
+
+  private async loadUsersByIds(ids: Iterable<string | null | undefined>): Promise<Map<string, users>> {
+    const unique = new Set<string>();
+    for (const raw of ids) {
+      if (raw != null && String(raw).trim()) unique.add(String(raw));
+    }
+    if (!unique.size) return new Map();
+    const rows = await this.usersRepository.find({ where: { id: In([...unique]) } });
+    return new Map(rows.map((u) => [String(u.id), u]));
+  }
+
+  private collectIdsFromTimerMeta(metaRaw?: string): string[] {
+    if (!metaRaw) return [];
+    try {
+      const meta = JSON.parse(metaRaw) as Record<string, unknown>;
+      return [
+        meta.triggeredByUserId,
+        meta.timerOwnerUserId,
+        meta.timerUserId,
+        meta.clearedByUserId,
+      ]
+        .filter((x) => x != null)
+        .map((x) => String(x));
+    } catch {
+      return [];
+    }
+  }
+
   private async canAccessOrder(orderId: string, requester: { id: string; role: string }) {
     const orderEntity = await this.orderRepository.findOne({
       where: { id: orderId },
@@ -418,23 +467,35 @@ export class OrderService {
     await this.orderStatusHistoryRepository.save(history);
   }
 
+  private workersAssignmentChanged(oldWorkerIds: string[], newWorkerIds: string[]): boolean {
+    const a = new Set((oldWorkerIds || []).map(String));
+    const b = new Set((newWorkerIds || []).map(String));
+    if (a.size !== b.size) return true;
+    for (const id of a) {
+      if (!b.has(id)) return true;
+    }
+    return false;
+  }
+
   private async logOrderAssignmentChange(
     orderId: string,
     oldWorkerIds: string[] | null,
     newWorkerIds: string[],
     changedBy?: string,
+    changeReason?: string,
   ) {
     const history = this.orderAssignmentHistoryRepository.create({
       orderId,
       oldWorkerIds: oldWorkerIds ?? [],
       newWorkerIds,
       changedBy,
+      changeReason: changeReason?.trim() || undefined,
     });
     await this.orderAssignmentHistoryRepository.save(history);
   }
 
   // =============== CRUD МЕТОДЫ ===============
-  async create(data: CreateOrderDto) {
+  async create(data: CreateOrderDto, req?: Request) {
     if (!data.offerId || !data.userId || !data.customerId) {
       return { code: 400, message: 'Not all arguments' };
     }
@@ -461,11 +522,14 @@ export class OrderService {
         return { code: 404, message: 'One or more users not found' };
       }
 
+      const createdBy = req ? this.tryGetUserIdFromRequest(req) : undefined;
+
       const newOrder = await this.orderRepository.save(
         this.orderRepository.create({
           offerId: data.offerId,
           assignedWorkers: assignedWorkers,
           customerId: data.customerId,
+          createdBy: createdBy || undefined,
           status: 'created',
           startedAt: new Date(),
           services: Array.isArray(checkOffer.services) ? checkOffer.services : [],
@@ -481,7 +545,12 @@ export class OrderService {
       // log initial assignment (if any)
       const initialWorkerIds = assignedWorkers.map((w) => String(w.id));
       if (initialWorkerIds.length > 0) {
-        await this.logOrderAssignmentChange(newOrder.id, [], initialWorkerIds, String(data.customerId));
+        await this.logOrderAssignmentChange(
+          newOrder.id,
+          [],
+          initialWorkerIds,
+          createdBy || String(data.customerId),
+        );
       }
 
       await this.logOrderStatusChange(newOrder.id, null, 'created');
@@ -503,16 +572,28 @@ export class OrderService {
     const orderEntity = await this.orderRepository.findOne({ where: { id: orderId } });
     if (!orderEntity) return { code: 404, message: 'Order not found' };
 
-    const nextServices = items.services !== undefined ? (Array.isArray(items.services) ? items.services : []) : orderEntity.services;
-    const nextParts = items.parts !== undefined ? (Array.isArray(items.parts) ? items.parts : []) : orderEntity.parts;
+    const prevServices = Array.isArray(orderEntity.services) ? orderEntity.services : [];
+    const prevParts = Array.isArray(orderEntity.parts) ? orderEntity.parts : [];
+    const nextServices = items.services !== undefined ? (Array.isArray(items.services) ? items.services : []) : prevServices;
+    const nextParts = items.parts !== undefined ? (Array.isArray(items.parts) ? items.parts : []) : prevParts;
 
     orderEntity.services = nextServices as any;
     orderEntity.parts = nextParts as any;
     const saved = await this.orderRepository.save(orderEntity);
 
     await this.auditOrderItems(orderId, changedBy, {
-      servicesCount: Array.isArray(nextServices) ? nextServices.length : 0,
-      partsCount: Array.isArray(nextParts) ? nextParts.length : 0,
+      servicesCountBefore: prevServices.length,
+      servicesCountAfter: Array.isArray(nextServices) ? nextServices.length : 0,
+      partsCountBefore: prevParts.length,
+      partsCountAfter: Array.isArray(nextParts) ? nextParts.length : 0,
+      servicesSummaryBefore: prevServices.map((s: any) => s?.serviceName || s?.label || s?.name).filter(Boolean),
+      servicesSummaryAfter: (nextServices as any[])
+        .map((s: any) => s?.serviceName || s?.label || s?.name)
+        .filter(Boolean),
+      partsSummaryBefore: prevParts.map((p: any) => p?.partName || p?.label || p?.name).filter(Boolean),
+      partsSummaryAfter: (nextParts as any[])
+        .map((p: any) => p?.partName || p?.label || p?.name)
+        .filter(Boolean),
     });
 
     return { code: 200, data: saved };
@@ -668,7 +749,12 @@ export class OrderService {
     }
   }
 
-  async updateOrderWorkers(orderId: string, userIds: string[], req: Request) {
+  async updateOrderWorkers(
+    orderId: string,
+    userIds: string[],
+    changeReason: string | undefined,
+    req: Request,
+  ) {
     try {
       await this.assertCanAccessOrder(orderId, req);
 
@@ -682,29 +768,40 @@ export class OrderService {
       }
 
       const oldWorkerIds = (orderEntity.assignedWorkers || []).map((w) => String(w.id));
+      const newWorkerIds = (userIds || []).map(String);
+      const assignmentChanged = this.workersAssignmentChanged(oldWorkerIds, newWorkerIds);
 
-      const workers = await this.usersRepository.find({
-        where: { id: In(userIds) },
-      });
+      if (oldWorkerIds.length > 0 && assignmentChanged) {
+        const reason = (changeReason || '').trim();
+        if (!reason) {
+          return {
+            code: 400,
+            message: 'changeReason is required when modifying assigned workers',
+          };
+        }
+      }
+
+      const workers =
+        newWorkerIds.length > 0
+          ? await this.usersRepository.find({
+              where: { id: In(newWorkerIds) },
+            })
+          : [];
 
       orderEntity.assignedWorkers = workers;
       await this.orderRepository.save(orderEntity);
 
-      let changedBy: string | undefined;
-      try {
-        const token = getBearerToken(req);
-        const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
-        changedBy = String(login.id);
-      } catch {
-        changedBy = undefined;
-      }
+      const changedBy = this.tryGetUserIdFromRequest(req);
 
-      await this.logOrderAssignmentChange(
-        orderId,
-        oldWorkerIds,
-        workers.map((w) => String(w.id)),
-        changedBy,
-      );
+      if (assignmentChanged) {
+        await this.logOrderAssignmentChange(
+          orderId,
+          oldWorkerIds,
+          workers.map((w) => String(w.id)),
+          changedBy,
+          changeReason,
+        );
+      }
 
       return {
         code: 200,
@@ -835,10 +932,12 @@ export class OrderService {
 
       const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
 
+      const startedAt = new Date();
       const timer = this.orderTimerRepository.create({
         orderId,
         userId: login.id,
-        startTime: new Date(),
+        startTime: startedAt,
+        segmentStartedAt: startedAt,
         status: 'In Progress',
         isRunning: true,
         isPaused: false,
@@ -850,8 +949,13 @@ export class OrderService {
       await this.logOrderStatusChange(orderId, previousStatus, 'in-progress', String(login.id));
 
       const savedTimer = await this.orderTimerRepository.save(timer);
+      const ownerId = String(savedTimer.userId || login.id);
       await this.logOrderTimerEvent(orderId, savedTimer.id, 'start', String(login.id), {
-        timerUserId: String(savedTimer.userId || login.id),
+        triggeredByUserId: String(login.id),
+        timerOwnerUserId: ownerId,
+        timerUserId: ownerId,
+        sessionStartedAt: startedAt.toISOString(),
+        segmentStartedAt: startedAt.toISOString(),
         timerStatus: savedTimer.status,
         isRunning: savedTimer.isRunning,
         isPaused: savedTimer.isPaused,
@@ -894,11 +998,15 @@ export class OrderService {
     const changedBy = this.tryGetUserIdFromRequest(req);
 
     const now = new Date();
+    const nowMs = now.getTime();
+    const segmentStartedAtIso = this.anchorSegmentStart(timer).toISOString();
+    const segmentWorkedMs = this.segmentWorkedMsTo(timer, nowMs);
+
     timer.isPaused = true;
     timer.status = 'Paused';
     timer.pauseTime = now;
 
-    let totalDuration = now.getTime() - timer.startTime.getTime();
+    let totalDuration = nowMs - timer.startTime.getTime();
     if (timer.totalPausedTime) {
       totalDuration -= timer.totalPausedTime;
     }
@@ -914,8 +1022,16 @@ export class OrderService {
     }
 
     const savedTimer = await this.orderTimerRepository.save(timer);
+    const ownerId = String(timer.userId || '');
     await this.logOrderTimerEvent(orderId, savedTimer.id, 'pause', changedBy, {
-      timerUserId: String(timer.userId || ''),
+      triggeredByUserId: changedBy ?? null,
+      timerOwnerUserId: ownerId,
+      timerUserId: ownerId,
+      pauseAt: now.toISOString(),
+      segmentStartedAt: segmentStartedAtIso,
+      segmentWorkedMs,
+      cumulativeActiveWorkMs:
+        savedTimer.totalDuration != null ? Number(savedTimer.totalDuration) : null,
       timerStatus: savedTimer.status,
       totalDurationMs: savedTimer.totalDuration != null ? Number(savedTimer.totalDuration) : null,
       orderStatusSideEffect: perLine ? null : 'waiting',
@@ -944,16 +1060,20 @@ export class OrderService {
 
     const changedBy = this.tryGetUserIdFromRequest(req);
 
+    const resumeAt = new Date();
+    const resumeMs = resumeAt.getTime();
+    let pauseBreakMs: number | null = null;
+
     if (timer.pauseTime) {
-      const pauseDuration = new Date().getTime() - timer.pauseTime.getTime();
+      pauseBreakMs = resumeMs - timer.pauseTime.getTime();
       const currentTotal = Number(timer.totalPausedTime || 0);
-      const newTotal = currentTotal + pauseDuration;
-      const MAX_BIGINT_SAFE = 9_000_000_000_000_000_000;
-      timer.totalPausedTime = Math.min(newTotal, MAX_BIGINT_SAFE);
+      const newTotal = currentTotal + pauseBreakMs;
+      timer.totalPausedTime = Math.min(newTotal, OrderService.ORDER_TIMER_MAX_PAUSED_MS);
     }
 
     timer.isPaused = false;
     timer.status = 'In Progress';
+    timer.segmentStartedAt = resumeAt;
 
     const perLine = timer.serviceLineIndex !== null && timer.serviceLineIndex !== undefined;
     if (!perLine) {
@@ -964,10 +1084,16 @@ export class OrderService {
     }
 
     const savedTimer = await this.orderTimerRepository.save(timer);
+    const ownerId = String(timer.userId || '');
     await this.logOrderTimerEvent(orderId, savedTimer.id, 'resume', changedBy, {
-      timerUserId: String(timer.userId || ''),
-      timerStatus: savedTimer.status,
+      triggeredByUserId: changedBy ?? null,
+      timerOwnerUserId: ownerId,
+      timerUserId: ownerId,
+      resumeAt: resumeAt.toISOString(),
+      pauseBreakMs,
+      newSegmentStartedAt: resumeAt.toISOString(),
       totalPausedTimeMs: savedTimer.totalPausedTime != null ? Number(savedTimer.totalPausedTime) : null,
+      timerStatus: savedTimer.status,
       orderStatusSideEffect: perLine ? null : 'in-progress',
       serviceLineIndex: savedTimer.serviceLineIndex,
     });
@@ -995,19 +1121,50 @@ export class OrderService {
     const changedBy = this.tryGetUserIdFromRequest(req);
 
     const now = new Date();
+    const nowMs = now.getTime();
+
+    let segmentWorkedMs = 0;
+    if (timer.isPaused && timer.pauseTime) {
+      segmentWorkedMs = this.segmentWorkedMsTo(timer, timer.pauseTime.getTime());
+    } else {
+      segmentWorkedMs = this.segmentWorkedMsTo(timer, nowMs);
+    }
+
+    if (timer.isPaused && timer.pauseTime) {
+      const tailPauseMs = nowMs - timer.pauseTime.getTime();
+      const currentTotal = Number(timer.totalPausedTime || 0);
+      timer.totalPausedTime = Math.min(
+        currentTotal + tailPauseMs,
+        OrderService.ORDER_TIMER_MAX_PAUSED_MS,
+      );
+    }
+
     timer.endTime = now;
     timer.isRunning = false;
     timer.isPaused = false;
+    timer.pauseTime = null;
+    timer.segmentStartedAt = null;
     timer.status = 'Completed';
-    timer.totalDuration = now.getTime() - timer.startTime.getTime();
+
+    const wallMs = nowMs - timer.startTime.getTime();
+    const pausedTotal = Number(timer.totalPausedTime || 0);
+    timer.totalDuration = Math.max(0, wallMs - pausedTotal);
 
     const saved = await this.orderTimerRepository.save(timer);
     const perLine = saved.serviceLineIndex !== null && saved.serviceLineIndex !== undefined;
+    const ownerId = String(timer.userId || '');
     await this.logOrderTimerEvent(orderId, saved.id, 'stop', changedBy, {
-      timerUserId: String(timer.userId || ''),
-      timerStatus: saved.status,
+      triggeredByUserId: changedBy ?? null,
+      timerOwnerUserId: ownerId,
+      timerUserId: ownerId,
+      stopAt: now.toISOString(),
+      segmentWorkedMs,
+      wallClockMs: wallMs,
+      totalPausedTimeMs: pausedTotal,
+      activeWorkTotalMs: saved.totalDuration != null ? Number(saved.totalDuration) : null,
       totalDurationMs: saved.totalDuration != null ? Number(saved.totalDuration) : null,
       endTime: saved.endTime ? saved.endTime.toISOString() : null,
+      timerStatus: saved.status,
       serviceLineIndex: saved.serviceLineIndex,
     });
 
@@ -1055,9 +1212,24 @@ export class OrderService {
         order: { changedAt: 'ASC' },
       });
 
+      const userIds: string[] = [];
+      for (const item of history) {
+        if (item.changedBy) userIds.push(String(item.changedBy));
+        for (const id of item.oldWorkerIds || []) userIds.push(String(id));
+        for (const id of item.newWorkerIds || []) userIds.push(String(id));
+      }
+      const usersById = await this.loadUsersByIds(userIds);
+
+      const data = history.map((item) => ({
+        ...item,
+        changedByUser: this.userRef(item.changedBy, usersById),
+        oldWorkers: (item.oldWorkerIds || []).map((wid) => this.userRef(wid, usersById)),
+        newWorkers: (item.newWorkerIds || []).map((wid) => this.userRef(wid, usersById)),
+      }));
+
       return {
         code: 200,
-        data: history,
+        data,
       };
     } catch (err) {
       if (
@@ -1154,6 +1326,199 @@ export class OrderService {
     }
   }
 
+  async getOrderReport(orderId: string, req: Request) {
+    try {
+      const orderEntity = await this.assertCanAccessOrder(orderId, req);
+
+      const offer = await this.offerRepository.findOne({
+        where: { id: orderEntity.offerId },
+      });
+
+      const [
+        statusHistory,
+        assignmentHistory,
+        timerSessions,
+        timerEvents,
+        clientMessages,
+      ] = await Promise.all([
+        this.orderStatusHistoryRepository.find({ where: { orderId }, order: { changedAt: 'ASC' } }),
+        this.orderAssignmentHistoryRepository.find({ where: { orderId }, order: { changedAt: 'ASC' } }),
+        this.orderTimerRepository.find({ where: { orderId }, order: { startTime: 'ASC' } }),
+        this.orderTimerHistoryRepository.find({ where: { orderId }, order: { changedAt: 'ASC' } }),
+        this.orderClientMessageRepository.find({ where: { orderId }, order: { createdAt: 'ASC' } }),
+      ]);
+
+      const userIds: string[] = [];
+      if (orderEntity.createdBy) userIds.push(String(orderEntity.createdBy));
+      for (const s of statusHistory) {
+        if (s.changedBy) userIds.push(String(s.changedBy));
+      }
+      for (const a of assignmentHistory) {
+        if (a.changedBy) userIds.push(String(a.changedBy));
+        for (const id of a.oldWorkerIds || []) userIds.push(String(id));
+        for (const id of a.newWorkerIds || []) userIds.push(String(id));
+      }
+      for (const t of timerSessions) {
+        if (t.userId) userIds.push(String(t.userId));
+      }
+      for (const ev of timerEvents) {
+        if (ev.changedBy) userIds.push(String(ev.changedBy));
+        userIds.push(...this.collectIdsFromTimerMeta(ev.meta));
+      }
+
+      const usersById = await this.loadUsersByIds(userIds);
+      const createdByUser = this.userRef(orderEntity.createdBy, usersById);
+
+      const enrichedStatus = statusHistory.map((s) => ({
+        ...s,
+        changedByUser: this.userRef(s.changedBy, usersById),
+      }));
+
+      const enrichedAssignment = assignmentHistory.map((item) => ({
+        ...item,
+        changedByUser: this.userRef(item.changedBy, usersById),
+        oldWorkers: (item.oldWorkerIds || []).map((wid) => this.userRef(wid, usersById)),
+        newWorkers: (item.newWorkerIds || []).map((wid) => this.userRef(wid, usersById)),
+      }));
+
+      const enrichedTimers = timerSessions.map((t) => ({
+        ...t,
+        worker: this.userRef(t.userId, usersById),
+      }));
+
+      const enrichedTimerEvents = timerEvents.map((ev) => {
+        let meta: Record<string, unknown> = {};
+        try {
+          if (ev.meta) meta = JSON.parse(ev.meta);
+        } catch {
+          meta = {};
+        }
+        const ownerId = meta.timerOwnerUserId ?? meta.timerUserId;
+        return {
+          ...ev,
+          meta,
+          changedByUser: this.userRef(ev.changedBy, usersById),
+          timerOwnerUser: this.userRef(ownerId != null ? String(ownerId) : undefined, usersById),
+        };
+      });
+
+      const itemChangeEvents = enrichedTimerEvents.filter((e) => e.action === 'items.updated');
+
+      type TimelineRow = {
+        at: string;
+        kind: string;
+        title: string;
+        detail: string;
+        actor?: string | null;
+      };
+
+      const timeline: TimelineRow[] = [];
+
+      if (orderEntity.createdAt) {
+        timeline.push({
+          at: new Date(orderEntity.createdAt).toISOString(),
+          kind: 'order.created',
+          title: 'Work order created',
+          detail: `Status: created · Offer ${orderEntity.offerId}`,
+          actor: createdByUser?.fullName ?? orderEntity.createdBy ?? null,
+        });
+      }
+
+      for (const s of enrichedStatus) {
+        timeline.push({
+          at: s.changedAt ? new Date(s.changedAt).toISOString() : '',
+          kind: 'status',
+          title: 'Status changed',
+          detail: `${s.oldStatus || '—'} → ${s.newStatus}`,
+          actor: s.changedByUser?.fullName ?? s.changedBy ?? null,
+        });
+      }
+
+      for (const a of enrichedAssignment) {
+        const oldNames = (a.oldWorkers || []).map((w) => w?.fullName).filter(Boolean).join(', ') || '—';
+        const newNames = (a.newWorkers || []).map((w) => w?.fullName).filter(Boolean).join(', ') || '—';
+        timeline.push({
+          at: a.changedAt ? new Date(a.changedAt).toISOString() : '',
+          kind: 'assignment',
+          title: 'Workers assignment',
+          detail: `${oldNames} → ${newNames}${a.changeReason ? ` · Reason: ${a.changeReason}` : ''}`,
+          actor: a.changedByUser?.fullName ?? a.changedBy ?? null,
+        });
+      }
+
+      for (const ev of itemChangeEvents) {
+        const m = ev.meta || {};
+        timeline.push({
+          at: ev.changedAt ? new Date(ev.changedAt).toISOString() : '',
+          kind: 'items',
+          title: 'Order items updated',
+          detail: `Services: ${m.servicesCountBefore ?? '?'} → ${m.servicesCountAfter ?? '?'}, parts: ${m.partsCountBefore ?? '?'} → ${m.partsCountAfter ?? '?'}`,
+          actor: ev.changedByUser?.fullName ?? ev.changedBy ?? null,
+        });
+      }
+
+      for (const ev of enrichedTimerEvents.filter((e) => e.action !== 'items.updated')) {
+        const m = ev.meta || {};
+        let detail = ev.action;
+        if (ev.action === 'pause' && m.segmentWorkedMs != null) {
+          detail = `Pause · segment ${m.segmentWorkedMs} ms`;
+        } else if (ev.action === 'stop' && m.activeWorkTotalMs != null) {
+          detail = `Stop · active total ${m.activeWorkTotalMs} ms`;
+        } else if (ev.action === 'cleared') {
+          detail = `All timer sessions cleared (${m.deletedCount ?? 0})`;
+        }
+        const line =
+          m.serviceLineIndex != null ? ` · line #${Number(m.serviceLineIndex) + 1}` : '';
+        timeline.push({
+          at: ev.changedAt ? new Date(ev.changedAt).toISOString() : '',
+          kind: 'timer',
+          title: `Timer: ${ev.action}`,
+          detail: `${detail}${line}`,
+          actor: ev.changedByUser?.fullName ?? ev.changedBy ?? null,
+        });
+      }
+
+      for (const m of clientMessages) {
+        timeline.push({
+          at: m.createdAt ? new Date(m.createdAt).toISOString() : '',
+          kind: 'message',
+          title: `Client message (${m.kind || 'note'})`,
+          detail: String(m.message || '').slice(0, 500),
+          actor: null,
+        });
+      }
+
+      timeline.sort((a, b) => String(a.at).localeCompare(String(b.at)));
+
+      return {
+        code: 200,
+        data: {
+          order: { ...orderEntity, offer },
+          createdByUser,
+          statusHistory: enrichedStatus,
+          assignmentHistory: enrichedAssignment,
+          timerSessions: enrichedTimers,
+          timerEvents: enrichedTimerEvents,
+          clientMessages,
+          timeline,
+          generatedAt: new Date().toISOString(),
+        },
+      };
+    } catch (err) {
+      if (
+        err instanceof ForbiddenException ||
+        err instanceof NotFoundException ||
+        err instanceof UnauthorizedException
+      ) {
+        throw err;
+      }
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
   // =============== ДРУГИЕ МЕТОДЫ (оставлены без изменений) ===============
   async getOrderById(orderId: string, req: Request) {
     try {
@@ -1163,7 +1528,12 @@ export class OrderService {
         where: { id: orderEntity.offerId },
       });
 
-      return { code: 200, data: { ...orderEntity, offer } };
+      const usersById = orderEntity.createdBy
+        ? await this.loadUsersByIds([orderEntity.createdBy])
+        : new Map();
+      const createdByUser = this.userRef(orderEntity.createdBy, usersById);
+
+      return { code: 200, data: { ...orderEntity, offer, createdByUser } };
     } catch (err) {
       if (
         err instanceof ForbiddenException ||
@@ -1327,18 +1697,10 @@ export class OrderService {
     if (isPerLine) {
       timer = await this.orderTimerRepository.findOne({
         where: this.perLineWhere(orderId, serviceLineIndex as number),
-        order: { startTime: 'DESC' },
       });
-      if (!timer) {
-        timer = await this.orderTimerRepository.findOne({
-          where: { orderId, serviceLineIndex: serviceLineIndex as number },
-          order: { startTime: 'DESC' },
-        });
-      }
     } else {
       timer = await this.orderTimerRepository.findOne({
-        where: { orderId },
-        order: { startTime: 'DESC' },
+        where: this.legacyActiveWhere(orderId),
       });
     }
 
@@ -1352,26 +1714,30 @@ export class OrderService {
       isPaused: timer.isPaused,
     };
 
-    if (timer.isRunning) {
-      const now = new Date().getTime();
-      const sinceStart = now - timer.startTime.getTime();
+    const now = new Date().getTime();
+    const sinceStart = now - timer.startTime.getTime();
+    const effectiveTotalPaused = Math.min(
+      Number(timer.totalPausedTime || 0),
+      Math.max(sinceStart, 0),
+    );
 
-      const effectiveTotalPaused = Math.min(
-        Number(timer.totalPausedTime || 0),
-        Math.max(sinceStart, 0),
-      );
-
-      let currentDuration = sinceStart - effectiveTotalPaused;
-
-      if (timer.isPaused && timer.pauseTime) {
-        const currentPauseDuration = now - timer.pauseTime.getTime();
-        currentDuration -= currentPauseDuration;
+    if (timer.isPaused) {
+      // Freeze display at pause — do not subtract growing pause wall time from "now"
+      if (timer.totalDuration != null) {
+        result.currentDuration = Math.max(0, Number(timer.totalDuration));
+      } else if (timer.pauseTime) {
+        const pauseMs = timer.pauseTime.getTime();
+        const sinceStartAtPause = pauseMs - timer.startTime.getTime();
+        const pausedAtPause = Math.min(
+          Number(timer.totalPausedTime || 0),
+          Math.max(sinceStartAtPause, 0),
+        );
+        result.currentDuration = Math.max(0, sinceStartAtPause - pausedAtPause);
+      } else {
+        result.currentDuration = Math.max(0, sinceStart - effectiveTotalPaused);
       }
-
-      result.currentDuration = Math.max(0, currentDuration);
     } else {
-      result.endTime = timer.endTime;
-      result.totalDuration = timer.totalDuration;
+      result.currentDuration = Math.max(0, sinceStart - effectiveTotalPaused);
     }
 
     return result;
@@ -1385,11 +1751,59 @@ export class OrderService {
     });
   }
 
-  async getTimerHistory(orderId: string, req: Request): Promise<OrderTimer[]> {
+  async getTimerHistory(orderId: string, req: Request): Promise<Array<OrderTimer & { worker: { id: string; fullName: string } | null }>> {
     await this.assertCanAccessOrder(orderId, req);
-    return this.orderTimerRepository.find({
+    const timers = await this.orderTimerRepository.find({
       where: { orderId },
-      order: { startTime: 'DESC' }
+      order: { startTime: 'DESC' },
+    });
+    const usersById = await this.loadUsersByIds(timers.map((t) => t.userId));
+    return timers.map((t) => ({
+      ...t,
+      worker: this.userRef(t.userId, usersById),
+    }));
+  }
+
+  async getTimerEvents(
+    orderId: string,
+    req: Request,
+  ): Promise<
+    Array<
+      OrderTimerHistory & {
+        changedByUser: { id: string; fullName: string } | null;
+        timerOwnerUser: { id: string; fullName: string } | null;
+      }
+    >
+  > {
+    await this.assertCanAccessOrder(orderId, req);
+    const events = await this.orderTimerHistoryRepository.find({
+      where: { orderId },
+      order: { changedAt: 'ASC' },
+    });
+
+    const userIds: string[] = [];
+    for (const ev of events) {
+      if (ev.changedBy) userIds.push(String(ev.changedBy));
+      userIds.push(...this.collectIdsFromTimerMeta(ev.meta));
+    }
+    const usersById = await this.loadUsersByIds(userIds);
+
+    return events.map((ev) => {
+      let timerOwnerId: string | undefined;
+      try {
+        if (ev.meta) {
+          const meta = JSON.parse(ev.meta) as Record<string, unknown>;
+          const owner = meta.timerOwnerUserId ?? meta.timerUserId;
+          if (owner != null) timerOwnerId = String(owner);
+        }
+      } catch {
+        timerOwnerId = undefined;
+      }
+      return {
+        ...ev,
+        changedByUser: this.userRef(ev.changedBy, usersById),
+        timerOwnerUser: this.userRef(timerOwnerId, usersById),
+      };
     });
   }
 
@@ -1431,7 +1845,9 @@ export class OrderService {
       const saved = await this.orderTimerRepository.save(timer);
       const changedBy = this.tryGetUserIdFromRequest(req);
       await this.logOrderTimerEvent(orderId, saved.id, 'adjusted', changedBy, {
+        triggeredByUserId: changedBy ?? null,
         timerUserId: String(saved.userId || ''),
+        timerOwnerUserId: String(saved.userId || ''),
         oldTotalDurationMs: oldTotal,
         newTotalDurationMs: saved.totalDuration != null ? Number(saved.totalDuration) : null,
         note: body.note?.trim() || undefined,

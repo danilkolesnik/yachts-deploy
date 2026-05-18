@@ -161,9 +161,21 @@ export const renderUserHistoryPayload = (it) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <FieldRow label="Action" value={actionLabel} />
           <FieldRow label="Timer id" value={parsed.timerId ?? null} />
-          <FieldRow label="Timer owner (user id)" value={parsed.timerUserId ?? null} />
+          <FieldRow label="Triggered by (user id)" value={parsed.triggeredByUserId ?? null} />
+          <FieldRow label="Timer owner (user id)" value={parsed.timerOwnerUserId ?? parsed.timerUserId ?? null} />
           <FieldRow label="Timer status" value={parsed.timerStatus ?? null} />
           <FieldRow label="Service line (#)" value={parsed.serviceLineIndex ?? null} />
+          <FieldRow label="Session started (UTC)" value={parsed.sessionStartedAt ?? null} />
+          <FieldRow label="Segment started (UTC)" value={parsed.segmentStartedAt ?? null} />
+          <FieldRow label="Segment worked (ms)" value={parsed.segmentWorkedMs ?? null} />
+          <FieldRow label="Pause at (UTC)" value={parsed.pauseAt ?? null} />
+          <FieldRow label="Resume at (UTC)" value={parsed.resumeAt ?? null} />
+          <FieldRow label="Pause / break duration (ms)" value={parsed.pauseBreakMs ?? null} />
+          <FieldRow label="New segment started (UTC)" value={parsed.newSegmentStartedAt ?? null} />
+          <FieldRow label="Stop at (UTC)" value={parsed.stopAt ?? null} />
+          <FieldRow label="Wall clock (ms)" value={parsed.wallClockMs ?? null} />
+          <FieldRow label="Active work total (ms)" value={parsed.activeWorkTotalMs ?? null} />
+          <FieldRow label="Cumulative active work (ms, at pause)" value={parsed.cumulativeActiveWorkMs ?? null} />
           <FieldRow label="Work order (ZN) id" value={parsed.workOrderId ?? parsed.orderId ?? null} />
           <FieldRow label="Cleared at (UTC)" value={parsed.clearedAt ?? null} />
           <FieldRow label="Cleared by (user id)" value={parsed.clearedByUserId ?? null} />
