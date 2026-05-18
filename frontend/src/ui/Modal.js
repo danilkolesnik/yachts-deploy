@@ -5,12 +5,13 @@ import {
   DialogBody,
 } from "@material-tailwind/react";
 
+/** Fluid width with side margin; max-width caps desktop size (no min-width — safe on mobile). */
 const SIZE_CLASSES = {
-  sm: "min-w-[320px] max-w-md",
-  md: "min-w-[400px] max-w-lg",
-  lg: "min-w-[560px] max-w-3xl",
-  xl: "min-w-[720px] max-w-5xl w-[92vw]",
-  "2xl": "min-w-[880px] max-w-6xl w-[95vw]",
+  sm: "w-[calc(100vw-1.5rem)] max-w-sm",
+  md: "w-[calc(100vw-1.5rem)] max-w-lg",
+  lg: "w-[calc(100vw-1.5rem)] max-w-3xl",
+  xl: "w-[calc(100vw-1.5rem)] max-w-5xl",
+  "2xl": "w-[calc(100vw-1.5rem)] !max-w-7xl",
 };
 
 const Modal = ({

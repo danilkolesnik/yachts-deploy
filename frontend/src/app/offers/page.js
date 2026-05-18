@@ -2095,9 +2095,9 @@ const OfferPage = () => {
                     onClose={closeHistoryModal} 
                     title="Offer History"
                     size="2xl"
-                    bodyClassName="overflow-y-auto max-h-[85vh]"
+                    bodyClassName="overflow-y-auto max-h-[min(85vh,900px)]"
                 >
-                    <div className="space-y-6 min-h-[520px]">
+                    <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg w-full">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
