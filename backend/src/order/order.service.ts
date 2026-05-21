@@ -23,6 +23,7 @@ import { OrderTimerHistory } from './entities/order-timer-history.entity';
 import { OrderClientMessage } from './entities/order-client-message.entity';
 import { EmployeeProfile } from 'src/users/entities/employee-profile.entity';
 import { PermissionsList } from 'src/constants/permissions';
+import { WORKER_TIMER_INDEX_BASE, isWorkerTimerIndex } from 'src/constants/order-timer';
 import { getEffectivePermissions, hasAllPermissions } from 'src/users/effective-permissions';
 import getBearerToken from 'src/methods/getBearerToken';
 import { JwtPayload } from 'jsonwebtoken';
@@ -888,6 +889,34 @@ export class OrderService {
     return { orderId, serviceLineIndex: IsNull(), isRunning: true } as const;
   }
 
+  /** Returns error message or null if serviceLineIndex is valid for this order. */
+  private validateTimerServiceLineIndex(
+    order: order,
+    offer: offer | null,
+    serviceLineIndex: number,
+  ): string | null {
+    if (serviceLineIndex < 0) {
+      return 'Invalid service line index';
+    }
+    if (isWorkerTimerIndex(serviceLineIndex)) {
+      const slot = serviceLineIndex - WORKER_TIMER_INDEX_BASE;
+      const workers = order.assignedWorkers || [];
+      if (slot >= workers.length) {
+        return 'Invalid worker timer slot (assign the worker to the order first)';
+      }
+      return null;
+    }
+    const lineCount = this.countOrderServiceLines(order, offer);
+    if (lineCount === 0) {
+      if (serviceLineIndex !== 0) {
+        return 'Invalid service line index';
+      }
+    } else if (serviceLineIndex >= lineCount) {
+      return 'Invalid service line index';
+    }
+    return null;
+  }
+
   async startTimer(
     orderId: string,
     req: Request,
@@ -896,19 +925,16 @@ export class OrderService {
     try {
       const order = await this.assertCanAccessOrder(orderId, req);
       const offer = await this.offerRepository.findOne({ where: { id: order.offerId } });
-      const lineCount = this.countOrderServiceLines(order, offer);
       const isPerLine = serviceLineIndex !== undefined && serviceLineIndex !== null;
 
       if (isPerLine) {
-        if (serviceLineIndex! < 0) {
-          return { code: 400, message: 'Invalid service line index' };
-        }
-        if (lineCount === 0) {
-          if (serviceLineIndex !== 0) {
-            return { code: 400, message: 'Invalid service line index' };
-          }
-        } else if (serviceLineIndex! >= lineCount) {
-          return { code: 400, message: 'Invalid service line index' };
+        const lineErr = this.validateTimerServiceLineIndex(
+          order,
+          offer,
+          serviceLineIndex as number,
+        );
+        if (lineErr) {
+          return { code: 400, message: lineErr };
         }
         const conflict = await this.orderTimerRepository.findOne({
           where: this.perLineWhere(orderId, serviceLineIndex as number),

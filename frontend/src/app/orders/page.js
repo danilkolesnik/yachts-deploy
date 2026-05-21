@@ -19,6 +19,7 @@ import Loader from '@/ui/loader';
 import Modal from '@/ui/Modal';
 import Link from 'next/link';
 import WorkTimer from '@/component/workTimer/workTimer';
+import { workerTimerIndex } from '@/constants/orderTimer';
 import { statusStyles } from '@/utils/statusStyles';
 import { useRouter } from 'next/navigation';
 import ExcelJS from 'exceljs';
@@ -351,7 +352,10 @@ const OrderPage = () => {
                 toast.error(res.data.message || 'Please provide a replacement reason');
                 return;
             }
-            await fetchOrders();
+            const list = await fetchOrders();
+            if (selectedOrder?.id) {
+                refreshTimersModalOrder(selectedOrder.id, list);
+            }
             setAssignmentReasonOpen(false);
             setAssignmentReasonPreset('');
             setAssignmentReasonOther('');
@@ -434,6 +438,24 @@ const OrderPage = () => {
             idx,
             name: (String(s?.serviceName ?? s?.label ?? s?.name ?? '').trim()) || `Service ${idx + 1}`,
         }));
+    };
+
+    const getOrderWorkersForTimers = (order) =>
+        (order?.assignedWorkers || []).map((w, slot) => ({
+            slot,
+            timerIndex: workerTimerIndex(slot),
+            name: w?.fullName || w?.id || `Worker ${slot + 1}`,
+            id: w?.id,
+        }));
+
+    const refreshTimersModalOrder = (orderId, ordersList) => {
+        const list = ordersList || orders;
+        const updated = list.find((o) => String(o.id) === String(orderId));
+        if (updated) {
+            setTimersModalOrder((prev) =>
+                prev && String(prev.id) === String(orderId) ? { ...prev, ...updated } : prev,
+            );
+        }
     };
 
     const columns = [
@@ -1138,15 +1160,61 @@ const OrderPage = () => {
                 >
                     {timersModalOrder && (() => {
                         const lines = getOrderServiceLinesForTimers(timersModalOrder);
+                        const workers = getOrderWorkersForTimers(timersModalOrder);
+                        const workerKey = (workers || []).map((w) => w.id).join(',');
                         return (
                             <div className="space-y-4 text-black">
                                 <div className="text-sm text-gray-700 border-b border-gray-200 pb-3">
                                     <div><span className="font-semibold">Customer:</span> {timersModalOrder.offer?.customerFullName || 'N/A'}</div>
                                     <div><span className="font-semibold">Yacht:</span> {timersModalOrder.offer?.yachtName || '—'}</div>
                                     <div><span className="font-semibold">Status:</span> {timersModalOrder.status}</div>
+                                    <div><span className="font-semibold">Assigned:</span>{' '}
+                                        {workers.length > 0
+                                            ? workers.map((w) => w.name).join(', ')
+                                            : '—'}
+                                    </div>
                                 </div>
-                                <div className="flex flex-col gap-3">
-                                    {lines.length === 0 ? (
+                                <div className="flex flex-col gap-4">
+                                    {lines.length > 0 && (
+                                        <div className="space-y-2">
+                                            <h3 className="text-sm font-semibold text-gray-800">By service line</h3>
+                                            <div className="flex flex-col gap-3">
+                                                {lines.map((line) => (
+                                                    <div key={`line-${line.idx}`} className="border border-gray-200 rounded-md p-3 bg-gray-50">
+                                                        <WorkTimer
+                                                            orderId={timersModalOrder.id}
+                                                            serviceLineIndex={line.idx}
+                                                            serviceLabel={line.name}
+                                                            onStop={fetchOrders}
+                                                            canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
+                                                            canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {workers.length > 0 && (
+                                        <div className="space-y-2">
+                                            <h3 className="text-sm font-semibold text-gray-800">By assigned worker</h3>
+                                            <div className="flex flex-col gap-3">
+                                                {workers.map((w) => (
+                                                    <div key={`worker-${w.id}`} className="border border-gray-200 rounded-md p-3 bg-gray-50">
+                                                        <WorkTimer
+                                                            key={`${timersModalOrder.id}-worker-${w.id}-${workerKey}`}
+                                                            orderId={timersModalOrder.id}
+                                                            serviceLineIndex={w.timerIndex}
+                                                            serviceLabel={w.name}
+                                                            onStop={fetchOrders}
+                                                            canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
+                                                            canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {lines.length === 0 && workers.length === 0 && (
                                         <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
                                             <WorkTimer
                                                 orderId={timersModalOrder.id}
@@ -1157,19 +1225,6 @@ const OrderPage = () => {
                                                 canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
                                             />
                                         </div>
-                                    ) : (
-                                        lines.map((line) => (
-                                            <div key={line.idx} className="border border-gray-200 rounded-md p-3 bg-gray-50">
-                                                <WorkTimer
-                                                    orderId={timersModalOrder.id}
-                                                    serviceLineIndex={line.idx}
-                                                    serviceLabel={line.name}
-                                                    onStop={fetchOrders}
-                                                    canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
-                                                    canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
-                                                />
-                                            </div>
-                                        ))
                                     )}
                                 </div>
                                 <div className="flex justify-end pt-2 border-t border-gray-200">

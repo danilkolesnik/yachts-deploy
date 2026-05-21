@@ -17,6 +17,7 @@ import {
     buildAssignmentChangeReason,
     assignmentChangeRequiresReason,
 } from '@/constants/orderAssignment';
+import { isWorkerTimerIndex, WORKER_TIMER_INDEX_BASE } from '@/constants/orderTimer';
 import { can } from '@/utils/canPermission';
 import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
@@ -50,11 +51,14 @@ const OrderDetail = ({ params }) => {
     const [timerSessionsLoading, setTimerSessionsLoading] = useState(false);
     const [adjustOpen, setAdjustOpen] = useState(false);
     const [adjustTimer, setAdjustTimer] = useState(null);
-    const [adjustTotalSeconds, setAdjustTotalSeconds] = useState('');
+    const [adjustHours, setAdjustHours] = useState('');
+    const [adjustMinutes, setAdjustMinutes] = useState('');
+    const [adjustSeconds, setAdjustSeconds] = useState('');
     const [adjustNote, setAdjustNote] = useState('');
     const [adjustSaving, setAdjustSaving] = useState(false);
     const [clearTimersOpen, setClearTimersOpen] = useState(false);
     const [clearTimersLoading, setClearTimersLoading] = useState(false);
+    const [clearTimersConfirmed, setClearTimersConfirmed] = useState(false);
     const [assignmentReasonOpen, setAssignmentReasonOpen] = useState(false);
     const [assignmentReasonPreset, setAssignmentReasonPreset] = useState('');
     const [assignmentReasonOther, setAssignmentReasonOther] = useState('');
@@ -196,24 +200,45 @@ const OrderDetail = ({ params }) => {
         }
     };
 
+    const splitSecondsToHms = (totalSec) => {
+        const sec = Math.max(0, Math.floor(Number(totalSec) || 0));
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        return { h, m, s };
+    };
+
+    const hmsToTotalMs = (hours, minutes, seconds) => {
+        const h = Math.max(0, Math.floor(Number(hours) || 0));
+        const m = Math.max(0, Math.min(59, Math.floor(Number(minutes) || 0)));
+        const s = Math.max(0, Math.min(59, Math.floor(Number(seconds) || 0)));
+        return (h * 3600 + m * 60 + s) * 1000;
+    };
+
     const openAdjustTimer = (t) => {
-        const sec = t.totalDuration != null ? Math.floor(Number(t.totalDuration) / 1000) : 0;
+        const totalSec = t.totalDuration != null ? Math.floor(Number(t.totalDuration) / 1000) : 0;
+        const { h, m, s } = splitSecondsToHms(totalSec);
         setAdjustTimer(t);
-        setAdjustTotalSeconds(String(sec));
+        setAdjustHours(String(h));
+        setAdjustMinutes(String(m));
+        setAdjustSeconds(String(s));
         setAdjustNote('');
         setAdjustOpen(true);
     };
 
     const saveAdjustTimer = async () => {
         if (!order || !adjustTimer) return;
-        const sec = Number(adjustTotalSeconds);
-        if (!Number.isFinite(sec) || sec < 0) return;
+        const h = Number(adjustHours);
+        const m = Number(adjustMinutes);
+        const s = Number(adjustSeconds);
+        if (![h, m, s].every((n) => Number.isFinite(n) && n >= 0)) return;
+        const totalDurationMs = hmsToTotalMs(adjustHours, adjustMinutes, adjustSeconds);
         setAdjustSaving(true);
         try {
             const token = localStorage.getItem('token');
             const res = await axios.patch(
                 `${URL}/orders/${order.id}/timers/${adjustTimer.id}`,
-                { totalDurationMs: Math.floor(sec * 1000), note: adjustNote.trim() || undefined },
+                { totalDurationMs, note: adjustNote.trim() || undefined },
                 { headers: { Authorization: `Bearer ${token}` } },
             );
             if (res.data?.code === 200) {
@@ -232,8 +257,13 @@ const OrderDetail = ({ params }) => {
         can(permissions, PermissionsList.ORDERS_TIMER_CLEAR_ALL) &&
         ['admin', 'manager'].includes(role);
 
+    const openClearTimersConfirm = () => {
+        setClearTimersConfirmed(false);
+        setClearTimersOpen(true);
+    };
+
     const confirmClearAllTimers = async () => {
-        if (!order || !canClearAllOrderTimers) return;
+        if (!order || !canClearAllOrderTimers || !clearTimersOpen || !clearTimersConfirmed) return;
         setClearTimersLoading(true);
         try {
             const token = localStorage.getItem('token');
@@ -923,7 +953,7 @@ const OrderDetail = ({ params }) => {
                             {canClearAllOrderTimers && (
                                 <button
                                     type="button"
-                                    onClick={() => setClearTimersOpen(true)}
+                                    onClick={openClearTimersConfirm}
                                     className="text-sm px-3 py-1.5 rounded border border-red-300 text-red-700 bg-red-50 hover:bg-red-100 w-fit"
                                 >
                                     Clear all timers…
@@ -950,7 +980,13 @@ const OrderDetail = ({ params }) => {
                                         const lineLabel =
                                             t.serviceLineIndex == null
                                                 ? '—'
-                                                : `#${Number(t.serviceLineIndex) + 1}`;
+                                                : isWorkerTimerIndex(t.serviceLineIndex)
+                                                  ? (order?.assignedWorkers || [])[
+                                                        Number(t.serviceLineIndex) -
+                                                            WORKER_TIMER_INDEX_BASE
+                                                    ]?.fullName ||
+                                                    `Worker #${Number(t.serviceLineIndex) - WORKER_TIMER_INDEX_BASE + 1}`
+                                                  : `Line #${Number(t.serviceLineIndex) + 1}`;
                                         const canAdjust = can(permissions, PermissionsList.ORDERS_TIMER_ADJUST);
                                         return (
                                             <li key={t.id} className="border rounded p-3 bg-white space-y-1">
@@ -1141,18 +1177,50 @@ const OrderDetail = ({ params }) => {
             >
                 <div className="space-y-3 text-black">
                     <p className="text-sm text-gray-600">
-                        Total logged time for this completed session (seconds). An audit entry is recorded.
+                        Set the total logged time for this completed session. An audit entry is recorded.
                     </p>
                     <div>
-                        <label className="block text-sm font-medium mb-1">Total seconds</label>
-                        <input
-                            type="number"
-                            min={0}
-                            step={1}
-                            className="border rounded p-2 w-full text-black"
-                            value={adjustTotalSeconds}
-                            onChange={(e) => setAdjustTotalSeconds(e.target.value)}
-                        />
+                        <label className="block text-sm font-medium mb-2">Duration</label>
+                        <div className="grid grid-cols-3 gap-3">
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Hours</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    step={1}
+                                    className="border rounded p-2 w-full text-black"
+                                    value={adjustHours}
+                                    onChange={(e) => setAdjustHours(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Minutes</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={59}
+                                    step={1}
+                                    className="border rounded p-2 w-full text-black"
+                                    value={adjustMinutes}
+                                    onChange={(e) => setAdjustMinutes(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1">Seconds</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={59}
+                                    step={1}
+                                    className="border rounded p-2 w-full text-black"
+                                    value={adjustSeconds}
+                                    onChange={(e) => setAdjustSeconds(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                            Preview: {formatMsHms(hmsToTotalMs(adjustHours, adjustMinutes, adjustSeconds))}
+                        </p>
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">Note (optional)</label>
@@ -1229,29 +1297,58 @@ const OrderDetail = ({ params }) => {
             <Modal
                 isOpen={clearTimersOpen}
                 onClose={() => {
-                    if (!clearTimersLoading) setClearTimersOpen(false);
+                    if (!clearTimersLoading) {
+                        setClearTimersOpen(false);
+                        setClearTimersConfirmed(false);
+                    }
                 }}
-                title="Delete all timer data?"
-                bodyClassName="max-h-[80vh] overflow-y-auto"
+                title="Confirm: delete all timer data"
+                size="md"
+                bodyClassName="overflow-y-auto"
             >
-                <div className="space-y-3 text-black">
+                <div className="space-y-4 text-black">
                     <p className="text-sm text-gray-700">
                         All timer records for work order{' '}
-                        <span className="font-mono font-semibold">{order?.id}</span> will be permanently deleted from the database.
-                        This cannot be undone. The action is written to the audit log (user, time, work order id).
+                        <span className="font-mono font-semibold">{order?.id}</span> will be permanently
+                        deleted. This cannot be undone. The action is written to the audit log.
                     </p>
                     {can(permissions, PermissionsList.ORDERS_TIMERS_HISTORY_READ) &&
                         (timerSessions || []).length > 0 && (
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-800 bg-amber-50 border border-amber-200 rounded p-3">
                             Sessions to remove: <strong>{timerSessions.length}</strong>
                         </p>
                     )}
-                    <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="text" color="gray" onClick={() => !clearTimersLoading && setClearTimersOpen(false)}>
+                    <label className="flex items-start gap-2 text-sm cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            className="mt-1"
+                            checked={clearTimersConfirmed}
+                            onChange={(e) => setClearTimersConfirmed(e.target.checked)}
+                            disabled={clearTimersLoading}
+                        />
+                        <span>I understand that all timer data for this work order will be permanently deleted.</span>
+                    </label>
+                    <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
+                        <Button
+                            type="button"
+                            variant="text"
+                            color="gray"
+                            onClick={() => {
+                                if (!clearTimersLoading) {
+                                    setClearTimersOpen(false);
+                                    setClearTimersConfirmed(false);
+                                }
+                            }}
+                        >
                             Cancel
                         </Button>
-                        <Button color="red" onClick={confirmClearAllTimers} disabled={clearTimersLoading}>
-                            {clearTimersLoading ? 'Deleting…' : 'Yes, delete all'}
+                        <Button
+                            type="button"
+                            color="red"
+                            onClick={confirmClearAllTimers}
+                            disabled={clearTimersLoading || !clearTimersConfirmed}
+                        >
+                            {clearTimersLoading ? 'Deleting…' : 'Delete all timer data'}
                         </Button>
                     </div>
                 </div>

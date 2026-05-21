@@ -25,12 +25,16 @@ const Modal = ({
 }) => {
   const sizeClass = SIZE_CLASSES[size] || SIZE_CLASSES.md;
 
+  const handleDialog = (value) => {
+    if (!value) onClose();
+  };
+
   return (
     <Dialog
       open={isOpen}
-      handler={onClose}
-      dismiss={{ outsidePress: false }}
-      className={`${sizeClass} ${className}`.trim()}
+      handler={handleDialog}
+      dismiss={{ outsidePress: false, escapeKey: false }}
+      className={`${sizeClass} z-[9999] ${className}`.trim()}
     >
       <DialogHeader className="text-black">{title}</DialogHeader>
       <DialogBody className={bodyClassName}>{children}</DialogBody>
