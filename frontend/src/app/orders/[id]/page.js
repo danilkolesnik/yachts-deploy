@@ -56,6 +56,7 @@ const OrderDetail = ({ params }) => {
     const [adjustSeconds, setAdjustSeconds] = useState('');
     const [adjustNote, setAdjustNote] = useState('');
     const [adjustSaving, setAdjustSaving] = useState(false);
+    const [adjustError, setAdjustError] = useState('');
     const [clearTimersOpen, setClearTimersOpen] = useState(false);
     const [clearTimersLoading, setClearTimersLoading] = useState(false);
     const [clearTimersConfirmed, setClearTimersConfirmed] = useState(false);
@@ -223,21 +224,26 @@ const OrderDetail = ({ params }) => {
         setAdjustMinutes(String(m));
         setAdjustSeconds(String(s));
         setAdjustNote('');
+        setAdjustError('');
         setAdjustOpen(true);
     };
 
     const saveAdjustTimer = async () => {
-        if (!order || !adjustTimer) return;
+        if (!id || !adjustTimer) return;
         const h = Number(adjustHours);
         const m = Number(adjustMinutes);
         const s = Number(adjustSeconds);
-        if (![h, m, s].every((n) => Number.isFinite(n) && n >= 0)) return;
+        if (![h, m, s].every((n) => Number.isFinite(n) && n >= 0)) {
+            setAdjustError('Enter a valid duration (hours, minutes, and seconds must be zero or greater).');
+            return;
+        }
         const totalDurationMs = hmsToTotalMs(adjustHours, adjustMinutes, adjustSeconds);
         setAdjustSaving(true);
+        setAdjustError('');
         try {
             const token = localStorage.getItem('token');
             const res = await axios.patch(
-                `${URL}/orders/${order.id}/timers/${adjustTimer.id}`,
+                `${URL}/orders/${id}/timers/${adjustTimer.id}`,
                 { totalDurationMs, note: adjustNote.trim() || undefined },
                 { headers: { Authorization: `Bearer ${token}` } },
             );
@@ -245,9 +251,19 @@ const OrderDetail = ({ params }) => {
                 setAdjustOpen(false);
                 setAdjustTimer(null);
                 await loadTimerSessions();
+                return;
             }
+            setAdjustError(res.data?.message || 'Could not save timer duration.');
         } catch (error) {
             console.error('Error adjusting timer:', error);
+            const msg =
+                error.response?.data?.message ||
+                (Array.isArray(error.response?.data?.message)
+                    ? error.response.data.message.join(', ')
+                    : null) ||
+                error.message ||
+                'Could not save timer duration.';
+            setAdjustError(msg);
         } finally {
             setAdjustSaving(false);
         }
@@ -1170,15 +1186,24 @@ const OrderDetail = ({ params }) => {
             <Modal
                 isOpen={adjustOpen}
                 onClose={() => {
-                    if (!adjustSaving) setAdjustOpen(false);
+                    if (!adjustSaving) {
+                        setAdjustOpen(false);
+                        setAdjustError('');
+                    }
                 }}
                 title="Adjust timer duration"
+                size="lg"
                 bodyClassName="max-h-[80vh] overflow-y-auto"
             >
                 <div className="space-y-3 text-black">
                     <p className="text-sm text-gray-600">
                         Set the total logged time for this completed session. An audit entry is recorded.
                     </p>
+                    {adjustError ? (
+                        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+                            {adjustError}
+                        </p>
+                    ) : null}
                     <div>
                         <label className="block text-sm font-medium mb-2">Duration</label>
                         <div className="grid grid-cols-3 gap-3">
@@ -1232,10 +1257,20 @@ const OrderDetail = ({ params }) => {
                         />
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="text" color="gray" onClick={() => !adjustSaving && setAdjustOpen(false)}>
+                        <Button
+                            type="button"
+                            variant="text"
+                            color="gray"
+                            onClick={() => {
+                                if (!adjustSaving) {
+                                    setAdjustOpen(false);
+                                    setAdjustError('');
+                                }
+                            }}
+                        >
                             Cancel
                         </Button>
-                        <Button color="green" onClick={saveAdjustTimer} disabled={adjustSaving}>
+                        <Button type="button" color="green" onClick={saveAdjustTimer} disabled={adjustSaving}>
                             {adjustSaving ? 'Saving…' : 'Save'}
                         </Button>
                     </div>

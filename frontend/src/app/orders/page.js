@@ -62,6 +62,50 @@ const OrderPage = () => {
     const [availableWorkers, setAvailableWorkers] = useState([]);
     const [selectedWorkersForEdit, setSelectedWorkersForEdit] = useState([]);
     const [timersModalOrder, setTimersModalOrder] = useState(null);
+    const [clearTimersOpen, setClearTimersOpen] = useState(false);
+    const [clearTimersOrderId, setClearTimersOrderId] = useState(null);
+    const [clearTimersLoading, setClearTimersLoading] = useState(false);
+    const [clearTimersConfirmed, setClearTimersConfirmed] = useState(false);
+
+    const roleNormalized = String(role || '').toLowerCase();
+    const canClearAllOrderTimers =
+        can(permissions, PermissionsList.ORDERS_TIMER_CLEAR_ALL) &&
+        ['admin', 'manager'].includes(roleNormalized);
+
+    const openClearTimersConfirm = () => {
+        if (!timersModalOrder) return;
+        setClearTimersOrderId(timersModalOrder.id);
+        setClearTimersConfirmed(false);
+        setClearTimersOpen(true);
+    };
+
+    const confirmClearAllTimers = async () => {
+        if (!clearTimersOrderId || !canClearAllOrderTimers || !clearTimersConfirmed) return;
+        setClearTimersLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post(
+                `${URL}/orders/${clearTimersOrderId}/timers/clear`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } },
+            );
+            if (res.data?.code === 200) {
+                setClearTimersOpen(false);
+                setClearTimersOrderId(null);
+                setClearTimersConfirmed(false);
+                await fetchOrders();
+                toast.success('All timer data deleted for this order.');
+            } else {
+                toast.error(res.data?.message || 'Could not clear timers.');
+            }
+        } catch (error) {
+            toast.error(
+                error.response?.data?.message || error.message || 'Could not clear timers.',
+            );
+        } finally {
+            setClearTimersLoading(false);
+        }
+    };
 
     // Manual/Help content in English
     const helpSections = {
@@ -1227,14 +1271,91 @@ const OrderPage = () => {
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex justify-end pt-2 border-t border-gray-200">
-                                    <Button variant="text" color="gray" onClick={() => setTimersModalOrder(null)}>
+                                <div className="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-gray-200">
+                                    {canClearAllOrderTimers ? (
+                                        <button
+                                            type="button"
+                                            onClick={openClearTimersConfirm}
+                                            className="text-sm px-3 py-1.5 rounded border border-red-300 text-red-700 bg-red-50 hover:bg-red-100"
+                                        >
+                                            Clear all timers…
+                                        </button>
+                                    ) : (
+                                        <span />
+                                    )}
+                                    <Button
+                                        type="button"
+                                        variant="text"
+                                        color="gray"
+                                        onClick={() => setTimersModalOrder(null)}
+                                        className="ml-auto"
+                                    >
                                         Close
                                     </Button>
                                 </div>
                             </div>
                         );
                     })()}
+                </Modal>
+
+                <Modal
+                    isOpen={clearTimersOpen}
+                    onClose={() => {
+                        if (!clearTimersLoading) {
+                            setClearTimersOpen(false);
+                            setClearTimersConfirmed(false);
+                            setClearTimersOrderId(null);
+                        }
+                    }}
+                    title="Confirm: delete all timer data"
+                    size="md"
+                    bodyClassName="overflow-y-auto"
+                >
+                    <div className="space-y-4 text-black">
+                        <p className="text-sm text-gray-700">
+                            All timer records for work order{' '}
+                            <span className="font-mono font-semibold">{clearTimersOrderId}</span> will be
+                            permanently deleted. This cannot be undone. The action is written to the audit
+                            log.
+                        </p>
+                        <label className="flex items-start gap-2 text-sm cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                className="mt-1"
+                                checked={clearTimersConfirmed}
+                                onChange={(e) => setClearTimersConfirmed(e.target.checked)}
+                                disabled={clearTimersLoading}
+                            />
+                            <span>
+                                I understand that all timer data for this work order will be permanently
+                                deleted.
+                            </span>
+                        </label>
+                        <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
+                            <Button
+                                type="button"
+                                variant="text"
+                                color="gray"
+                                onClick={() => {
+                                    if (!clearTimersLoading) {
+                                        setClearTimersOpen(false);
+                                        setClearTimersConfirmed(false);
+                                        setClearTimersOrderId(null);
+                                    }
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                color="red"
+                                onClick={confirmClearAllTimers}
+                                disabled={clearTimersLoading || !clearTimersConfirmed}
+                            >
+                                {clearTimersLoading ? 'Deleting…' : 'Delete all timer data'}
+                            </Button>
+                        </div>
+                    </div>
                 </Modal>
 
                 {/* Delete Confirmation Modal */}
