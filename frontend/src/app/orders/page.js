@@ -66,6 +66,7 @@ const OrderPage = () => {
     const [clearTimersOrderId, setClearTimersOrderId] = useState(null);
     const [clearTimersLoading, setClearTimersLoading] = useState(false);
     const [clearTimersConfirmed, setClearTimersConfirmed] = useState(false);
+    const [timersRefreshKey, setTimersRefreshKey] = useState(0);
 
     const roleNormalized = String(role || '').toLowerCase();
     const canClearAllOrderTimers =
@@ -93,7 +94,12 @@ const OrderPage = () => {
                 setClearTimersOpen(false);
                 setClearTimersOrderId(null);
                 setClearTimersConfirmed(false);
-                await fetchOrders();
+                setTimersRefreshKey((k) => k + 1);
+                const list = await fetchOrders();
+                if (list && timersModalOrder) {
+                    const updated = list.find((o) => o.id === timersModalOrder.id);
+                    if (updated) setTimersModalOrder(updated);
+                }
                 toast.success('All timer data deleted for this order.');
             } else {
                 toast.error(res.data?.message || 'Could not clear timers.');
@@ -1226,9 +1232,11 @@ const OrderPage = () => {
                                                 {lines.map((line) => (
                                                     <div key={`line-${line.idx}`} className="border border-gray-200 rounded-md p-3 bg-gray-50">
                                                         <WorkTimer
+                                                            key={`${timersModalOrder.id}-line-${line.idx}-${timersRefreshKey}`}
                                                             orderId={timersModalOrder.id}
                                                             serviceLineIndex={line.idx}
                                                             serviceLabel={line.name}
+                                                            refreshToken={timersRefreshKey}
                                                             onStop={fetchOrders}
                                                             canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
                                                             canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
@@ -1245,10 +1253,11 @@ const OrderPage = () => {
                                                 {workers.map((w) => (
                                                     <div key={`worker-${w.id}`} className="border border-gray-200 rounded-md p-3 bg-gray-50">
                                                         <WorkTimer
-                                                            key={`${timersModalOrder.id}-worker-${w.id}-${workerKey}`}
+                                                            key={`${timersModalOrder.id}-worker-${w.id}-${workerKey}-${timersRefreshKey}`}
                                                             orderId={timersModalOrder.id}
                                                             serviceLineIndex={w.timerIndex}
                                                             serviceLabel={w.name}
+                                                            refreshToken={timersRefreshKey}
                                                             onStop={fetchOrders}
                                                             canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
                                                             canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}
@@ -1261,9 +1270,11 @@ const OrderPage = () => {
                                     {lines.length === 0 && workers.length === 0 && (
                                         <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
                                             <WorkTimer
+                                                key={`${timersModalOrder.id}-fallback-${timersRefreshKey}`}
                                                 orderId={timersModalOrder.id}
                                                 serviceLineIndex={0}
                                                 serviceLabel="Work (no lines)"
+                                                refreshToken={timersRefreshKey}
                                                 onStop={fetchOrders}
                                                 canUseTimer={can(permissions, PermissionsList.ORDERS_TIMER_USE)}
                                                 canStopTimer={can(permissions, PermissionsList.ORDERS_TIMER_STOP)}

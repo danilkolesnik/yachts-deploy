@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useOrderTimer } from '@/hooks/useOrderTimer';
 import { PlayIcon, PauseIcon, StopIcon } from '@heroicons/react/24/solid';
 
@@ -7,6 +7,7 @@ const OrderTimer = ({
   serviceLineIndex,
   serviceLabel,
   onStop,
+  refreshToken = 0,
   canUseTimer = true,
   canStopTimer = true,
 }) => {
@@ -19,10 +20,15 @@ const OrderTimer = ({
     stopTimer,
     elapsedTime,
     formatTime,
-  } = useOrderTimer(orderId, serviceLineIndex);
+  } = useOrderTimer(orderId, serviceLineIndex, refreshToken);
 
   const [stopConfirmOpen, setStopConfirmOpen] = useState(false);
   const [stopPending, setStopPending] = useState(false);
+
+  useEffect(() => {
+    setStopConfirmOpen(false);
+    setStopPending(false);
+  }, [refreshToken]);
 
   const notifyParent = () => {
     if (typeof onStop === 'function') {

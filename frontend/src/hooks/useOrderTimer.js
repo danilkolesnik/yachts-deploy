@@ -4,7 +4,7 @@ import { URL } from '@/utils/constants';
 
 import axios from 'axios';
 
-export const useOrderTimer = (orderId, serviceLineIndex) => {
+export const useOrderTimer = (orderId, serviceLineIndex, refreshToken = 0) => {
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -156,7 +156,7 @@ export const useOrderTimer = (orderId, serviceLineIndex) => {
 
   useEffect(() => {
     fetchTimerStatus();
-  }, [orderId, serviceLineIndex]);
+  }, [orderId, serviceLineIndex, refreshToken]);
 
   const formatTime = (ms) => {
     const seconds = Math.floor((ms / 1000) % 60);
