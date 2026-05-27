@@ -163,7 +163,7 @@ const OrderTimer = ({
               type="button"
               onClick={confirmStop}
               disabled={stopPending}
-              className="px-3 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              className="px-3 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 font-semibold shadow-sm ring-1 ring-red-700/30 focus:outline-none focus:ring-2 focus:ring-red-500"
             >
               {stopPending ? 'Stopping…' : 'Stop timer'}
             </button>
