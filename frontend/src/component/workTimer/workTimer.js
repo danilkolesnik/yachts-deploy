@@ -132,7 +132,7 @@ const OrderTimer = ({
 
       {stopConfirmOpen && (
         <div
-          className="mt-3 p-3 bg-amber-50 border border-amber-300 rounded-md text-sm text-gray-900 space-y-2 max-w-sm shadow-sm"
+          className="mt-3 p-3 bg-amber-50 border border-amber-300 rounded-md text-xs text-gray-900 space-y-2 max-w-sm"
           role="alertdialog"
           aria-labelledby={`stop-timer-title-${orderId}-${serviceLineIndex}`}
         >
@@ -150,22 +150,22 @@ const OrderTimer = ({
             <span className="font-mono font-semibold">{formatTime(elapsedTime)}</span>. The display
             will reset to 00:00:00.
           </p>
-          <div className="flex flex-wrap justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 pt-1">
             <button
               type="button"
               onClick={cancelStop}
               disabled={stopPending}
-              className="px-4 py-2 rounded border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 disabled:opacity-50 font-medium"
+              className="px-3 py-1.5 rounded border border-gray-300 bg-white text-gray-800 hover:bg-gray-50 disabled:opacity-50"
             >
-              Keep running
+              Cancel
             </button>
             <button
               type="button"
               onClick={confirmStop}
               disabled={stopPending}
-              className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 font-semibold shadow-sm"
+              className="px-3 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
             >
-              {stopPending ? 'Stopping…' : 'Yes, stop'}
+              {stopPending ? 'Stopping…' : 'Stop timer'}
             </button>
           </div>
         </div>
