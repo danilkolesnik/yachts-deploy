@@ -118,11 +118,12 @@ export class UsersService {
         };
       }
 
-      // Safety: prevent self-demotion and "no admins left" scenarios.
+      if (changedBy && String(changedBy) === String(id)) {
+        return { code: 403, message: 'You cannot change your own role' };
+      }
+
+      // Safety: prevent "no admins left" scenarios.
       if (user.role === 'admin' && newRole !== 'admin') {
-        if (changedBy && String(changedBy) === String(id)) {
-          return { code: 403, message: 'Admin cannot change own role' };
-        }
         const adminCount = await this.usersRepository.count({ where: { role: 'admin' } });
         if (adminCount <= 1) {
           return { code: 403, message: 'Cannot demote the last admin' };

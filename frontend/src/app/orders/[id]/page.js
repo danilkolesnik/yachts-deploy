@@ -15,7 +15,7 @@ import { PermissionsList } from '@/constants/permissions';
 import {
     ASSIGNMENT_CHANGE_REASONS,
     buildAssignmentChangeReason,
-    assignmentChangeRequiresReason,
+    shouldPromptAssignmentReason,
 } from '@/constants/orderAssignment';
 import { isWorkerTimerIndex, WORKER_TIMER_INDEX_BASE } from '@/constants/orderTimer';
 import { can } from '@/utils/canPermission';
@@ -605,7 +605,7 @@ const OrderDetail = ({ params }) => {
     };
 
     const onSaveWorkersClick = () => {
-        if (assignmentChangeRequiresReason(order, selectedWorkers)) {
+        if (shouldPromptAssignmentReason(order, selectedWorkers)) {
             setAssignmentReasonPreset('');
             setAssignmentReasonOther('');
             setAssignmentError('');
@@ -615,13 +615,19 @@ const OrderDetail = ({ params }) => {
         handleWorkersUpdate();
     };
 
-    const confirmAssignmentReason = () => {
+    const getOptionalAssignmentReason = () => {
         const reason = buildAssignmentChangeReason(assignmentReasonPreset, assignmentReasonOther);
-        if (!reason) {
-            setAssignmentError('Please select or enter a reason for the assignment change.');
-            return;
-        }
-        handleWorkersUpdate(reason);
+        return reason || undefined;
+    };
+
+    const confirmAssignmentReason = () => {
+        setAssignmentError('');
+        handleWorkersUpdate(getOptionalAssignmentReason());
+    };
+
+    const saveAssignmentWithoutReason = () => {
+        setAssignmentError('');
+        handleWorkersUpdate(undefined);
     };
 
     const openOrderReport = () => {
@@ -1282,12 +1288,14 @@ const OrderDetail = ({ params }) => {
                 onClose={() => {
                     if (!updatingWorkers) setAssignmentReasonOpen(false);
                 }}
-                title="Reason for worker replacement"
+                title="Remove or replace worker"
                 bodyClassName="max-h-[80vh] overflow-y-auto"
             >
                 <div className="space-y-3 text-black">
                     <p className="text-sm text-gray-600">
-                        Enter the reason for changing assigned workers. This is saved in the work order history and included in the work order report.
+                        You are removing or replacing an assigned worker. You may note why (optional) — for
+                        example sick leave, no-show, or urgent transfer. If left blank, the change is still saved.
+                        Adding workers only does not show this step.
                     </p>
                     <div className="space-y-2">
                         {ASSIGNMENT_CHANGE_REASONS.map((r) => (
@@ -1314,16 +1322,31 @@ const OrderDetail = ({ params }) => {
                         />
                     )}
                     {assignmentError && <p className="text-sm text-red-600">{assignmentError}</p>}
-                    <div className="flex justify-end gap-2 pt-2">
+                    <div className="flex flex-wrap justify-end gap-2 pt-2">
                         <Button
+                            type="button"
                             variant="text"
                             color="gray"
                             onClick={() => !updatingWorkers && setAssignmentReasonOpen(false)}
                         >
                             Cancel
                         </Button>
-                        <Button color="green" onClick={confirmAssignmentReason} disabled={updatingWorkers}>
-                            {updatingWorkers ? 'Saving…' : 'Save assignment'}
+                        <Button
+                            type="button"
+                            variant="outlined"
+                            color="gray"
+                            onClick={saveAssignmentWithoutReason}
+                            disabled={updatingWorkers}
+                        >
+                            {updatingWorkers ? 'Saving…' : 'Continue without reason'}
+                        </Button>
+                        <Button
+                            type="button"
+                            color="green"
+                            onClick={confirmAssignmentReason}
+                            disabled={updatingWorkers}
+                        >
+                            {updatingWorkers ? 'Saving…' : 'Save'}
                         </Button>
                     </div>
                 </div>

@@ -9,7 +9,7 @@ import { PermissionsList } from '@/constants/permissions';
 import {
     ASSIGNMENT_CHANGE_REASONS,
     buildAssignmentChangeReason,
-    assignmentChangeRequiresReason,
+    shouldPromptAssignmentReason,
 } from '@/constants/orderAssignment';
 import { can } from '@/utils/canPermission';
 import { PencilIcon, TrashIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/solid';
@@ -421,7 +421,7 @@ const OrderPage = () => {
     };
 
     const onSaveWorkersFromList = () => {
-        if (assignmentChangeRequiresReason(selectedOrder, selectedWorkersForEdit)) {
+        if (shouldPromptAssignmentReason(selectedOrder, selectedWorkersForEdit)) {
             setAssignmentReasonPreset('');
             setAssignmentReasonOther('');
             setAssignmentError('');
@@ -431,13 +431,19 @@ const OrderPage = () => {
         updateOrderWorkers();
     };
 
-    const confirmAssignmentReasonFromList = () => {
+    const getOptionalAssignmentReason = () => {
         const reason = buildAssignmentChangeReason(assignmentReasonPreset, assignmentReasonOther);
-        if (!reason) {
-            setAssignmentError('Please select or enter a reason for the worker change.');
-            return;
-        }
-        updateOrderWorkers(reason);
+        return reason || undefined;
+    };
+
+    const confirmAssignmentReasonFromList = () => {
+        setAssignmentError('');
+        updateOrderWorkers(getOptionalAssignmentReason());
+    };
+
+    const saveAssignmentWithoutReasonFromList = () => {
+        setAssignmentError('');
+        updateOrderWorkers(undefined);
     };
 
     const handleDelete = (id) => {
@@ -1090,11 +1096,12 @@ const OrderPage = () => {
                     onClose={() => {
                         if (!loadingUpdate) setAssignmentReasonOpen(false);
                     }}
-                    title="Reason for worker replacement"
+                    title="Remove or replace worker"
                 >
                     <div className="space-y-3 text-black">
                         <p className="text-sm text-gray-600">
-                            Enter the reason for the change. The update cannot be saved without a reason.
+                            You are removing or replacing an assigned worker. You may note why (optional). If left
+                            blank, the change is still saved. Adding workers only does not show this step.
                         </p>
                         <div className="space-y-2">
                             {ASSIGNMENT_CHANGE_REASONS.map((r) => (
@@ -1121,15 +1128,30 @@ const OrderPage = () => {
                             />
                         )}
                         {assignmentError && <p className="text-sm text-red-600">{assignmentError}</p>}
-                        <div className="flex justify-end gap-2">
+                        <div className="flex flex-wrap justify-end gap-2">
                             <Button
+                                type="button"
                                 variant="text"
                                 color="gray"
                                 onClick={() => !loadingUpdate && setAssignmentReasonOpen(false)}
                             >
                                 Cancel
                             </Button>
-                            <Button color="green" onClick={confirmAssignmentReasonFromList} disabled={loadingUpdate}>
+                            <Button
+                                type="button"
+                                variant="outlined"
+                                color="gray"
+                                onClick={saveAssignmentWithoutReasonFromList}
+                                disabled={loadingUpdate}
+                            >
+                                {loadingUpdate ? 'Saving…' : 'Continue without reason'}
+                            </Button>
+                            <Button
+                                type="button"
+                                color="green"
+                                onClick={confirmAssignmentReasonFromList}
+                                disabled={loadingUpdate}
+                            >
                                 {loadingUpdate ? 'Saving…' : 'Save'}
                             </Button>
                         </div>

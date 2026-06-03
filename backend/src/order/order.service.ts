@@ -772,16 +772,6 @@ export class OrderService {
       const newWorkerIds = (userIds || []).map(String);
       const assignmentChanged = this.workersAssignmentChanged(oldWorkerIds, newWorkerIds);
 
-      if (oldWorkerIds.length > 0 && assignmentChanged) {
-        const reason = (changeReason || '').trim();
-        if (!reason) {
-          return {
-            code: 400,
-            message: 'changeReason is required when modifying assigned workers',
-          };
-        }
-      }
-
       const workers =
         newWorkerIds.length > 0
           ? await this.usersRepository.find({

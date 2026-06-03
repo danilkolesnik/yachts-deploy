@@ -15,6 +15,7 @@ import { ClipLoader } from 'react-spinners';
 import Input from '@/ui/Input';
 import { useRouter } from 'next/navigation';
 import { PermissionsList } from '@/constants/permissions';
+import { useAppSelector } from '@/lib/hooks';
 
 /** Permissions that make sense for portal `client` accounts (staff list does not apply). */
 const CLIENT_PROFILE_PERMISSION_OPTIONS = [
@@ -48,6 +49,7 @@ const PROFILE_PERMISSION_OPTIONS = [
 
 const UsersPage = () => {
     const router = useRouter();
+    const currentUserId = useAppSelector((s) => s.userData?.id);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editRoleModalIsOpen, setEditRoleModalIsOpen] = useState(false);
@@ -281,6 +283,9 @@ const UsersPage = () => {
         }
     };
 
+    const isSelfUser = (user) =>
+        currentUserId != null && user?.id != null && String(user.id) === String(currentUserId);
+
     const columns = [
         {
             name: 'ID',
@@ -306,12 +311,23 @@ const UsersPage = () => {
             name: 'Actions',
             cell: row => (
                 <div className="flex space-x-2">
-                    <button
-                        onClick={() => openEditRoleModal(row)}
-                        className="text-blue-500 hover:text-blue-700"
-                    >
-                        <PencilIcon className="w-5 h-5" />
-                    </button>
+                    {!isSelfUser(row) ? (
+                        <button
+                            type="button"
+                            onClick={() => openEditRoleModal(row)}
+                            className="text-blue-500 hover:text-blue-700"
+                            title="Edit role"
+                        >
+                            <PencilIcon className="w-5 h-5" />
+                        </button>
+                    ) : (
+                        <span
+                            className="text-xs text-gray-400 px-1"
+                            title="You cannot change your own role"
+                        >
+                            —
+                        </span>
+                    )}
                     <button
                         onClick={() => openProfileModal(row)}
                         className="text-green-500 hover:text-green-700"
@@ -333,6 +349,10 @@ const UsersPage = () => {
     ];
 
     const openEditRoleModal = (user) => {
+        if (isSelfUser(user)) {
+            toast.info('You cannot change your own role');
+            return;
+        }
         setSelectedUser(user);
         setNewRole(user.role || roles[0].value);
         setEditRoleModalIsOpen(true);
@@ -415,6 +435,11 @@ const UsersPage = () => {
 
     const updateRole = async () => {
         if (!selectedUser) return;
+        if (isSelfUser(selectedUser)) {
+            toast.info('You cannot change your own role');
+            closeEditRoleModal();
+            return;
+        }
 
         try {
             const response = await axios.put(`${URL}/users/${selectedUser.id}/role`, { role: newRole });
@@ -425,11 +450,11 @@ const UsersPage = () => {
                 toast.success("User role updated successfully");
             } else {
                 console.error('Failed to update role:', response.data.message);
-                toast.error("Failed to update role");
+                toast.error(response.data?.message || 'Failed to update role');
             }
         } catch (error) {
             console.error('Error updating role:', error);
-            toast.error("Error updating role");
+            toast.error(error.response?.data?.message || 'Error updating role');
         }
     };
 

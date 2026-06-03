@@ -1,4 +1,4 @@
-/** Reasons required when changing assigned workers after initial assignment. */
+/** Optional reasons when removing or replacing assigned workers (not when only adding). */
 export const ASSIGNMENT_CHANGE_REASONS = [
   { value: 'sick', label: 'Sick leave' },
   { value: 'absent', label: 'Did not show up for work' },
@@ -19,7 +19,16 @@ export function workersIdsChanged(savedWorkers, selectedOptions) {
   return saved !== next;
 }
 
-export function assignmentChangeRequiresReason(order, selectedOptions) {
-  const hadWorkers = (order?.assignedWorkers || []).length > 0;
-  return hadWorkers && workersIdsChanged(order?.assignedWorkers, selectedOptions);
+/** True if any currently assigned worker is no longer in the new selection. */
+export function workersWereRemoved(savedWorkers, selectedOptions) {
+  const nextIds = new Set((selectedOptions || []).map((w) => String(w.value)));
+  return (savedWorkers || []).some((w) => !nextIds.has(String(w.id)));
 }
+
+/** Show reason modal when a worker is removed or replaced (not when only adding). */
+export function shouldPromptAssignmentReason(order, selectedOptions) {
+  return workersWereRemoved(order?.assignedWorkers, selectedOptions);
+}
+
+/** @deprecated use shouldPromptAssignmentReason */
+export const assignmentChangeRequiresReason = shouldPromptAssignmentReason;
