@@ -27,8 +27,12 @@ export class InvoiceController {
         });
       }
 
-      const pdfBuffer = await createPdfBuffer(invoiceResult.data, 'invoice');
       const invoice = invoiceResult.data;
+      if (!invoice) {
+        return res.status(500).json({ message: 'Invoice data missing' });
+      }
+
+      const pdfBuffer = await createPdfBuffer(invoice, 'invoice');
 
       res.set({
         'Content-Type': 'application/pdf',
@@ -63,11 +67,16 @@ export class InvoiceController {
         return res.status(404).json({ message: 'Invoice not found' });
       }
 
-      const pdfBuffer = await createPdfBuffer(invoiceResult.data, 'invoice');
+      const invoice = invoiceResult.data;
+      if (!invoice) {
+        return res.status(500).json({ message: 'Invoice data missing' });
+      }
+
+      const pdfBuffer = await createPdfBuffer(invoice, 'invoice');
 
       res.set({
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="invoice-${id}.pdf"`,
+        'Content-Disposition': `attachment; filename="invoice-${invoice.id}.pdf"`,
         'Content-Length': pdfBuffer.length,
       });
       res.end(pdfBuffer);

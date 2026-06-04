@@ -145,9 +145,14 @@ export class InvoiceService {
       return result;
     }
 
+    const invoice = result.data;
+    if (!invoice) {
+      return { code: 500, message: 'Invoice data missing' };
+    }
+
     const subject = 'Invoice';
     const message = '<p>Please find the attached invoice PDF.</p>';
-    return sendEmail(email, result.data, 'invoice', subject, message);
+    return sendEmail(email, invoice, 'invoice', subject, message);
   }
 
   async sendInvoiceEmailByOffer(offerId: string, email: string) {
@@ -155,6 +160,10 @@ export class InvoiceService {
     if (invoiceResult.code !== 200 && invoiceResult.code !== 201) {
       return invoiceResult;
     }
-    return this.sendInvoiceEmail(invoiceResult.data.id, email);
+    const invoice = invoiceResult.data;
+    if (!invoice) {
+      return { code: 500, message: 'Invoice data missing' };
+    }
+    return this.sendInvoiceEmail(invoice.id, email);
   }
 }
