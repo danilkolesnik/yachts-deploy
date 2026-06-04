@@ -2,16 +2,31 @@ import * as fs from 'fs';
 import * as path from 'path';
 import puppeteer from 'puppeteer';
 import { getTranslations } from './translations';
+import { buildOfferExportHtml } from './offerExportPdf';
 
 export async function createPdfBuffer(data: any, type: string): Promise<Buffer> {
   try {
     const normalizedType = String(type || '').toLowerCase();
+
+    if (normalizedType === 'offer-export') {
+      const html = buildOfferExportHtml(data);
+      const browser = await puppeteer.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+      });
+      await browser.close();
+      return Buffer.from(pdfBuffer);
+    }
+
     const templateName =
-      normalizedType === 'offer-export'
-        ? 'offer-export'
-        : normalizedType === 'invoice'
-          ? 'Invoice'
-          : normalizedType;
+      normalizedType === 'invoice'
+        ? 'Invoice'
+        : normalizedType;
     const templatePath = path.join(process.cwd(), 'documents', `${templateName}.html`);
     let templateString = fs.readFileSync(templatePath, 'utf8');
     const exportData = {

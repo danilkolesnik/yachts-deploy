@@ -13,8 +13,7 @@ import Loader from '@/ui/loader';
 import Header from '@/component/header';
 import Link from 'next/link';
 import ExcelJS from 'exceljs';
-import { jsPDF } from 'jspdf';
-import { autoTable } from 'jspdf-autotable';
+import { downloadOfferPdf } from '@/utils/exportOfferPdf';
 
 const ConfirmedOffersPage = () => {
     const router = useRouter();
@@ -165,88 +164,13 @@ const ConfirmedOffersPage = () => {
         router.push('/offers');
     };
 
-    const generateOfferPdf = (row) => {
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pageWidth = doc.internal.pageSize.getWidth();
-        let y = 14;
-        const margin = 14;
-        const lineHeight = 7;
-
-        doc.setFontSize(18);
-        doc.text('Offer Details', margin, y);
-        y += lineHeight + 4;
-
-        doc.setFontSize(11);
-        doc.text(`Offer ID: ${row.id}`, margin, y);
-        y += lineHeight;
-        doc.text(`Date: ${new Date(row.createdAt).toLocaleString()}`, margin, y);
-        y += lineHeight;
-        doc.text(`Customer: ${row.customerFullName || ''}`, margin, y);
-        y += lineHeight;
-        doc.text(`Status: ${row.status || ''}`, margin, y);
-        y += lineHeight + 6;
-
-        const yachtsData = Array.isArray(row.yachts) && row.yachts.length > 0
-            ? row.yachts.map(yacht => [yacht.name || '', yacht.model || '', yacht.countryCode || ''])
-            : [[row.yachtName || '', row.yachtModel || '', row.countryCode || '']];
-        autoTable(doc, {
-            startY: y,
-            head: [['Yacht Name', 'Model', 'Boat Registration']],
-            body: yachtsData,
-            margin: { left: margin },
-            theme: 'grid',
-        });
-        y = doc.lastAutoTable.finalY + 10;
-
-        const servicesData = Array.isArray(row.services) && row.services.length > 0
-            ? row.services.map(s => [s.serviceName || s.label || '', String(s.priceInEuroWithoutVAT ?? '0') + ' €'])
-            : (row.services && typeof row.services === 'object' ? [[row.services.serviceName || row.services.label || '', String(row.services.priceInEuroWithoutVAT ?? '0') + ' €']] : []);
-        if (servicesData.length > 0) {
-            if (y > 250) { doc.addPage(); y = 14; }
-            autoTable(doc, {
-                startY: y,
-                head: [['Service Name', 'Price (€)']],
-                body: servicesData,
-                margin: { left: margin },
-                theme: 'grid',
-            });
-            y = doc.lastAutoTable.finalY + 10;
-        }
-
-        const partsData = Array.isArray(row.parts) && row.parts.length > 0
-            ? row.parts.map(p => [p.label || p.name || p.partName || '', String(p.quantity ?? 1), String(p.pricePerUnit ?? '0') + ' €'])
-            : [];
-        if (partsData.length > 0) {
-            if (y > 240) { doc.addPage(); y = 14; }
-            autoTable(doc, {
-                startY: y,
-                head: [['Part Name', 'Quantity', 'Price per Unit (€)']],
-                body: partsData,
-                margin: { left: margin },
-                theme: 'grid',
-            });
-            y = doc.lastAutoTable.finalY + 10;
-        }
-
-        if (row.comment && String(row.comment).trim()) {
-            if (y > 260) { doc.addPage(); y = 14; }
-            doc.setFontSize(12);
-            doc.text('Comments', margin, y);
-            y += lineHeight;
-            doc.setFontSize(10);
-            const commentLines = doc.splitTextToSize(row.comment, pageWidth - 2 * margin);
-            doc.text(commentLines, margin, y);
-        }
-
-        doc.save(`offer-${row.id}.pdf`);
-    };
-
-    const handleExportPdf = (row) => {
+    const handleExportPdf = async (row) => {
         setPdfExportLoading(prev => ({ ...prev, [row.id]: true }));
         try {
-            generateOfferPdf(row);
+            await downloadOfferPdf(row.id);
         } catch (error) {
             console.error('Error exporting PDF:', error);
+            alert('Error exporting PDF. Please try again.');
         } finally {
             setPdfExportLoading(prev => ({ ...prev, [row.id]: false }));
         }

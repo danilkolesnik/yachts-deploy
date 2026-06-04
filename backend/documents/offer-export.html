@@ -8,6 +8,11 @@
         @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
         * {
             font-family: 'Roboto', sans-serif;
+            color: black;
+        }
+        body {
+            color: black;
+            background-color: white;
         }
         table {
             width: 100%;
@@ -24,6 +29,7 @@
         .container {
             width: 600px;
             margin: 0 auto;
+            padding: 0 20px;
         }
         .header-row {
             display: flex;
@@ -103,7 +109,7 @@
             font-size: 12px;
         }
         .logo {
-            width: 150px;
+            width: 140px;
             height: 100px;
         }
         .contact-info {
@@ -160,7 +166,7 @@
 <body>
     <div class="container">
         <div class="contact-info-container">
-            <img src='http://46.225.17.97:5000/uploads/logo/Logo.png' alt="logo" class="logo">
+            <img src='{{logoUrl}}' alt="logo" class="logo">
             <div class="contact-info">
                 <strong>All Service Marine D.O.O.</strong><br>
                 OIB: 84034357097<br>
@@ -213,6 +219,7 @@
                 <tr>
                     <th>No.</th>
                     <th>Products / Proizvodi</th>
+                    <th>Article Number / Artikal</th>
                     <th>Quantity / Količina</th>
                     <th>Price in EURO per pcs/ Cijena u Eurima ed/kom</th>
                     <th>Price in EURO/ Cijena u Eurima</th>
@@ -256,4 +263,4 @@
         {{videosSection}}
     </div>
 </body>
-</html> 
+</html>

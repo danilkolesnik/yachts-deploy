@@ -14,6 +14,7 @@ type TranslationKeys =
   | 'LOCATION'
   | 'PRODUCTS'
   | 'NO'
+  | 'ARTICLE_NUMBER'
   | 'QUANTITY'
   | 'PRICE_PER_PCS'
   | 'PRICE'
@@ -79,6 +80,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     LOCATION: 'Location',
     PRODUCTS: 'Products',
     NO: 'No.',
+    ARTICLE_NUMBER: 'Article Number',
     QUANTITY: 'Quantity',
     PRICE_PER_PCS: 'Price in EURO per pcs',
     PRICE: 'Price in EURO',
@@ -142,6 +144,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     LOCATION: 'Ort',
     PRODUCTS: 'Produkte',
     NO: 'Nr.',
+    ARTICLE_NUMBER: 'Artikelnummer',
     QUANTITY: 'Menge',
     PRICE_PER_PCS: 'Preis in EURO pro Stk.',
     PRICE: 'Preis in EURO',
@@ -205,6 +208,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     LOCATION: 'Mjesto',
     PRODUCTS: 'Proizvodi',
     NO: 'Br.',
+    ARTICLE_NUMBER: 'Artikal',
     QUANTITY: 'Količina',
     PRICE_PER_PCS: 'Cijena u Eurima po kom',
     PRICE: 'Cijena u Eurima',
