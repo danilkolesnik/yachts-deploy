@@ -10,6 +10,7 @@ import { LoginAuthDto } from './dto/login-auth.dto';
 import generateRandomId from 'src/methods/generateRandomId';
 import getBearerToken from 'src/methods/getBearerToken';
 import * as nodemailer from 'nodemailer';
+import { getEmailFromAddress } from 'src/utils/emailFrom';
 
 import * as jwt from 'jsonwebtoken';
 import * as bcrypt from 'bcryptjs';
@@ -277,7 +278,7 @@ export class AuthService {
       `
 
       const mailOptions: nodemailer.SendMailOptions = {
-        from: emailUser,
+        from: getEmailFromAddress(emailUser),
         to: email,
         subject: 'Reset Password',
         text: 'Reset Password',

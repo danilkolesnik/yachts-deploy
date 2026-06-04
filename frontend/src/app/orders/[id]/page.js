@@ -23,19 +23,24 @@ import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
 import ReactSelect from 'react-select';
 import { downloadWorkOrderPdf } from '@/utils/exportWorkOrderPdf';
+import { uploadOrderMedia, getUploadErrorMessage } from '@/utils/uploadMedia';
+import { ORDER_MEDIA_SECTIONS, normalizeOrderMedia } from '@/constants/orderMediaSections';
 
 const OrderDetail = ({ params }) => {
     const { id } = use(params);
     const [order, setOrder] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadFeedback, setUploadFeedback] = useState(null);
     const [workOrderPdfLoading, setWorkOrderPdfLoading] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const permissions = useAppSelector((s) => s.userData?.permissions || []);
     const reduxRole = useAppSelector((s) => s.userData?.role) || (typeof window !== 'undefined' ? localStorage.getItem('role') : '');
     const role = String(reduxRole || '').toLowerCase();
     const hidePrices = ['mechanic', 'electrician', 'user', 'client'].includes(role);
-    const [selectedTab, setSelectedTab] = useState('Before');
+    const [selectedMediaTabIndex, setSelectedMediaTabIndex] = useState(0);
+    const [uploadSectionId, setUploadSectionId] = useState(null);
     const [showGallery, setShowGallery] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [statusHistory, setStatusHistory] = useState([]);
@@ -310,8 +315,7 @@ const OrderDetail = ({ params }) => {
         if (id) {
             axios.get(`${URL}/orders/${id}`)
                 .then(response => {
-                    const data = response.data.data;
-                    setOrder(data);
+                    setOrder(normalizeOrderMedia(response.data.data));
                     const initialSelected = (data.assignedWorkers || []).map(worker => ({
                         value: worker.id,
                         label: worker.fullName,
@@ -390,69 +394,56 @@ const OrderDetail = ({ params }) => {
         }
     };
 
-    const handleFileChange = (event) => {
-        setSelectedFile(event.target.files[0]);
+    const handleFileChange = (section, event) => {
+        setUploadSectionId(section.id);
+        setSelectedFile(event.target.files?.[0] || null);
+        setUploadFeedback(null);
     };
 
-    const handleUpload = async () => {
-        if (!selectedFile) return;
-
-        const formData = new FormData();
-        formData.append('file', selectedFile);
+    const handleUpload = async (section) => {
+        if (!selectedFile || !section) return;
 
         setUploading(true);
+        setUploadProgress(0);
+        setUploadFeedback(null);
         try {
-            const tabMapping = {
-                'Before': 'process',
-                'In Progress': 'result',
-                'Result': 'tab'
-            };
-            const tabName = tabMapping[selectedTab];
-            const response = await axios.post(`${URL}/orders/${id}/upload/${tabName}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            const { fileUrl, isVideo } = await uploadOrderMedia(id, section.apiTab, selectedFile, {
+                onProgress: setUploadProgress,
             });
-            
-            // Use the file URL returned by the server
-            const newFileUrl = response.data.file.url;
-            
-            const isVideo = selectedFile.type.startsWith('video/');
-            const key = isVideo ? `${tabName}VideoUrls` : `${tabName}ImageUrls`;
-            setOrder((prevOrder) => ({
-                ...prevOrder,
-                [key]: [...(prevOrder[key] || []), newFileUrl],
-            }));
+
+            const key = isVideo ? section.videoKey : section.imageKey;
+            setOrder((prevOrder) =>
+                normalizeOrderMedia({
+                    ...prevOrder,
+                    [key]: [...(prevOrder[key] || []), fileUrl],
+                }),
+            );
+            setSelectedFile(null);
+            setUploadSectionId(null);
+            setUploadFeedback({ type: 'success', message: 'Файл загружен.' });
+            await refreshOrderData();
         } catch (error) {
             console.error('Error uploading file:', error);
+            setUploadFeedback({ type: 'error', message: getUploadErrorMessage(error) });
         } finally {
             setUploading(false);
+            setUploadProgress(0);
         }
     };
 
-    const handleDelete = async (url) => {
+    const handleDelete = async (url, section) => {
+        if (!section) return;
         try {
             setDeleting(true);
-            const tabMapping = {
-                'Before': 'process',
-                'In Progress': 'result',
-                'Result': 'tab'
-            };
-            const tabName = tabMapping[selectedTab];
-            
-            const response = await axios.post(`${URL}/orders/${id}/delete/${tabName}`, { fileUrl: url });
-            
+            const response = await axios.post(`${URL}/orders/${id}/delete/${section.apiTab}`, { fileUrl: url });
+
             if (response.data.code === 200) {
-                // Refresh order from server
-                const orderResponse = await axios.get(`${URL}/orders/${id}`);
-                setOrder(orderResponse.data.data);
+                await refreshOrderData();
             }
         } catch (error) {
             console.error('Error deleting file:', error);
-            // On error, still try to refresh order from server
             try {
-                const orderResponse = await axios.get(`${URL}/orders/${id}`);
-                setOrder(orderResponse.data.data);
+                await refreshOrderData();
             } catch (refreshError) {
                 console.error('Error refreshing data:', refreshError);
             }
@@ -461,11 +452,10 @@ const OrderDetail = ({ params }) => {
         }
     };
 
-    // Refresh order payload from API
     const refreshOrderData = async () => {
         try {
             const response = await axios.get(`${URL}/orders/${id}`);
-            setOrder(response.data.data);
+            setOrder(normalizeOrderMedia(response.data.data));
         } catch (error) {
             console.error('Error refreshing order data:', error);
         }
@@ -480,53 +470,105 @@ const OrderDetail = ({ params }) => {
         }
     }, [id]);
 
-    const handleImageClick = (index) => {
+    const activeMediaSection = ORDER_MEDIA_SECTIONS[selectedMediaTabIndex];
+
+    const getCurrentImages = (section = activeMediaSection) => {
+        const images = section ? order?.[section.imageKey] : [];
+        return (Array.isArray(images) ? images : []).map((url) => ({
+            original: url,
+            thumbnail: url,
+            originalAlt: 'Order Image',
+            thumbnailAlt: 'Order Image Thumbnail',
+        }));
+    };
+
+    const handleImageClick = (section, index) => {
+        setSelectedMediaTabIndex(ORDER_MEDIA_SECTIONS.indexOf(section));
         setSelectedImageIndex(index);
         setShowGallery(true);
     };
 
-    const getCurrentImages = () => {
-        const tabMapping = {
-            'Before': 'processImageUrls',
-            'In Progress': 'resultImageUrls',
-            'Result': 'tabImageUrls'
-        };
-        const imageKey = tabMapping[selectedTab];
-        return order?.[imageKey]?.map(url => ({
-            original: url,
-            thumbnail: url,
-            originalAlt: 'Order Image',
-            thumbnailAlt: 'Order Image Thumbnail'
-        })) || [];
+    const renderSectionUpload = (section) => {
+        if (!can(permissions, PermissionsList.ORDERS_MEDIA_ADD)) return null;
+        const isActiveUpload =
+            uploadSectionId === section.id && (selectedFile || uploading);
+        const showFeedback = uploadSectionId === section.id && uploadFeedback;
+
+        return (
+            <div className="mt-8 border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-semibold mb-3 text-black">
+                    Загрузить в «{section.label}»
+                </h3>
+                <input
+                    type="file"
+                    accept="image/*,video/*,.mp4,.mov,.webm,.avi,.mkv,.m4v"
+                    onChange={(event) => handleFileChange(section, event)}
+                    className="text-sm text-stone-500
+                            file:mr-5 file:py-1 file:px-3 file:border-[1px]
+                            file:text-xs file:font-medium
+                            file:bg-stone-50 file:text-stone-700
+                            hover:file:cursor-pointer hover:file:bg-blue-50
+                            hover:file:text-blue-700"
+                />
+                <button
+                    type="button"
+                    onClick={() => handleUpload(section)}
+                    className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    disabled={uploading || !selectedFile || uploadSectionId !== section.id}
+                >
+                    {uploading && uploadSectionId === section.id
+                        ? uploadProgress > 0
+                            ? `Загрузка… ${uploadProgress}%`
+                            : 'Загрузка…'
+                        : 'Загрузить'}
+                </button>
+                {isActiveUpload && selectedFile && !uploading && (
+                    <p className="mt-2 text-sm text-gray-600">{selectedFile.name}</p>
+                )}
+                {showFeedback && (
+                    <p
+                        className={`mt-2 text-sm ${
+                            uploadFeedback.type === 'error' ? 'text-red-600' : 'text-green-700'
+                        }`}
+                    >
+                        {uploadFeedback.message}
+                    </p>
+                )}
+            </div>
+        );
     };
 
-    const renderTabContent = () => {
-        const tabMapping = {
-            'Before': { imageKey: 'processImageUrls', videoKey: 'processVideoUrls' },
-            'In Progress': { imageKey: 'resultImageUrls', videoKey: 'resultVideoUrls' },
-            'Result': { imageKey: 'tabImageUrls', videoKey: 'tabVideoUrls' }
-        };
-        const { imageKey, videoKey } = tabMapping[selectedTab];
+    const renderSectionContent = (section) => {
+        if (!order || !section) return null;
+
+        const images = order[section.imageKey] || [];
+        const videos = order[section.videoKey] || [];
 
         return (
             <div className="text-black">
-                {order[imageKey] && order[imageKey].length > 0 && (
-                    <div className="mt-10">
+                {images.length > 0 ? (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-bold mb-4 text-black">Фото</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                            {order[imageKey].map((url, index) => (
-                                <div key={index} className="relative group cursor-pointer" onClick={() => handleImageClick(index)}>
+                            {images.map((url, index) => (
+                                <div
+                                    key={`${section.id}-img-${url}-${index}`}
+                                    className="relative group cursor-pointer"
+                                    onClick={() => handleImageClick(section, index)}
+                                >
                                     <img
                                         src={url}
-                                        alt={`Order Image ${index + 1}`}
+                                        alt={`${section.label} ${index + 1}`}
                                         width={500}
                                         height={300}
                                         className="w-full h-auto rounded-lg shadow-md transition-transform transform group-hover:scale-105"
                                     />
                                     {can(permissions, PermissionsList.ORDERS_MEDIA_DELETE) && (
                                         <button
+                                            type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleDelete(url);
+                                                handleDelete(url, section);
                                             }}
                                             disabled={deleting}
                                             className="absolute top-1 right-1 text-black rounded-full p-2 transition-colors disabled:opacity-50"
@@ -538,13 +580,15 @@ const OrderDetail = ({ params }) => {
                             ))}
                         </div>
                     </div>
+                ) : (
+                    <p className="mt-6 text-sm text-gray-500">Нет фото в этом разделе.</p>
                 )}
-                {order[videoKey] && order[videoKey].length > 0 && (
+                {videos.length > 0 ? (
                     <div className="mt-10">
-                        <h2 className="text-3xl font-bold mb-6 text-black">Videos</h2>
+                        <h3 className="text-xl font-bold mb-4 text-black">Видео</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                            {order[videoKey].map((url, index) => (
-                                <div key={index} className="relative group">
+                            {videos.map((url, index) => (
+                                <div key={`${section.id}-vid-${url}-${index}`} className="relative group">
                                     <ReactPlayer
                                         url={url}
                                         controls
@@ -554,7 +598,8 @@ const OrderDetail = ({ params }) => {
                                     />
                                     {can(permissions, PermissionsList.ORDERS_MEDIA_DELETE) && (
                                         <button
-                                            onClick={() => handleDelete(url)}
+                                            type="button"
+                                            onClick={() => handleDelete(url, section)}
                                             disabled={deleting}
                                             className="absolute top-1 right-1 text-black rounded-full p-2 transition-colors disabled:opacity-50"
                                         >
@@ -565,7 +610,10 @@ const OrderDetail = ({ params }) => {
                             ))}
                         </div>
                     </div>
+                ) : (
+                    <p className="mt-4 text-sm text-gray-500">Нет видео в этом разделе.</p>
                 )}
+                {renderSectionUpload(section)}
             </div>
         );
     };
@@ -1168,50 +1216,36 @@ const OrderDetail = ({ params }) => {
                         </div>
                     </div>
                 )}
-                <Tab.Group>
+                <h2 className="text-2xl font-bold mb-3 text-black">Медиа-отчёт</h2>
+                <Tab.Group
+                    selectedIndex={selectedMediaTabIndex}
+                    onChange={(index) => {
+                        setSelectedMediaTabIndex(index);
+                        setSelectedFile(null);
+                        setUploadSectionId(null);
+                        setUploadFeedback(null);
+                    }}
+                >
                     <Tab.List className="flex space-x-1 border-b-2 border-gray-300">
-                        {['Before', 'In Progress', 'Result'].map((tab) => (
+                        {ORDER_MEDIA_SECTIONS.map((section) => (
                             <Tab
-                                key={tab}
+                                key={section.id}
                                 className={({ selected }) =>
                                     `w-full py-2.5 text-sm leading-5 font-bold text-black
                                     ${selected ? 'border-b-2 border-black focus:outline-none' : 'hover:text-gray-500'}
                                     transition duration-300 ease-in-out`
                                 }
-                                onClick={() => setSelectedTab(tab)}
                             >
-                                {tab}
+                                {section.label}
                             </Tab>
                         ))}
                     </Tab.List>
                     <Tab.Panels className="mt-2">
-                        <Tab.Panel>{selectedTab === 'Before' && renderTabContent()}</Tab.Panel>
-                        <Tab.Panel>{selectedTab === 'In Progress' && renderTabContent()}</Tab.Panel>
-                        <Tab.Panel>{selectedTab === 'Result' && renderTabContent()}</Tab.Panel>
+                        {ORDER_MEDIA_SECTIONS.map((section) => (
+                            <Tab.Panel key={section.id}>{renderSectionContent(section)}</Tab.Panel>
+                        ))}
                     </Tab.Panels>
                 </Tab.Group>
-                {can(permissions, PermissionsList.ORDERS_MEDIA_ADD) && (
-                    <div className="mt-10">
-                        <h2 className="text-3xl font-bold mb-6 text-black">Upload New File</h2>
-                        <input 
-                            type="file" 
-                            onChange={handleFileChange} 
-                            className="text-sm text-stone-500
-                            file:mr-5 file:py-1 file:px-3 file:border-[1px]
-                            file:text-xs file:font-medium
-                            file:bg-stone-50 file:text-stone-700
-                            hover:file:cursor-pointer hover:file:bg-blue-50
-                            hover:file:text-blue-700"
-                        />
-                        <button
-                            onClick={handleUpload}
-                            className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                            disabled={uploading}
-                        >
-                            {uploading ? 'Uploading...' : 'Upload'}
-                        </button>
-                    </div>
-                )}
             </div>
 
             <Modal
@@ -1442,7 +1476,7 @@ const OrderDetail = ({ params }) => {
                     <div className="w-full h-full p-4">
                         <div className="relative w-full h-full">
                             <ImageGallery
-                                items={getCurrentImages()}
+                                items={getCurrentImages(activeMediaSection)}
                                 startIndex={selectedImageIndex}
                                 showFullscreenButton={true}
                                 showPlayButton={false}

@@ -5,8 +5,7 @@ import { createPdfBuffer } from '../utils/createPdf';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderItemsDto } from './dto/update-order-items.dto';
 import { Request } from 'express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { createMediaUploadOptions } from 'src/utils/mediaUpload';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as jwt from 'jsonwebtoken';
 import getBearerToken from 'src/methods/getBearerToken';
@@ -282,28 +281,7 @@ export class OrderController {
 
   @Post(':orderId/upload/:tab')
   @Permissions(PermissionsList.ORDERS_MEDIA_ADD)
-  @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: (req, file, callback) => {
-        const isImage = file.mimetype.startsWith('image/');
-        const isVideo = file.mimetype.startsWith('video/');
-        let folder = './uploads'; 
-
-        if (isImage) {
-          folder = './uploads/image';
-        } else if (isVideo) {
-          folder = './uploads/video';
-        }
-
-        callback(null, folder);
-      },
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, `${uniqueSuffix}${ext}`);
-      },
-    }),
-  }))
+  @UseInterceptors(FileInterceptor('file', createMediaUploadOptions()))
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
     @Param('orderId') orderId: string,

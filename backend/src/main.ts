@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { existsSync } from 'fs';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -9,7 +10,11 @@ async function bootstrap() {
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
   app.setViewEngine('ejs');
 
-  app.useStaticAssets('/app/uploads', {
+  const uploadsRoot =
+    process.env.UPLOADS_DIR ||
+    (existsSync('/app/uploads') ? '/app/uploads' : join(__dirname, '..', 'uploads'));
+
+  app.useStaticAssets(uploadsRoot, {
     prefix: '/uploads',
     setHeaders: (res) => {
       res.set('Cross-Origin-Resource-Policy', 'cross-origin');

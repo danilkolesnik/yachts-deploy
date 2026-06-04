@@ -17,12 +17,15 @@ import { PermissionsList } from '@/constants/permissions';
 import { can } from '@/utils/canPermission';
 import { downloadOfferPdf } from '@/utils/exportOfferPdf';
 import { downloadInvoicePdfByOffer, sendInvoiceEmailByOffer } from '@/utils/exportInvoicePdf';
+import { uploadOfferMedia, getUploadErrorMessage } from '@/utils/uploadMedia';
 
 const OfferDetail = ({ params }) => {
     const { id } = use(params);
     const [offer, setOffer] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadFeedback, setUploadFeedback] = useState(null);
     const [role, setRole] = useState(null);
     const [showGallery, setShowGallery] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -74,34 +77,33 @@ const OfferDetail = ({ params }) => {
     const handleUpload = async () => {
         if (!selectedFile) return;
 
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-
         setUploading(true);
+        setUploadProgress(0);
+        setUploadFeedback(null);
         try {
-            const response = await axios.post(`${URL}/upload/${id}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            const { fileUrl, isVideo } = await uploadOfferMedia(id, selectedFile, {
+                onProgress: setUploadProgress,
             });
-            
-            const newFileUrl = response.data.file.url;
-            
-            if (selectedFile.type.startsWith('video/')) {
+
+            if (isVideo) {
                 setOffer((prevOffer) => ({
                     ...prevOffer,
-                    videoUrls: [...prevOffer.videoUrls, newFileUrl],
+                    videoUrls: [...(prevOffer.videoUrls || []), fileUrl],
                 }));
             } else {
                 setOffer((prevOffer) => ({
                     ...prevOffer,
-                    imageUrls: [...prevOffer.imageUrls, newFileUrl],
+                    imageUrls: [...(prevOffer.imageUrls || []), fileUrl],
                 }));
             }
+            setSelectedFile(null);
+            setUploadFeedback({ type: 'success', message: 'File uploaded successfully.' });
         } catch (error) {
             console.error('Error uploading file:', error);
+            setUploadFeedback({ type: 'error', message: getUploadErrorMessage(error) });
         } finally {
             setUploading(false);
+            setUploadProgress(0);
         }
     };
 
@@ -491,7 +493,8 @@ const OfferDetail = ({ params }) => {
                     <div className="mt-10">
                         <h2 className="text-3xl font-bold mb-6 text-black">Upload New File</h2>
                         <input 
-                            type="file" 
+                            type="file"
+                            accept="image/*,video/*,.mp4,.mov,.webm,.avi,.mkv,.m4v"
                             onChange={handleFileChange} 
                             className="text-sm text-stone-500
                             file:mr-5 file:py-1 file:px-3 file:border-[1px]
@@ -505,8 +508,15 @@ const OfferDetail = ({ params }) => {
                             className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                             disabled={uploading}
                         >
-                            {uploading ? 'Uploading...' : 'Upload'}
+                            {uploading
+                                ? (uploadProgress > 0 ? `Uploading… ${uploadProgress}%` : 'Uploading…')
+                                : 'Upload'}
                         </button>
+                        {uploadFeedback && (
+                            <p className={`mt-2 text-sm ${uploadFeedback.type === 'error' ? 'text-red-600' : 'text-green-700'}`}>
+                                {uploadFeedback.message}
+                            </p>
+                        )}
                     </div>
                 )}
             </div>

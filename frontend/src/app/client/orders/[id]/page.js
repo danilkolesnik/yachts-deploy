@@ -14,6 +14,7 @@ import { can } from "@/utils/canPermission";
 import ImageGallery from "react-image-gallery";
 import "react-image-gallery/styles/css/image-gallery.css";
 import { XMarkIcon } from "@heroicons/react/24/solid";
+import { ORDER_MEDIA_SECTIONS, normalizeOrderMedia } from "@/constants/orderMediaSections";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -145,11 +146,12 @@ export default function ClientOrderDetailPage() {
 
   const mediaTabs = useMemo(() => {
     if (!order) return [];
-    return [
-      { name: "Before", images: order.processImageUrls || [], videos: order.processVideoUrls || [] },
-      { name: "In progress", images: order.resultImageUrls || [], videos: order.resultVideoUrls || [] },
-      { name: "Result", images: order.tabImageUrls || [], videos: order.tabVideoUrls || [] },
-    ];
+    const normalized = normalizeOrderMedia(order);
+    return ORDER_MEDIA_SECTIONS.map((section) => ({
+      name: section.label,
+      images: normalized[section.imageKey] || [],
+      videos: normalized[section.videoKey] || [],
+    }));
   }, [order]);
 
   const openGallery = (images, startIndex) => {

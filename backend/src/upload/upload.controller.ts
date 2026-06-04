@@ -1,12 +1,24 @@
-import { Controller, Post, UploadedFile, UseInterceptors, Param, Get, Body } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+  Param,
+  Get,
+  Body,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { File } from './entities/file.entity';
 import { offer } from 'src/offer/entities/offer.entity';
 import { unlink } from 'fs/promises';
+import {
+  createMediaUploadOptions,
+  detectMediaKind,
+  getPublicMediaUrl,
+} from 'src/utils/mediaUpload';
 
 @Controller('upload')
 export class UploadController {
@@ -17,100 +29,91 @@ export class UploadController {
     private readonly offerRepository: Repository<offer>,
   ) {}
 
-  private normalizeUrl(url: string): string {
-    // Удаляем двойные слеши, кроме http(s)://
-    return url.replace(/([^:]\/)\/+/g, "$1");
-  }
-
-  private getPublicUrl(filename: string, isImage: boolean): string {
-    const folder = isImage ? 'image' : 'video';
-    return this.normalizeUrl(`${process.env.SERVER_URL}/uploads/${folder}/${filename}`);
-  }
-
-@Post('delete')
-async deleteFile(@Body() body: { url: string; offerId: string }) {
-  const { url, offerId } = body;
-  try {
-    const filename = url.split('/').pop();
-    if (!filename) {
-      return { message: 'Некорректный URL.', code: 400 };
-    }
-
-    const file = await this.fileRepository.findOne({ where: { filename, offerId } });
-    if (!file) {
-      return { message: 'Файл не найден.', code: 404 };
-    }
-
-    await unlink(file.path);
-
-    await this.fileRepository.delete(file.id);
-
-    const offer = await this.offerRepository.findOne({ where: { id: offerId } });
-    if (offer) {
-      const isImage = file.mimetype.startsWith('image/');
-      const isVideo = file.mimetype.startsWith('video/');
-
-      if (isImage) {
-        offer.imageUrls = offer.imageUrls.filter(imageUrl => imageUrl !== url);
-      } else if (isVideo) {
-        offer.videoUrls = offer.videoUrls.filter(videoUrl => videoUrl !== url);
+  @Post('delete')
+  async deleteFile(@Body() body: { url: string; offerId: string }) {
+    const { url, offerId } = body;
+    try {
+      const filename = url.split('/').pop();
+      if (!filename) {
+        return { message: 'Некорректный URL.', code: 400 };
       }
 
-      await this.offerRepository.save(offer);
-    }
+      const file = await this.fileRepository.findOne({
+        where: { filename, offerId },
+      });
+      if (!file) {
+        return { message: 'Файл не найден.', code: 404 };
+      }
 
-    return { message: 'Файл успешно удалён.', code: 200 };
-  } catch (error) {
-    return { message: 'Ошибка при удалении файла.', code: 500, error: error.message };
-  }
-}
+      await unlink(file.path);
 
-  @Post(':offerId')
-  @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: (req, file, callback) => {
-        const isImage = file.mimetype.startsWith('image/');
-        const isVideo = file.mimetype.startsWith('video/');
-        let folder = '/app/uploads'; 
+      await this.fileRepository.delete(file.id);
 
-        if (isImage) {
-          folder = '/app/uploads/image';
-        } else if (isVideo) {
-          folder = '/app/uploads/video';
+      const offerEntity = await this.offerRepository.findOne({
+        where: { id: offerId },
+      });
+      if (offerEntity) {
+        const kind = detectMediaKind(file.mimetype, file.filename);
+        if (kind === 'image') {
+          offerEntity.imageUrls = offerEntity.imageUrls.filter(
+            (imageUrl) => imageUrl !== url,
+          );
+        } else if (kind === 'video') {
+          offerEntity.videoUrls = offerEntity.videoUrls.filter(
+            (videoUrl) => videoUrl !== url,
+          );
         }
 
-        callback(null, folder);
-      },
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, `${uniqueSuffix}${ext}`);
-      },
-    }),
-  }))
-  async uploadFile(@UploadedFile() file: Express.Multer.File, @Param('offerId') offerId: string) {
+        await this.offerRepository.save(offerEntity);
+      }
+
+      return { message: 'Файл успешно удалён.', code: 200 };
+    } catch (error) {
+      return {
+        message: 'Ошибка при удалении файла.',
+        code: 500,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  @Post(':offerId')
+  @UseInterceptors(FileInterceptor('file', createMediaUploadOptions()))
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('offerId') offerId: string,
+  ) {
     if (!file) {
-      return { message: 'Файл не загружен.' };
+      throw new BadRequestException('Файл не загружен.');
     }
 
-    const offer = await this.offerRepository.findOne({ where: { id: offerId } });
-    if (!offer) {
-      return { message: 'Offer не найден.' };
+    const offerEntity = await this.offerRepository.findOne({
+      where: { id: offerId },
+    });
+    if (!offerEntity) {
+      throw new BadRequestException('Offer не найден.');
     }
 
-    const isImage = file.mimetype.startsWith('image/');
-    const isVideo = file.mimetype.startsWith('video/');
-
-    // Используем новый метод для получения публичного URL
-    const fileUrl = this.getPublicUrl(file.filename, isImage);
-
-    if (isImage) {
-      offer.imageUrls = offer.imageUrls ? [...offer.imageUrls, fileUrl] : [fileUrl];
-    } else if (isVideo) {
-      offer.videoUrls = offer.videoUrls ? [...offer.videoUrls, fileUrl] : [fileUrl];
+    const kind = detectMediaKind(file.mimetype, file.originalname);
+    if (!kind) {
+      throw new BadRequestException(
+        'Unsupported file type. Upload images or videos (e.g. .mp4).',
+      );
     }
 
-    await this.offerRepository.save(offer);
+    const fileUrl = getPublicMediaUrl(file.filename, kind);
+
+    if (kind === 'image') {
+      offerEntity.imageUrls = offerEntity.imageUrls
+        ? [...offerEntity.imageUrls, fileUrl]
+        : [fileUrl];
+    } else {
+      offerEntity.videoUrls = offerEntity.videoUrls
+        ? [...offerEntity.videoUrls, fileUrl]
+        : [fileUrl];
+    }
+
+    await this.offerRepository.save(offerEntity);
 
     const newFile = this.fileRepository.create({
       filename: file.filename,
@@ -121,13 +124,13 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
 
     await this.fileRepository.save(newFile);
 
-    return { 
-      message: 'Файл успешно загружен.', 
-      code: 200, 
+    return {
+      message: 'Файл успешно загружен.',
+      code: 200,
       file: {
         ...newFile,
-        url: fileUrl
-      }
+        url: fileUrl,
+      },
     };
   }
 
@@ -138,8 +141,11 @@ async deleteFile(@Body() body: { url: string; offerId: string }) {
       return { message: 'Файл не найден.' };
     }
 
-    const isImage = file.mimetype.startsWith('image/');
-    const fileUrl = this.getPublicUrl(file.filename, isImage);
+    const kind =
+      detectMediaKind(file.mimetype, file.filename) === 'video'
+        ? 'video'
+        : 'image';
+    const fileUrl = getPublicMediaUrl(file.filename, kind);
 
     return {
       id: file.id,

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -30,6 +31,15 @@ import { JwtPayload } from 'jsonwebtoken';
 import * as jwt from 'jsonwebtoken';
 import { unlink } from 'fs/promises';
 import { InvoiceService } from 'src/invoice/invoice.service';
+import {
+  detectMediaKind,
+  getPublicMediaUrl,
+} from 'src/utils/mediaUpload';
+import {
+  isValidOrderMediaTab,
+  normalizeMediaUrlList,
+  normalizeOrderMediaFields,
+} from 'src/constants/order-media';
 
 @Injectable()
 export class OrderService {
@@ -1597,7 +1607,14 @@ export class OrderService {
         : new Map();
       const createdByUser = this.userRef(orderEntity.createdBy, usersById);
 
-      return { code: 200, data: { ...orderEntity, offer, createdByUser } };
+      return {
+        code: 200,
+        data: normalizeOrderMediaFields({
+          ...orderEntity,
+          offer,
+          createdByUser,
+        }),
+      };
     } catch (err) {
       if (
         err instanceof ForbiddenException ||
@@ -1642,11 +1659,6 @@ export class OrderService {
     return url.replace(/([^:]\/)\/+/g, "$1");
   }
 
-  private getPublicUrl(filename: string, isImage: boolean): string {
-    const folder = isImage ? 'image' : 'video';
-    return this.normalizeUrl(`${process.env.SERVER_URL}/uploads/${folder}/${filename}`);
-  }
-
   async uploadFileToOrder(
     orderId: string,
     file: Express.Multer.File,
@@ -1654,14 +1666,34 @@ export class OrderService {
     req: Request,
   ): Promise<any> {
     if (!file) {
-      return { message: 'Файл не загружен.' };
+      throw new BadRequestException('Файл не загружен.');
+    }
+
+    if (!isValidOrderMediaTab(tab)) {
+      throw new BadRequestException(
+        'Неверный раздел медиа-отчёта (ожидается: process, result, tab).',
+      );
     }
 
     const order = await this.assertCanAccessOrder(orderId, req);
 
-    const isImage = file.mimetype.startsWith('image/');
-    const isVideo = file.mimetype.startsWith('video/');
-    const fileUrl = this.getPublicUrl(file.filename, isImage);
+    order.processImageUrls = normalizeMediaUrlList(order.processImageUrls);
+    order.processVideoUrls = normalizeMediaUrlList(order.processVideoUrls);
+    order.resultImageUrls = normalizeMediaUrlList(order.resultImageUrls);
+    order.resultVideoUrls = normalizeMediaUrlList(order.resultVideoUrls);
+    order.tabImageUrls = normalizeMediaUrlList(order.tabImageUrls);
+    order.tabVideoUrls = normalizeMediaUrlList(order.tabVideoUrls);
+
+    const kind = detectMediaKind(file.mimetype, file.originalname);
+    if (!kind) {
+      throw new BadRequestException(
+        'Unsupported file type. Upload images or videos (e.g. .mp4).',
+      );
+    }
+
+    const isImage = kind === 'image';
+    const isVideo = kind === 'video';
+    const fileUrl = getPublicMediaUrl(file.filename, kind);
     
     if (tab === 'process') {
       if (isImage) {
@@ -1681,6 +1713,10 @@ export class OrderService {
       } else if (isVideo) {
         order.tabVideoUrls = order.tabVideoUrls ? [...order.tabVideoUrls, fileUrl] : [fileUrl];
       }
+    } else {
+      throw new BadRequestException(
+        'Неверный раздел медиа-отчёта (ожидается: process, result, tab).',
+      );
     }
 
     await this.orderRepository.save(order);
@@ -1707,7 +1743,20 @@ export class OrderService {
     tab: string,
     req: Request,
   ): Promise<{ message: string; code: number }> {
+    if (!isValidOrderMediaTab(tab)) {
+      throw new BadRequestException(
+        'Неверный раздел медиа-отчёта (ожидается: process, result, tab).',
+      );
+    }
+
     const order = await this.assertCanAccessOrder(orderId, req);
+
+    order.processImageUrls = normalizeMediaUrlList(order.processImageUrls);
+    order.processVideoUrls = normalizeMediaUrlList(order.processVideoUrls);
+    order.resultImageUrls = normalizeMediaUrlList(order.resultImageUrls);
+    order.resultVideoUrls = normalizeMediaUrlList(order.resultVideoUrls);
+    order.tabImageUrls = normalizeMediaUrlList(order.tabImageUrls);
+    order.tabVideoUrls = normalizeMediaUrlList(order.tabVideoUrls);
 
     const filename = fileUrl.split('/').pop();
     if (!filename) {
