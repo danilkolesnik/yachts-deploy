@@ -16,6 +16,7 @@ import { useAppSelector } from '@/lib/hooks';
 import { PermissionsList } from '@/constants/permissions';
 import { can } from '@/utils/canPermission';
 import { downloadOfferPdf } from '@/utils/exportOfferPdf';
+import { downloadInvoicePdfByOffer, sendInvoiceEmailByOffer } from '@/utils/exportInvoicePdf';
 
 const OfferDetail = ({ params }) => {
     const { id } = use(params);
@@ -26,7 +27,9 @@ const OfferDetail = ({ params }) => {
     const [showGallery, setShowGallery] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [pdfExportLoading, setPdfExportLoading] = useState(false);
+    const [invoicePdfLoading, setInvoicePdfLoading] = useState(false);
     const [emailModalOpen, setEmailModalOpen] = useState(false);
+    const [emailKind, setEmailKind] = useState('offer');
     const [emailLoading, setEmailLoading] = useState(false);
     const [emailAddress, setEmailAddress] = useState('');
     const router = useRouter();
@@ -133,6 +136,19 @@ const OfferDetail = ({ params }) => {
         }
     };
 
+    const handleExportInvoicePdf = async () => {
+        if (!offer || !id) return;
+        setInvoicePdfLoading(true);
+        try {
+            await downloadInvoicePdfByOffer(id);
+        } catch (error) {
+            console.error('Error exporting invoice PDF:', error);
+            alert('Error exporting invoice PDF. Please try again.');
+        } finally {
+            setInvoicePdfLoading(false);
+        }
+    };
+
     const handleSendEmail = async () => {
         if (!emailAddress.trim()) {
             alert('Please enter an email address');
@@ -141,7 +157,9 @@ const OfferDetail = ({ params }) => {
 
         setEmailLoading(true);
         try {
-            const response = await axios.post(`${URL}/offer/${id}/send-email`, 
+            const response = emailKind === 'invoice'
+                ? await sendInvoiceEmailByOffer(id, emailAddress)
+                : (await axios.post(`${URL}/offer/${id}/send-email`, 
                 { email: emailAddress },
                 {
                     headers: {
@@ -149,10 +167,10 @@ const OfferDetail = ({ params }) => {
                         'Content-Type': 'application/json'
                     }
                 }
-            );
+            )).data;
             
-            if (response.data.code === 200) {
-                alert('Email sent successfully!');
+            if (response.code === 200) {
+                alert(emailKind === 'invoice' ? 'Invoice email sent successfully!' : 'Email sent successfully!');
                 setEmailModalOpen(false);
                 setEmailAddress('');
             } else {
@@ -197,11 +215,25 @@ const OfferDetail = ({ params }) => {
                                 {pdfExportLoading ? 'Generating PDF...' : 'Export PDF'}
                             </Button>
                             <Button 
+                                color="purple" 
+                                onClick={handleExportInvoicePdf}
+                                disabled={invoicePdfLoading}
+                            >
+                                {invoicePdfLoading ? 'Generating...' : 'Invoice PDF'}
+                            </Button>
+                            <Button 
                                 color="orange" 
-                                onClick={() => setEmailModalOpen(true)}
+                                onClick={() => { setEmailKind('offer'); setEmailModalOpen(true); }}
                                 disabled={emailLoading}
                             >
                                 {emailLoading ? 'Sending...' : 'Send Email'}
+                            </Button>
+                            <Button 
+                                color="indigo" 
+                                onClick={() => { setEmailKind('invoice'); setEmailModalOpen(true); }}
+                                disabled={emailLoading}
+                            >
+                                {emailLoading ? 'Sending...' : 'Send Invoice'}
                             </Button>
                         </div>
                     )}

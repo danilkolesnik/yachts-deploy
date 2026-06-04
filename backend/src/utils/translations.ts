@@ -2,6 +2,12 @@ export type SupportedLanguage = 'en' | 'de' | 'hr';
 
 type TranslationKeys =
   | 'OFFER'
+  | 'OFFER_HR'
+  | 'WORK_ORDER'
+  | 'WORK_ORDER_HR'
+  | 'OFFER_REF'
+  | 'ASSIGNED_WORKERS'
+  | 'COMMENT'
   | 'NUMBER'
   | 'DATE'
   | 'CUSTOMER'
@@ -30,6 +36,7 @@ type TranslationKeys =
   | 'VIDEO_FILE_AVAILABLE'
   // Invoice-specific and other labels
   | 'INVOICE'
+  | 'INVOICE_HR'
   | 'PLACE_AND_DATE'
   | 'WAREHOUSE'
   | 'REMARK'
@@ -68,6 +75,12 @@ type TranslationKeys =
 export const translations: Record<SupportedLanguage, Record<TranslationKeys, string>> = {
   en: {
     OFFER: 'OFFER',
+    OFFER_HR: 'PONUDA',
+    WORK_ORDER: 'WORK ORDER',
+    WORK_ORDER_HR: 'RADNI NALOG',
+    OFFER_REF: 'Offer',
+    ASSIGNED_WORKERS: 'Assigned workers',
+    COMMENT: 'Comment',
     NUMBER: 'Number',
     DATE: 'Date',
     CUSTOMER: 'Customer',
@@ -95,6 +108,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     VIDEO_LABEL: 'Video',
     VIDEO_FILE_AVAILABLE: 'Video file available at:',
     INVOICE: 'INVOICE',
+    INVOICE_HR: 'RAČUN',
     PLACE_AND_DATE: 'Place and date of issue',
     WAREHOUSE: 'MAIN WAREHOUSE',
     REMARK: 'Remark',
@@ -132,6 +146,12 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
   },
   de: {
     OFFER: 'ANGEBOT',
+    OFFER_HR: 'PONUDA',
+    WORK_ORDER: 'ARBEITSAUFTRAG',
+    WORK_ORDER_HR: 'RADNI NALOG',
+    OFFER_REF: 'Angebot',
+    ASSIGNED_WORKERS: 'Zugewiesene Mitarbeiter',
+    COMMENT: 'Kommentar',
     NUMBER: 'Nummer',
     DATE: 'Datum',
     CUSTOMER: 'Kunde',
@@ -159,6 +179,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     VIDEO_LABEL: 'Video',
     VIDEO_FILE_AVAILABLE: 'Videodatei verfügbar unter:',
     INVOICE: 'RECHNUNG',
+    INVOICE_HR: 'RAČUN',
     PLACE_AND_DATE: 'Ausstellungsort und -datum',
     WAREHOUSE: 'HAUPTLAGER',
     REMARK: 'Bemerkung',
@@ -196,6 +217,12 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
   },
   hr: {
     OFFER: 'PONUDA',
+    OFFER_HR: 'PONUDA',
+    WORK_ORDER: 'RADNI NALOG',
+    WORK_ORDER_HR: 'RADNI NALOG',
+    OFFER_REF: 'Ponuda',
+    ASSIGNED_WORKERS: 'Odgovorni radnici',
+    COMMENT: 'Komentar',
     NUMBER: 'Broj',
     DATE: 'Datum',
     CUSTOMER: 'Kupac',
@@ -223,6 +250,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     VIDEO_LABEL: 'Video',
     VIDEO_FILE_AVAILABLE: 'Video datoteka dostupna na:',
     INVOICE: 'RAČUN',
+    INVOICE_HR: 'RAČUN',
     PLACE_AND_DATE: 'Mjesto i datum izdavanja',
     WAREHOUSE: 'GLAVNO SKLADIŠTE',
     REMARK: 'Napomena',

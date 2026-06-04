@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Order</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+        * {
+            font-family: 'Roboto', sans-serif;
+            color: black;
+        }
+        body { background: white; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; font-size: 12px; }
+        .container { width: 600px; margin: 0 auto; padding: 0 20px; }
+        .contact-info-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid black;
+        }
+        .logo { width: 140px; height: 100px; }
+        .contact-info { width: 50%; font-size: 12px; margin-bottom: 10px; }
+        .header-row { display: flex; justify-content: space-between; padding: 5px 0; }
+        .header-title { display: flex; align-items: center; justify-content: center; text-align: center; }
+        .header-item { flex: 1; padding: 5px; font-size: 12px; font-weight: 500; }
+        .header-item.full { flex: 2; }
+        .row { display: flex; justify-content: space-between; border: 1.2px solid black; }
+        .row2 { display: flex; flex-direction: column; padding-left: 5px; }
+        .row-3 { border: 1.2px solid black; margin-top: 20px; }
+        .right { border-right: 1.2px solid black; }
+        .row-4 { flex-direction: column; border-right: 1.2px solid black; }
+        .row5 { display: flex; border: 1.2px solid black; border-top: none; margin-bottom: 20px; }
+        .row5-item { width: 50%; display: flex; align-items: center; }
+        .header-table { font-size: 14px; font-weight: 500; display: block; margin-top: 12px; }
+        .workers-block {
+            border: 1.2px solid black;
+            padding: 8px;
+            margin-bottom: 16px;
+            font-size: 12px;
+        }
+        .comment-block {
+            border: 1.2px solid black;
+            padding: 8px;
+            margin-top: 16px;
+            font-size: 12px;
+            min-height: 48px;
+        }
+        .signature {
+            margin-top: 40px;
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="contact-info-container">
+            <img src="{{logoUrl}}" alt="logo" class="logo">
+            <div class="contact-info">
+                <strong>All Service Marine D.O.O.</strong><br>
+                OIB: 84034357097<br>
+                Mob.: +385 91 535-59-60<br>
+                Phone: +385 91 613-89-41<br>
+                E-mail: info@a-s-m.yachts
+            </div>
+        </div>
+        <div class="header row-title">
+            <div class="header-row">
+                <div class="header-item header-title">WORK ORDER / RADNI NALOG</div>
+                <div>
+                    <div class="header-item">Number/Broj: RN {{orderId}}</div>
+                    <div class="header-item">Date/Datum: {{createdAt}}</div>
+                    <div class="header-item">Offer/Ponuda: {{offerId}}</div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="header-row row2">
+                    <div class="header-item">Customer/Kupac: {{customerFullName}}</div>
+                    <div class="header-item">Address/Adresa:</div>
+                </div>
+            </div>
+            <div class="header-row row-3">
+                <div class="header-item right">Description/Opis:</div>
+                <div class="header-item full">Non Schedule Service / Usluga izvan rasporeda</div>
+            </div>
+            <div class="row5">
+                <div class="header-row row-4">
+                    <div class="header-row row2">
+                        <div class="header-item">Yacht Name/Ime jahte: {{yachtName}}</div>
+                    </div>
+                    <div class="header-row row2">
+                        <div class="header-item">Yacht Model / Model jahte/ SN/SB: {{yachtModel}}</div>
+                    </div>
+                    <div class="header-row row2">
+                        <div class="header-item">Reg. Number/Reg. Broj: {{countryCode}}</div>
+                    </div>
+                </div>
+                <div class="header-row row5-item">
+                    <div class="header-item">Location/Mjesto:</div>
+                    <div class="header-item">{{location}}</div>
+                </div>
+            </div>
+
+            <div class="workers-block">
+                <strong>Assigned workers / Odgovorni radnici:</strong> {{assignedWorkers}}
+            </div>
+
+            <span class="header-table">Products / Proizvodi</span>
+            <table>
+                <tr>
+                    <th>No.</th>
+                    <th>Products / Proizvodi</th>
+                    <th>Article Number / Artikal</th>
+                    <th>Quantity / Količina</th>
+                </tr>
+                {{partsTableRows}}
+            </table>
+
+            <span class="header-table">Work / Radovi</span>
+            <table>
+                <tr>
+                    <th>No.</th>
+                    <th>Service / Servis</th>
+                    <th>Quantity / Količina</th>
+                </tr>
+                {{servicesTableRows}}
+            </table>
+
+            <div class="comment-block">
+                <strong>Comment / Komentar:</strong><br>
+                {{comment}}
+            </div>
+
+            <div class="signature">V.Cherednichenko</div>
+        </div>
+    </div>
+</body>
+</html>

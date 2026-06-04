@@ -29,6 +29,7 @@ import getBearerToken from 'src/methods/getBearerToken';
 import { JwtPayload } from 'jsonwebtoken';
 import * as jwt from 'jsonwebtoken';
 import { unlink } from 'fs/promises';
+import { InvoiceService } from 'src/invoice/invoice.service';
 
 @Injectable()
 export class OrderService {
@@ -59,6 +60,7 @@ export class OrderService {
     private readonly orderClientMessageRepository: Repository<OrderClientMessage>,
     @InjectRepository(EmployeeProfile)
     private readonly employeeProfileRepository: Repository<EmployeeProfile>,
+    private readonly invoiceService: InvoiceService,
   ) {}
 
   private tryGetUserIdFromRequest(req?: Request): string | undefined {
@@ -727,12 +729,23 @@ export class OrderService {
           where: { id: order.customerId },
         });
   
-        if (customer) {
-          const subject = 'Invoice created';
-          const message = '<p>Invoice created. Please find the attached PDF.</p>';
-          const orderData = { ...order, offer: { ...offer } };
-          
-          await sendEmail(customer.email, orderData, 'Invoice', subject, message);
+        if (customer?.email) {
+          const invoiceResult = await this.invoiceService.createFromOffer(
+            offer.id,
+            orderId,
+          );
+
+          if (invoiceResult.code === 200 || invoiceResult.code === 201) {
+            const subject = 'Invoice created';
+            const message = '<p>Invoice created. Please find the attached PDF.</p>';
+            await sendEmail(
+              customer.email,
+              invoiceResult.data,
+              'invoice',
+              subject,
+              message,
+            );
+          }
         }
       }
   
@@ -1536,6 +1549,41 @@ export class OrderService {
   }
 
   // =============== ДРУГИЕ МЕТОДЫ (оставлены без изменений) ===============
+  async getWorkOrderPdfPayload(orderId: string, req: Request) {
+    try {
+      const requester = this.getRequesterFromReq(req);
+      const access = await this.canAccessOrder(orderId, requester);
+      if (!access.ok) {
+        return { code: access.code, message: access.message };
+      }
+
+      const offer = await this.offerRepository.findOne({
+        where: { id: access.order.offerId },
+      });
+
+      if (!offer) {
+        return { code: 404, message: 'Offer not found for this order' };
+      }
+
+      return {
+        code: 200,
+        data: { order: access.order, offer },
+      };
+    } catch (err) {
+      if (
+        err instanceof ForbiddenException ||
+        err instanceof NotFoundException ||
+        err instanceof UnauthorizedException
+      ) {
+        throw err;
+      }
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
   async getOrderById(orderId: string, req: Request) {
     try {
       const orderEntity = await this.assertCanAccessOrder(orderId, req);

@@ -1,5 +1,7 @@
-import { Controller, Post, Get, Patch, Param, Body, Req, UploadedFile, UseInterceptors, Query } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, Req, Res, UploadedFile, UseInterceptors, Query } from '@nestjs/common';
+import { Response } from 'express';
 import { OrderService } from './order.service';
+import { createPdfBuffer } from '../utils/createPdf';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderItemsDto } from './dto/update-order-items.dto';
 import { Request } from 'express';
@@ -119,6 +121,32 @@ export class OrderController {
   @Permissions(PermissionsList.ORDERS_READ)
   async getOrderReport(@Param('id') orderId: string, @Req() req: Request) {
     return this.orderService.getOrderReport(orderId, req);
+  }
+
+  @Get(':id/export-pdf')
+  @Permissions(PermissionsList.ORDERS_READ)
+  async exportWorkOrderPdf(
+    @Param('id') orderId: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    try {
+      const payload = await this.orderService.getWorkOrderPdfPayload(orderId, req);
+      if (payload.code !== 200) {
+        return res.status(payload.code === 404 ? 404 : 500).json({ message: payload.message });
+      }
+
+      const pdfBuffer = await createPdfBuffer(payload.data, 'work-order');
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="work-order-${orderId}.pdf"`,
+        'Content-Length': pdfBuffer.length,
+      });
+      res.end(pdfBuffer);
+    } catch (error) {
+      console.error('Error exporting work order PDF:', error);
+      res.status(500).json({ message: 'Error generating work order PDF' });
+    }
   }
 
   @Get(':id')

@@ -11,6 +11,7 @@ import { OrderTimer } from './src/order/entities/order-timer.entity';
 import { OrderStatusHistory } from './src/order/entities/order-status-history.entity';
 import { OrderTimerHistory } from './src/order/entities/order-timer-history.entity';
 import { Yacht } from './src/yacht/entities/yacht.entity';
+import { Invoice } from './src/invoice/entities/invoice.entity';
 
 export default new DataSource({
   type: 'postgres',
@@ -31,7 +32,8 @@ export default new DataSource({
     OrderTimer,
     OrderStatusHistory,
     OrderTimerHistory,
-    Yacht
+    Yacht,
+    Invoice,
   ],
   migrations: ['src/migrations/*.ts'],
   synchronize: false,

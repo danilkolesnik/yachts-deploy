@@ -14,6 +14,7 @@ import Header from '@/component/header';
 import Link from 'next/link';
 import ExcelJS from 'exceljs';
 import { downloadOfferPdf } from '@/utils/exportOfferPdf';
+import { downloadInvoicePdfByOffer, sendInvoiceEmailByOffer } from '@/utils/exportInvoicePdf';
 
 const ConfirmedOffersPage = () => {
     const router = useRouter();
@@ -21,7 +22,9 @@ const ConfirmedOffersPage = () => {
     const [loading, setLoading] = useState(true);
     const [role, setRole] = useState(null);
     const [pdfExportLoading, setPdfExportLoading] = useState({});
+    const [invoicePdfLoading, setInvoicePdfLoading] = useState({});
     const [emailModalOpen, setEmailModalOpen] = useState(false);
+    const [emailKind, setEmailKind] = useState('offer');
     const [emailLoading, setEmailLoading] = useState(false);
     const [emailAddress, setEmailAddress] = useState('');
     const [selectedOfferId, setSelectedOfferId] = useState(null);
@@ -144,6 +147,42 @@ const ConfirmedOffersPage = () => {
             ignoreRowClick: true,
             button: true.toString(),
         }] : []),
+        ...(role !== 'user' ? [{
+            name: '',
+            cell: row => (
+                <button
+                    onClick={() => handleExportInvoicePdf(row)}
+                    disabled={invoicePdfLoading[row.id]}
+                    className={`px-2 py-2 text-white rounded ${
+                        invoicePdfLoading[row.id]
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-purple-600 hover:bg-purple-800'
+                    }`}
+                >
+                    {invoicePdfLoading[row.id] ? 'Generating...' : 'Invoice PDF'}
+                </button>
+            ),
+            ignoreRowClick: true,
+            button: true.toString(),
+        }] : []),
+        ...(role !== 'user' ? [{
+            name: '',
+            cell: row => (
+                <button
+                    onClick={() => handleSendInvoiceEmail(row.id)}
+                    disabled={emailSendingLoading[row.id]}
+                    className={`px-2 py-2 text-white rounded ${
+                        emailSendingLoading[row.id]
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-indigo-500 hover:bg-indigo-700'
+                    }`}
+                >
+                    {emailSendingLoading[row.id] ? 'Sending...' : 'Send Invoice'}
+                </button>
+            ),
+            ignoreRowClick: true,
+            button: true.toString(),
+        }] : []),
     ];
 
     const getData = async () => {
@@ -176,7 +215,26 @@ const ConfirmedOffersPage = () => {
         }
     };
 
+    const handleExportInvoicePdf = async (row) => {
+        setInvoicePdfLoading(prev => ({ ...prev, [row.id]: true }));
+        try {
+            await downloadInvoicePdfByOffer(row.id);
+        } catch (error) {
+            console.error('Error exporting invoice PDF:', error);
+            alert('Error exporting invoice PDF. Please try again.');
+        } finally {
+            setInvoicePdfLoading(prev => ({ ...prev, [row.id]: false }));
+        }
+    };
+
     const handleSendEmail = async (offerId) => {
+        setEmailKind('offer');
+        setSelectedOfferId(offerId);
+        setEmailModalOpen(true);
+    };
+
+    const handleSendInvoiceEmail = (offerId) => {
+        setEmailKind('invoice');
         setSelectedOfferId(offerId);
         setEmailModalOpen(true);
     };
@@ -190,7 +248,9 @@ const ConfirmedOffersPage = () => {
         setEmailLoading(true);
         setEmailSendingLoading(prev => ({ ...prev, [selectedOfferId]: true }));
         try {
-            const response = await axios.post(`${URL}/offer/${selectedOfferId}/send-email`, 
+            const response = emailKind === 'invoice'
+                ? await sendInvoiceEmailByOffer(selectedOfferId, emailAddress)
+                : (await axios.post(`${URL}/offer/${selectedOfferId}/send-email`, 
                 { email: emailAddress },
                 {
                     headers: {
@@ -198,10 +258,10 @@ const ConfirmedOffersPage = () => {
                         'Content-Type': 'application/json'
                     }
                 }
-            );
+            )).data;
             
-            if (response.data.code === 200) {
-                alert('Email sent successfully!');
+            if (response.code === 200) {
+                alert(emailKind === 'invoice' ? 'Invoice email sent successfully!' : 'Email sent successfully!');
                 setEmailModalOpen(false);
                 setEmailAddress('');
                 setSelectedOfferId(null);

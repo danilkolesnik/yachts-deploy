@@ -23,6 +23,7 @@ import { workerTimerIndex } from '@/constants/orderTimer';
 import { statusStyles } from '@/utils/statusStyles';
 import { useRouter } from 'next/navigation';
 import ExcelJS from 'exceljs';
+import { downloadWorkOrderPdf } from '@/utils/exportWorkOrderPdf';
 import { toast } from 'react-toastify';
 import ReactSelect from 'react-select';
 
@@ -42,6 +43,7 @@ const OrderPage = () => {
     const [sortOrder, setSortOrder] = useState('desc');
     const [loading, setLoading] = useState(true);
     const [loadingUpdate, setLoadingUpdate] = useState(false);
+    const [workOrderPdfLoading, setWorkOrderPdfLoading] = useState({});
     const id = useAppSelector(state => state.userData?.id);
     const permissions = useAppSelector((s) => s.userData?.permissions || []);
     const role = useAppSelector((s) => s.userData?.role);
@@ -381,6 +383,19 @@ const OrderPage = () => {
         window.open(`/orders/${orderId}/report`, '_blank', 'noopener,noreferrer,width=960,height=900');
     };
 
+    const handleExportWorkOrderPdf = async (orderId, e) => {
+        if (e) e.stopPropagation();
+        setWorkOrderPdfLoading((prev) => ({ ...prev, [orderId]: true }));
+        try {
+            await downloadWorkOrderPdf(orderId);
+        } catch (error) {
+            console.error('Error exporting work order PDF:', error);
+            alert('Error exporting work order PDF');
+        } finally {
+            setWorkOrderPdfLoading((prev) => ({ ...prev, [orderId]: false }));
+        }
+    };
+
     const updateOrderWorkers = async (changeReason) => {
         if (!selectedOrder) return;
         const userIds = (selectedWorkersForEdit || []).map(w => w.value);
@@ -541,7 +556,7 @@ const OrderPage = () => {
             ? [{
             name: 'Report',
             cell: row => (
-                <div className="flex justify-center py-1" onClick={(e) => e.stopPropagation()}>
+                <div className="flex justify-center gap-1 py-1" onClick={(e) => e.stopPropagation()}>
                     <Button
                         size="sm"
                         variant="outlined"
@@ -550,6 +565,16 @@ const OrderPage = () => {
                         onClick={(e) => openOrderReport(row.id, e)}
                     >
                         Report
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outlined"
+                        color="purple"
+                        className="normal-case text-xs px-3 py-1"
+                        disabled={workOrderPdfLoading[row.id]}
+                        onClick={(e) => handleExportWorkOrderPdf(row.id, e)}
+                    >
+                        {workOrderPdfLoading[row.id] ? '...' : 'PDF'}
                     </Button>
                 </div>
             ),

@@ -1,68 +1,24 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { getTranslations } from './translations';
-
-function formatMoney(value: number): string {
-  return Number.isFinite(value) ? value.toFixed(2) : '0.00';
-}
-
-function normalizeServices(services: unknown): any[] {
-  if (Array.isArray(services)) {
-    return services;
-  }
-  if (services && typeof services === 'object') {
-    return [services];
-  }
-  return [];
-}
-
-function getServiceName(service: any): string {
-  return String(
-    service?.serviceName ??
-      service?.value?.serviceName ??
-      service?.label ??
-      '',
-  );
-}
-
-function getServicePrice(service: any): number {
-  return Number(
-    service?.priceInEuroWithoutVAT ??
-      service?.value?.priceInEuroWithoutVAT ??
-      0,
-  );
-}
-
-function getPartLabel(part: any): string {
-  return String(
-    part?.label ?? part?.name ?? part?.partName ?? part?.value?.label ?? '',
-  );
-}
-
-function getPartArticleNumber(part: any): string {
-  const article =
-    part?.articleNumber ?? part?.value?.articleNumber ?? part?.value?.article;
-  return article ? String(article) : '-';
-}
-
-function resolveYachtFields(data: any) {
-  const firstYacht =
-    Array.isArray(data?.yachts) && data.yachts.length > 0
-      ? data.yachts[0]
-      : null;
-
-  return {
-    yachtName: String(firstYacht?.name ?? data?.yachtName ?? ''),
-    yachtModel: String(firstYacht?.model ?? data?.yachtModel ?? ''),
-    countryCode: String(firstYacht?.countryCode ?? data?.countryCode ?? ''),
-  };
-}
+import {
+  formatMoney,
+  getLogoUrl,
+  getPartArticleNumber,
+  getPartLabel,
+  getPartPricePerUnit,
+  getPartQuantity,
+  getServiceName,
+  getServicePrice,
+  normalizeServices,
+  resolveYachtFields,
+} from './pdfFormatters';
 
 function applyOfferTranslations(template: string, lang?: string): string {
   const t = getTranslations(lang);
 
   return template
-    .replace('OFFER / PONUDA', `${t.OFFER}`)
+    .replace('OFFER / PONUDA', `${t.OFFER} / ${t.OFFER_HR}`)
     .replace('Number/Broj:', `${t.NUMBER}:`)
     .replace('Date/Datum:', `${t.DATE}:`)
     .replace('Customer/Kupac:', `${t.CUSTOMER}:`)
@@ -95,7 +51,12 @@ function applyOfferTranslations(template: string, lang?: string): string {
     .replace('SUBTOTAL / UKUPNO:', `${t.SUBTOTAL}:`)
     .replace('Provided Services / Pružene usluge:', `${t.PROVIDED_SERVICES}:`)
     .replace('<th>Service / Servis</th>', `<th>${t.SERVICE}</th>`)
-    .replace('TOTAL AMOUNT / SVEUKUPNI IZNOS:', `${t.TOTAL_AMOUNT}:`);
+    .replace('TOTAL AMOUNT / SVEUKUPNI IZNOS:', `${t.TOTAL_AMOUNT}:`)
+    .replace('BANK DETAILS / BANKOVNI DETALJI:', `${t.BANK_DETAILS}:`)
+    .replace('Beneficiary / Korisnik:', `${t.BENEFICIARY}:`)
+    .replace('Beneficiary Bank / Banka primatelj:', `${t.BENEFICIARY_BANK}:`)
+    .replace('Bank address / Adresa banke:', `${t.BANK_ADDRESS}:`)
+    .replace('SWIFT / BRZ:', `${t.SWIFT}:`);
 }
 
 export function buildOfferExportHtml(data: any): string {
@@ -115,8 +76,8 @@ export function buildOfferExportHtml(data: any): string {
 
   const partsTableRows = exportData.parts
     .map((part: any, index: number) => {
-      const quantity = Number(part?.quantity ?? 1);
-      const pricePerUnit = Number(part?.pricePerUnit ?? 0);
+      const quantity = getPartQuantity(part);
+      const pricePerUnit = getPartPricePerUnit(part);
       const total = quantity * pricePerUnit;
       return `
       <tr>
@@ -147,9 +108,7 @@ export function buildOfferExportHtml(data: any): string {
     .join('');
 
   const totalPrice = exportData.parts.reduce((acc: number, part: any) => {
-    const quantity = Number(part?.quantity ?? 1);
-    const pricePerUnit = Number(part?.pricePerUnit ?? 0);
-    return acc + quantity * pricePerUnit;
+    return acc + getPartQuantity(part) * getPartPricePerUnit(part);
   }, 0);
 
   const totalPriceAllServices = services.reduce(
@@ -211,10 +170,8 @@ export function buildOfferExportHtml(data: any): string {
     ? ''
     : createdAt.toLocaleString();
 
-  const logoUrl = `${process.env.SERVER_URL || 'http://localhost:3001'}/uploads/logo/Logo.png`;
-
   templateString = templateString
-    .replace('{{logoUrl}}', logoUrl)
+    .replace(/\{\{logoUrl\}\}/g, getLogoUrl())
     .replace('{{offerId}}', String(exportData.id ?? ''))
     .replace('{{customerFullName}}', String(exportData.customerFullName ?? ''))
     .replace('{{yachtName}}', yacht.yachtName)

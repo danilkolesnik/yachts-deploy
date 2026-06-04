@@ -31,15 +31,6 @@
         .bold {
             font-weight: bold;
         }
-        /* table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
-        } */
         .logo {
             width: 150px;
             height: 100px;
@@ -162,7 +153,7 @@
 <body>
     <div class="container">
         <div class="contact-info-container">
-            <img src='http://46.225.17.97:5000/uploads/logo/Logo.png' alt="logo" class="logo">
+            <img src='{{logoUrl}}' alt="logo" class="logo">
             <div class="contact-info">
                 <strong>All Service Marine D.O.O.</strong><br>
                 OIB: 84034357097<br>
@@ -182,19 +173,18 @@
         <div class="header">
             <div>
                 <p>Place and date of issue: Pula, {{createdAt}}</p>
-                <p class="invoice-title">INVOICE : 4/0001/214</p>
+                <p class="invoice-title">INVOICE / RAČUN : {{invoiceNumber}}</p>
                 <p>GLAVNO SKLADIŠTE</p>
                 <p>Remark: OFFER {{offerIdInvoice}}</p>
                 <p>Method of payment: VIRMANOM U ROKU 5 DANA</p>
                 <p>Order: RN {{orderId}}</p>
             </div>
             <div>
-                <p class="bold">Gerhard Müller</p>
+                <p class="bold">{{customerFullName}}</p>
                 <p>Address:</p>
                 <p>OIB:</p>
                 <p>Name: {{yachtNameOffer}}</p>
                 <p>Model: {{yachtModelOffer}}</p>
-                <!-- <p>Country: {{countryCode}}</p> -->
                 <p>Location: {{location}}</p>
             </div>
         </div>
@@ -221,13 +211,7 @@
                 <span>Price per unit EUR</span>
                 <span>Price EUR</span>
             </div>
-            <div>
-                <span>{{idService}}</span>
-                <span>{{seriveNameInvoice}}</span>
-                <span>1</span>
-                <span>{{servicePriceInvoice}}</span>
-                <span>{{totalPriceInvoiceServices}}</span>
-            </div>
+            {{invoiceServicesRows}}
         </div>
        
 
@@ -265,25 +249,25 @@
         </div>
 
         <div class="payment">
-            <h1>SLOVIMA:(ŠESTOSEDAMDESETSEDAM EURA I PEDESET CENTI)</h1>
+            <h1>SLOVIMA:</h1>
             <div class="payment-item">
                 <span>DVO:</span>
-                <span>24/01/2025</span>
+                <span>{{issueDate}}</span>
             </div>
             <div class="payment-item">
                 <span>Payment due:</span>
-                <span>29/01/2025</span>
+                <span>{{paymentDueDate}}</span>
             </div>
             <div class="payment-item">
                 <span>Reference number:</span>
-                <span>000933 - 000004</span>
+                <span>{{referenceNumber}}</span>
             </div>
         </div>
 
         <div class="bank">
             <span>Payment must be made to a bank account</span>
             <span>Oznaka plaćanja: Transakcijski račun</span>
-            <span>Datum i vrijeme izdavanja: 24.01.2025 14:58:31</span>
+            <span>Datum i vrijeme izdavanja: {{issueDateTime}}</span>
             <span>Dokument Izdao: SILVIJA MIRKOVIC</span>
         </div>
 

@@ -22,12 +22,14 @@ import { can } from '@/utils/canPermission';
 import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
 import ReactSelect from 'react-select';
+import { downloadWorkOrderPdf } from '@/utils/exportWorkOrderPdf';
 
 const OrderDetail = ({ params }) => {
     const { id } = use(params);
     const [order, setOrder] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [workOrderPdfLoading, setWorkOrderPdfLoading] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const permissions = useAppSelector((s) => s.userData?.permissions || []);
     const reduxRole = useAppSelector((s) => s.userData?.role) || (typeof window !== 'undefined' ? localStorage.getItem('role') : '');
@@ -635,6 +637,19 @@ const OrderDetail = ({ params }) => {
         window.open(`/orders/${id}/report`, '_blank', 'noopener,noreferrer,width=960,height=900');
     };
 
+    const handleExportWorkOrderPdf = async () => {
+        if (!id) return;
+        setWorkOrderPdfLoading(true);
+        try {
+            await downloadWorkOrderPdf(id);
+        } catch (error) {
+            console.error('Error exporting work order PDF:', error);
+            alert('Error exporting work order PDF');
+        } finally {
+            setWorkOrderPdfLoading(false);
+        }
+    };
+
     if (!order) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -657,6 +672,16 @@ const OrderDetail = ({ params }) => {
                                 className="text-sm px-3 py-1.5 rounded border border-gray-300 bg-white hover:bg-gray-50 text-black"
                             >
                                 Work order report
+                            </button>
+                        )}
+                        {can(permissions, PermissionsList.ORDERS_READ) && (
+                            <button
+                                type="button"
+                                onClick={handleExportWorkOrderPdf}
+                                disabled={workOrderPdfLoading}
+                                className="text-sm px-3 py-1.5 rounded border border-purple-300 bg-purple-50 hover:bg-purple-100 text-black disabled:opacity-50"
+                            >
+                                {workOrderPdfLoading ? 'Generating PDF...' : 'Work order PDF'}
                             </button>
                         )}
                         <span className="text-sm text-gray-500">

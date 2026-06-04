@@ -3,30 +3,40 @@ import * as path from 'path';
 import puppeteer from 'puppeteer';
 import { getTranslations } from './translations';
 import { buildOfferExportHtml } from './offerExportPdf';
+import { buildInvoiceExportHtml } from './invoiceExportPdf';
+import { buildWorkOrderExportHtml } from './workOrderExportPdf';
+
+async function renderHtmlToPdf(html: string): Promise<Buffer> {
+  const browser = await puppeteer.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
+  const page = await browser.newPage();
+  await page.setContent(html, { waitUntil: 'networkidle0' });
+  const pdfBuffer = await page.pdf({
+    format: 'A4',
+    printBackground: true,
+  });
+  await browser.close();
+  return Buffer.from(pdfBuffer);
+}
 
 export async function createPdfBuffer(data: any, type: string): Promise<Buffer> {
   try {
     const normalizedType = String(type || '').toLowerCase();
 
     if (normalizedType === 'offer-export') {
-      const html = buildOfferExportHtml(data);
-      const browser = await puppeteer.launch({
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      });
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-      });
-      await browser.close();
-      return Buffer.from(pdfBuffer);
+      return renderHtmlToPdf(buildOfferExportHtml(data));
     }
 
-    const templateName =
-      normalizedType === 'invoice'
-        ? 'Invoice'
-        : normalizedType;
+    if (normalizedType === 'invoice') {
+      return renderHtmlToPdf(buildInvoiceExportHtml(data));
+    }
+
+    if (normalizedType === 'work-order' || normalizedType === 'work-order-export') {
+      return renderHtmlToPdf(buildWorkOrderExportHtml(data));
+    }
+
+    const templateName = normalizedType;
     const templatePath = path.join(process.cwd(), 'documents', `${templateName}.html`);
     let templateString = fs.readFileSync(templatePath, 'utf8');
     const exportData = {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Offer</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
         * {
@@ -23,9 +23,6 @@
             padding: 8px;
             text-align: left;
         }
-        .content {
-            width: 460px;
-        }
         .container {
             width: 600px;
             margin: 0 auto;
@@ -39,18 +36,11 @@
         .row-title {
             align-items: center;
         }
-        .header-row:last-child {
-            border-bottom: none;
-        }
         .header-title {
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
-        }
-        .title{
-            font-size: 35px;
-            font-weight: 500;
         }
         .header-item {
             flex: 1;
@@ -69,13 +59,12 @@
         .row2 {
             display: flex;
             flex-direction: column;
-            padding: 0px;
+            padding: 0;
             padding-left: 5px;
-           
         }
         .row-3 {
             border: 1.2px solid black;
-            padding: 0px;
+            padding: 0;
             margin-top: 20px;
         }
         .right {
@@ -83,12 +72,12 @@
         }
         .item {
             font-size: 14px;
-            padding: 0px;
+            padding: 0;
         }
         .row-4 {
             flex-direction: column;
             border-top: none;
-            padding: 0px;
+            padding: 0;
             border-right: 1.2px solid black;
         }
         .row5 {
@@ -123,8 +112,7 @@
             align-items: center;
             border-bottom: 2px solid black;
         }
-
-        .header-table{
+        .header-table {
             font-size: 14px;
             font-weight: 500;
         }
@@ -135,17 +123,17 @@
             margin-top: 10px;
             font-weight: bold;
         }
-        .subtotal div{
+        .subtotal div {
             padding: 4px;
             width: 50%;
         }
-        .subtotal div:nth-child(1){
+        .subtotal div:nth-child(1) {
             border-right: 1.2px solid black;
         }
-        .subtotal div:nth-child(2){
+        .subtotal div:nth-child(2) {
             text-align: right;
         }
-        .total-amount{
+        .total-amount {
             display: flex;
             justify-content: space-between;
             border: 1.2px solid black;
@@ -155,41 +143,44 @@
             width: 70%;
             margin-left: auto;
         }
-        .total-amount div{
+        .total-amount div {
             padding: 4px;
         }
-        .total-amount div:nth-child(1){
+        .total-amount div:nth-child(1) {
             border-right: 1.2px solid black;
+        }
+        .bank-details {
+            margin-top: 40px;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="contact-info-container">
-            <img src='{{logoUrl}}' alt="logo" class="logo">
+            <img src="{{logoUrl}}" alt="logo" class="logo">
             <div class="contact-info">
                 <strong>All Service Marine D.O.O.</strong><br>
                 OIB: 84034357097<br>
-            Mob.: +385 91 535-59-60<br>
-            Phone: +385 91 613-89-41<br>
+                Mob.: +385 91 535-59-60<br>
+                Phone: +385 91 613-89-41<br>
                 E-mail: info@a-s-m.yachts
             </div>
-            
         </div>
         <div class="header row-title">
             <div class="header-row">
                 <div class="header-item header-title">OFFER / PONUDA</div>
                 <div class="header-list">
                     <div class="header-item">Number/Broj: {{offerId}}</div>
-                    <div class="header-item">Date/Datum: {{createdAt}}</div> 
+                    <div class="header-item">Date/Datum: {{createdAt}}</div>
                 </div>
             </div>
             <div class="row">
                 <div class="header-row row2">
                     <div class="header-item item">Customer/Kupac: {{customerFullName}}</div>
-                    <div class="header-item item">Address/Adresa:</div> 
+                    <div class="header-item item">Address/Adresa:</div>
                 </div>
-            </div>  
+            </div>
             <div class="header-row row-3">
                 <div class="header-item right">Description/Opis:</div>
                 <div class="header-item full">Non Schedule Service / Usluga izvan rasporeda</div>
@@ -212,9 +203,7 @@
                 </div>
             </div>
 
-            <span class="header-table">
-                Products / Proizvodi
-            </span>
+            <span class="header-table">Products / Proizvodi</span>
             <table class="table">
                 <tr>
                     <th>No.</th>
@@ -231,11 +220,7 @@
                 <div>EUR {{totalPrice}}</div>
             </div>
 
-
-            <span class="header-table">
-                Provided Services / Pružene usluge: 
-            </span>
-
+            <span class="header-table">Provided Services / Pružene usluge:</span>
             <table class="table table-2">
                 <tr>
                     <th>No.</th>
@@ -246,19 +231,24 @@
                 </tr>
                 {{servicesTableRows}}
             </table>
-
             <div class="subtotal">
                 <div>SUBTOTAL / UKUPNO:</div>
                 <div>EUR {{totalPriceAllServices}}</div>
             </div>
-
-
             <div class="total-amount">
                 <div>TOTAL AMOUNT / SVEUKUPNI IZNOS:</div>
                 <div>EUR {{totalPriceAll}}</div>
             </div>
         </div>
-        
+        <div class="bank-details">
+            <strong>BANK DETAILS / BANKOVNI DETALJI:</strong><br>
+            Beneficiary / Korisnik: All Services MARINE d.o.o.<br>
+            Beneficiary Bank / Banka primatelj: ERSTE&STEIERMARKISCHE BANK d.d.<br>
+            IBAN: HR5124020061101131858<br>
+            Bank address / Adresa banke: JADRANSKA TRG 3a, 51000 RIJEKA, REPUBLIKA HRVATSKA<br>
+            SWIFT / BRZ: ESBCHR22<br>
+            <div style="text-align: center; margin-top: 20px;">V.Cherednichenko</div>
+        </div>
         {{imagesSection}}
         {{videosSection}}
     </div>

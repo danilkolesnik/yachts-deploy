@@ -22,6 +22,7 @@ import EditOfferModal from '@/component/modal/EditOfferModal';
 import ExcelJS from 'exceljs';
 import { ClipLoader } from 'react-spinners';
 import { downloadOfferPdf } from '@/utils/exportOfferPdf';
+import { downloadInvoicePdfByOffer, sendInvoiceEmailByOffer } from '@/utils/exportInvoicePdf';
 
 const OfferPage = () => {
     const router = useRouter();
@@ -41,7 +42,9 @@ const OfferPage = () => {
     const [createPartModalIsOpen, setCreatePartModalIsOpen] = useState(false);
     const [role, setRole] = useState(null);
     const [pdfExportLoading, setPdfExportLoading] = useState({});
+    const [invoicePdfLoading, setInvoicePdfLoading] = useState({});
     const [emailModalOpen, setEmailModalOpen] = useState(false);
+    const [emailKind, setEmailKind] = useState('offer');
     const [emailLoading, setEmailLoading] = useState(false);
     const [emailAddress, setEmailAddress] = useState('');
     const [selectedOfferId, setSelectedOfferId] = useState(null);
@@ -297,6 +300,28 @@ const OfferPage = () => {
                         {emailSendingLoading[row.id] ? '...' : 'Email'}
                     </button>
                     <button
+                        onClick={() => handleExportInvoicePdf(row)}
+                        disabled={invoicePdfLoading[row.id]}
+                        className={`px-3 py-1 text-white rounded flex items-center justify-center min-w-[72px] ${
+                            invoicePdfLoading[row.id]
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-purple-600 hover:bg-purple-800'
+                        }`}
+                    >
+                        {invoicePdfLoading[row.id] ? '...' : 'Inv.PDF'}
+                    </button>
+                    <button
+                        onClick={() => handleSendInvoiceEmail(row.id)}
+                        disabled={emailSendingLoading[row.id]}
+                        className={`px-3 py-1 text-white rounded flex items-center justify-center min-w-[72px] ${
+                            emailSendingLoading[row.id]
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-indigo-500 hover:bg-indigo-700'
+                        }`}
+                    >
+                        {emailSendingLoading[row.id] ? '...' : 'Inv.Email'}
+                    </button>
+                    <button
                         onClick={() => handlePrintOffer(row)}
                         className="px-3 py-1 text-white rounded bg-blue-500 hover:bg-blue-700 flex items-center justify-center min-w-[60px]"
                     >
@@ -466,6 +491,42 @@ const OfferPage = () => {
             ignoreRowClick: true,
             button: true.toString(),
         }] : []),
+        ...(role !== 'user' ? [{
+            name: '',
+            cell: row => (
+                <button
+                    onClick={() => handleExportInvoicePdf(row)}
+                    disabled={invoicePdfLoading[row.id]}
+                    className={`px-2 py-2 text-white rounded ${
+                        invoicePdfLoading[row.id]
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-purple-600 hover:bg-purple-800'
+                    }`}
+                >
+                    {invoicePdfLoading[row.id] ? 'Generating...' : 'Invoice PDF'}
+                </button>
+            ),
+            ignoreRowClick: true,
+            button: true.toString(),
+        }] : []),
+        ...(role !== 'user' ? [{
+            name: '',
+            cell: row => (
+                <button
+                    onClick={() => handleSendInvoiceEmail(row.id)}
+                    disabled={emailSendingLoading[row.id]}
+                    className={`px-2 py-2 text-white rounded ${
+                        emailSendingLoading[row.id]
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-indigo-500 hover:bg-indigo-700'
+                    }`}
+                >
+                    {emailSendingLoading[row.id] ? 'Sending...' : 'Send Invoice'}
+                </button>
+            ),
+            ignoreRowClick: true,
+            button: true.toString(),
+        }] : []),
     ];
 
     // Functions for history modal
@@ -581,11 +642,6 @@ const OfferPage = () => {
         } finally {
             setPdfExportLoading(prev => ({ ...prev, [row.id]: false }));
         }
-    };
-
-    const handleHistorySendEmail = async (offerId) => {
-        setSelectedOfferId(offerId);
-        setEmailModalOpen(true);
     };
 
     const handlePrintOffer = (row) => {
@@ -1303,9 +1359,33 @@ const OfferPage = () => {
         }
     };
 
+    const handleExportInvoicePdf = async (row) => {
+        setInvoicePdfLoading(prev => ({ ...prev, [row.id]: true }));
+        try {
+            await downloadInvoicePdfByOffer(row.id);
+            toast.success('Invoice PDF downloaded');
+        } catch (error) {
+            console.error('Error exporting invoice PDF:', error);
+            toast.error('Error exporting invoice PDF');
+        } finally {
+            setInvoicePdfLoading(prev => ({ ...prev, [row.id]: false }));
+        }
+    };
+
     const handleSendEmail = async (offerId) => {
+        setEmailKind('offer');
         setSelectedOfferId(offerId);
         setEmailModalOpen(true);
+    };
+
+    const handleSendInvoiceEmail = (offerId) => {
+        setEmailKind('invoice');
+        setSelectedOfferId(offerId);
+        setEmailModalOpen(true);
+    };
+
+    const handleHistorySendEmail = (offerId) => {
+        handleSendEmail(offerId);
     };
 
     const handleEmailSubmit = async () => {
@@ -1317,18 +1397,19 @@ const OfferPage = () => {
         setEmailLoading(true);
         setEmailSendingLoading(prev => ({ ...prev, [selectedOfferId]: true }));
         try {
-            const response = await axios.post(`${URL}/offer/${selectedOfferId}/send-email`, 
+            const response = emailKind === 'invoice'
+                ? await sendInvoiceEmailByOffer(selectedOfferId, emailAddress)
+                : (await axios.post(`${URL}/offer/${selectedOfferId}/send-email`, 
                 { email: emailAddress },
                 {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
                     }
-                }
-            );
+                })).data;
             
-            if (response.data.code === 200) {
-                alert('Email sent successfully!');
+            if (response.code === 200) {
+                alert(emailKind === 'invoice' ? 'Invoice email sent successfully!' : 'Email sent successfully!');
                 setEmailModalOpen(false);
                 setEmailAddress('');
                 setSelectedOfferId(null);
@@ -2388,7 +2469,7 @@ const OfferPage = () => {
                         </div>
                     </form>
                 </Modal>
-                <Modal isOpen={emailModalOpen} onClose={() => setEmailModalOpen(false)} title="Send Email">
+                <Modal isOpen={emailModalOpen} onClose={() => setEmailModalOpen(false)} title={emailKind === 'invoice' ? 'Send Invoice Email' : 'Send Email'}>
                     <div className="space-y-4">
                         <Input
                             label="Email Address"
