@@ -1,6 +1,7 @@
 import {
   ORDER_MEDIA_SECTIONS,
   normalizeOrderMediaFields,
+  type OrderMediaFieldSource,
 } from 'src/constants/order-media';
 import { getLogoUrl, resolveYachtFields } from './pdfFormatters';
 
@@ -71,7 +72,7 @@ function buildSectionMediaHtml(
   return `${imagesHtml}${videosHtml}`;
 }
 
-export function buildMediaSectionsFromOrder(order: Record<string, unknown>) {
+export function buildMediaSectionsFromOrder(order: OrderMediaFieldSource) {
   const normalized = normalizeOrderMediaFields(order);
   return ORDER_MEDIA_SECTIONS.map((section) => ({
     id: section.id,

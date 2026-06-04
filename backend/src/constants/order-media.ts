@@ -44,7 +44,16 @@ export function normalizeMediaUrlList(value: unknown): string[] {
   return [];
 }
 
-export function normalizeOrderMediaFields<T extends Record<string, unknown>>(
+export type OrderMediaFieldSource = {
+  processImageUrls?: unknown;
+  processVideoUrls?: unknown;
+  resultImageUrls?: unknown;
+  resultVideoUrls?: unknown;
+  tabImageUrls?: unknown;
+  tabVideoUrls?: unknown;
+};
+
+export function normalizeOrderMediaFields<T extends OrderMediaFieldSource>(
   order: T,
 ): T {
   return {
