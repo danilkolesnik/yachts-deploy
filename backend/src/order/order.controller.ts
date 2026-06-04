@@ -122,6 +122,32 @@ export class OrderController {
     return this.orderService.getOrderReport(orderId, req);
   }
 
+  @Get(':id/export-media-pdf')
+  @Permissions(PermissionsList.ORDERS_READ)
+  async exportMediaReportPdf(
+    @Param('id') orderId: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    try {
+      const payload = await this.orderService.getMediaReportPdfPayload(orderId, req);
+      if (payload.code !== 200) {
+        return res.status(payload.code === 404 ? 404 : 500).json({ message: payload.message });
+      }
+
+      const pdfBuffer = await createPdfBuffer(payload.data, 'media-report');
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="media-report-${orderId}.pdf"`,
+        'Content-Length': pdfBuffer.length,
+      });
+      res.end(pdfBuffer);
+    } catch (error) {
+      console.error('Error exporting media report PDF:', error);
+      res.status(500).json({ message: 'Error generating media report PDF' });
+    }
+  }
+
   @Get(':id/export-pdf')
   @Permissions(PermissionsList.ORDERS_READ)
   async exportWorkOrderPdf(

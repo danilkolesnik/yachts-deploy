@@ -40,6 +40,7 @@ import {
   normalizeMediaUrlList,
   normalizeOrderMediaFields,
 } from 'src/constants/order-media';
+import { buildMediaSectionsFromOrder } from 'src/utils/mediaReportExportPdf';
 
 @Injectable()
 export class OrderService {
@@ -119,7 +120,7 @@ export class OrderService {
     const r = String(requester.role || '').toLowerCase();
     if (r !== 'admin' && r !== 'manager') {
       throw new ForbiddenException(
-        'Удаление данных таймеров по заказу доступно только администратору или менеджеру',
+        'Clearing order timer data is allowed only for administrators or managers',
       );
     }
   }
@@ -507,7 +508,7 @@ export class OrderService {
     await this.orderAssignmentHistoryRepository.save(history);
   }
 
-  // =============== CRUD МЕТОДЫ ===============
+  // =============== CRUD ===============
   async create(data: CreateOrderDto, req?: Request) {
     if (!data.offerId || !data.userId || !data.customerId) {
       return { code: 400, message: 'Not all arguments' };
@@ -662,7 +663,7 @@ export class OrderService {
     }
   }
 
-  // =============== СТАТУСЫ ===============
+  // =============== STATUSES ===============
   async updateOrderStatus(orderId: string, newStatus: string, req?: Request) {
     try {
       if (req) {
@@ -697,7 +698,7 @@ export class OrderService {
         }
       } catch {}
 
-      // Обновляем статус и дату
+      // Update status and timestamps
       order.status = newStatus;
       if (newStatus === 'finished') {
         order.finishedAt = new Date();
@@ -709,14 +710,14 @@ export class OrderService {
 
       await this.logOrderStatusChange(orderId, previousStatus, newStatus, changedBy);
   
-      // ЛОГИКА ДЛЯ СТАТУСА FINISHED
+      // FINISHED status handling
       if (newStatus === 'finished') {
-        // 1. Меняем статус Offer на "finished"
+        // 1. Set offer status to "finished"
         offer.status = 'finished';
         offer.finishedAt = new Date();
         await this.offerRepository.save(offer);
   
-        // 2. Создаем запись в истории Offer
+        // 2. Create offer history entry
         const offerHistory = this.offerHistoryRepository.create({
           offerId: offer.id,
           userId: order.customerId,
@@ -729,11 +730,11 @@ export class OrderService {
         });
         await this.offerHistoryRepository.save(offerHistory);
   
-        // 3. Уведомление администрации
+        // 3. Notify administrators
         await this.notifyAdminsAboutFinishedOffer(offer, order);
       }
   
-      // ЛОГИКА ДЛЯ СТАТУСА COMPLETED
+      // COMPLETED status handling
       if (newStatus === 'completed') {
         const customer = await this.usersRepository.findOne({
           where: { id: order.customerId },
@@ -840,7 +841,7 @@ export class OrderService {
         return { code: 404, message: 'Offer not found' };
       }
   
-      // Проверяем, что Offer в статусе "finished"
+      // Ensure offer is in "finished" status
       if (offer.status !== 'finished') {
         return {
           code: 400,
@@ -848,13 +849,13 @@ export class OrderService {
         };
       }
   
-      // Меняем статус на "closed"
+      // Set status to "closed"
       offer.status = 'closed';
       offer.closedAt = new Date();
       offer.closedBy = userId;
       await this.offerRepository.save(offer);
   
-      // Создаем запись в истории
+      // Create history entry
       const offerHistory = this.offerHistoryRepository.create({
         offerId: offer.id,
         userId: userId,
@@ -880,8 +881,8 @@ export class OrderService {
     }
   }
 
-  // =============== ТАЙМЕРЫ ===============
-  /** Количество строк услуг в ЗН (order.services или снимок из offer.services). */
+  // =============== TIMERS ===============
+  /** Number of service lines on the work order (order.services or snapshot from offer.services). */
   private countOrderServiceLines(orderEntity: order, offer: offer | null): number {
     const o = orderEntity as any;
     if (Array.isArray(o?.services) && o.services.length > 0) {
@@ -1286,7 +1287,7 @@ export class OrderService {
     }
   }
 
-  // =============== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===============
+  // =============== HELPERS ===============
   private async notifyAdminsAboutFinishedOffer(offer: offer, order: order) {
     try {
       const admins = await this.usersRepository.find({
@@ -1318,7 +1319,7 @@ export class OrderService {
     }
   }
 
-  // =============== ПОЛУЧЕНИЕ OFFER С ФИЛЬТРАЦИЕЙ ===============
+  // =============== OFFERS WITH FILTER ===============
   async getOffersWithFilter(req: Request, status?: string) {
     const token = getBearerToken(req);
     
@@ -1332,7 +1333,7 @@ export class OrderService {
         whereCondition.status = status;
       }
 
-      // Для не-админов/не-менеджеров скрываем закрытые офферы
+      // Hide closed offers for non-admin/non-manager users
       if (userRole !== 'admin' && userRole !== 'manager') {
         if (status === 'closed') {
           return {
@@ -1341,7 +1342,7 @@ export class OrderService {
             data: []
           };
         }
-        // Если не указан статус или 'all' - показываем все кроме closed
+        // When status is omitted or 'all', show all except closed
         if (!status || status === 'all') {
           whereCondition.status = Not('closed');
         }
@@ -1355,7 +1356,7 @@ export class OrderService {
       return {
         code: 200,
         data: offers,
-        userRole, // для фронтенда
+        userRole, // for frontend
       };
     } catch (err) {
       return {
@@ -1529,10 +1530,16 @@ export class OrderService {
 
       timeline.sort((a, b) => String(a.at).localeCompare(String(b.at)));
 
+      const normalizedOrder = normalizeOrderMediaFields({
+        ...orderEntity,
+        offer,
+      });
+      const mediaSections = buildMediaSectionsFromOrder(normalizedOrder);
+
       return {
         code: 200,
         data: {
-          order: { ...orderEntity, offer },
+          order: normalizedOrder,
           createdByUser,
           statusHistory: enrichedStatus,
           assignmentHistory: enrichedAssignment,
@@ -1540,6 +1547,7 @@ export class OrderService {
           timerEvents: enrichedTimerEvents,
           clientMessages,
           timeline,
+          mediaSections,
           generatedAt: new Date().toISOString(),
         },
       };
@@ -1558,7 +1566,40 @@ export class OrderService {
     }
   }
 
-  // =============== ДРУГИЕ МЕТОДЫ (оставлены без изменений) ===============
+  // =============== OTHER METHODS ===============
+  async getMediaReportPdfPayload(orderId: string, req: Request) {
+    try {
+      const orderEntity = await this.assertCanAccessOrder(orderId, req);
+
+      const offer = await this.offerRepository.findOne({
+        where: { id: orderEntity.offerId },
+      });
+
+      if (!offer) {
+        return { code: 404, message: 'Offer not found for this order' };
+      }
+
+      const order = normalizeOrderMediaFields(orderEntity);
+
+      return {
+        code: 200,
+        data: { order, offer },
+      };
+    } catch (err) {
+      if (
+        err instanceof ForbiddenException ||
+        err instanceof NotFoundException ||
+        err instanceof UnauthorizedException
+      ) {
+        throw err;
+      }
+      return {
+        code: 500,
+        message: err instanceof Error ? err.message : 'Internal server error',
+      };
+    }
+  }
+
   async getWorkOrderPdfPayload(orderId: string, req: Request) {
     try {
       const requester = this.getRequesterFromReq(req);
@@ -1666,12 +1707,12 @@ export class OrderService {
     req: Request,
   ): Promise<any> {
     if (!file) {
-      throw new BadRequestException('Файл не загружен.');
+      throw new BadRequestException('No file uploaded.');
     }
 
     if (!isValidOrderMediaTab(tab)) {
       throw new BadRequestException(
-        'Неверный раздел медиа-отчёта (ожидается: process, result, tab).',
+        'Invalid media report section (expected: process, result, tab).',
       );
     }
 
@@ -1715,7 +1756,7 @@ export class OrderService {
       }
     } else {
       throw new BadRequestException(
-        'Неверный раздел медиа-отчёта (ожидается: process, result, tab).',
+        'Invalid media report section (expected: process, result, tab).',
       );
     }
 
@@ -1731,7 +1772,7 @@ export class OrderService {
     await this.fileRepository.save(newFile);
 
     return { 
-      message: 'Файл успешно загружен.', 
+      message: 'File uploaded successfully.', 
       code: 200, 
       file: { ...newFile, url: fileUrl }
     };
@@ -1745,7 +1786,7 @@ export class OrderService {
   ): Promise<{ message: string; code: number }> {
     if (!isValidOrderMediaTab(tab)) {
       throw new BadRequestException(
-        'Неверный раздел медиа-отчёта (ожидается: process, result, tab).',
+        'Invalid media report section (expected: process, result, tab).',
       );
     }
 
@@ -1760,12 +1801,12 @@ export class OrderService {
 
     const filename = fileUrl.split('/').pop();
     if (!filename) {
-      return { message: 'Некорректный URL.', code: 400 };
+      return { message: 'Invalid file URL.', code: 400 };
     }
 
     const file = await this.fileRepository.findOne({ where: { filename, offerId: order.offerId } });
     if (!file) {
-      return { message: 'Файл не найден.', code: 404 };
+      return { message: 'File not found.', code: 404 };
     }
 
     await unlink(file.path);
@@ -1783,7 +1824,7 @@ export class OrderService {
     }
 
     await this.orderRepository.save(order);
-    return { message: 'Файл успешно удалён.', code: 200 };
+    return { message: 'File deleted successfully.', code: 200 };
   }
 
   async getTimerStatus(

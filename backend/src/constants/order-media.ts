@@ -1,5 +1,30 @@
 export const ORDER_MEDIA_TABS = ['process', 'result', 'tab'] as const;
 
+/** UI / PDF section labels mapped to order entity fields */
+export const ORDER_MEDIA_SECTIONS = [
+  {
+    id: 'before',
+    label: 'Before',
+    apiTab: 'process',
+    imageKey: 'processImageUrls',
+    videoKey: 'processVideoUrls',
+  },
+  {
+    id: 'in-progress',
+    label: 'In Progress',
+    apiTab: 'result',
+    imageKey: 'resultImageUrls',
+    videoKey: 'resultVideoUrls',
+  },
+  {
+    id: 'after',
+    label: 'Result',
+    apiTab: 'tab',
+    imageKey: 'tabImageUrls',
+    videoKey: 'tabVideoUrls',
+  },
+] as const;
+
 export type OrderMediaTab = (typeof ORDER_MEDIA_TABS)[number];
 
 export function isValidOrderMediaTab(tab: string): tab is OrderMediaTab {

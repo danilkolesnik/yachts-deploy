@@ -23,6 +23,7 @@ import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
 import ReactSelect from 'react-select';
 import { downloadWorkOrderPdf } from '@/utils/exportWorkOrderPdf';
+import { downloadMediaReportPdf } from '@/utils/exportMediaReportPdf';
 import { uploadOrderMedia, getUploadErrorMessage } from '@/utils/uploadMedia';
 import { ORDER_MEDIA_SECTIONS, normalizeOrderMedia } from '@/constants/orderMediaSections';
 
@@ -34,6 +35,7 @@ const OrderDetail = ({ params }) => {
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadFeedback, setUploadFeedback] = useState(null);
     const [workOrderPdfLoading, setWorkOrderPdfLoading] = useState(false);
+    const [mediaReportPdfLoading, setMediaReportPdfLoading] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const permissions = useAppSelector((s) => s.userData?.permissions || []);
     const reduxRole = useAppSelector((s) => s.userData?.role) || (typeof window !== 'undefined' ? localStorage.getItem('role') : '');
@@ -420,7 +422,7 @@ const OrderDetail = ({ params }) => {
             );
             setSelectedFile(null);
             setUploadSectionId(null);
-            setUploadFeedback({ type: 'success', message: 'Файл загружен.' });
+            setUploadFeedback({ type: 'success', message: 'File uploaded successfully.' });
             await refreshOrderData();
         } catch (error) {
             console.error('Error uploading file:', error);
@@ -497,7 +499,7 @@ const OrderDetail = ({ params }) => {
         return (
             <div className="mt-8 border-t border-gray-200 pt-6">
                 <h3 className="text-lg font-semibold mb-3 text-black">
-                    Загрузить в «{section.label}»
+                    {`Upload to "${section.label}"`}
                 </h3>
                 <input
                     type="file"
@@ -518,9 +520,9 @@ const OrderDetail = ({ params }) => {
                 >
                     {uploading && uploadSectionId === section.id
                         ? uploadProgress > 0
-                            ? `Загрузка… ${uploadProgress}%`
-                            : 'Загрузка…'
-                        : 'Загрузить'}
+                            ? `Uploading… ${uploadProgress}%`
+                            : 'Uploading…'
+                        : 'Upload'}
                 </button>
                 {isActiveUpload && selectedFile && !uploading && (
                     <p className="mt-2 text-sm text-gray-600">{selectedFile.name}</p>
@@ -548,7 +550,7 @@ const OrderDetail = ({ params }) => {
             <div className="text-black">
                 {images.length > 0 ? (
                     <div className="mt-6">
-                        <h3 className="text-xl font-bold mb-4 text-black">Фото</h3>
+                        <h3 className="text-xl font-bold mb-4 text-black">Photos</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                             {images.map((url, index) => (
                                 <div
@@ -581,11 +583,11 @@ const OrderDetail = ({ params }) => {
                         </div>
                     </div>
                 ) : (
-                    <p className="mt-6 text-sm text-gray-500">Нет фото в этом разделе.</p>
+                    <p className="mt-6 text-sm text-gray-500">No photos in this section.</p>
                 )}
                 {videos.length > 0 ? (
                     <div className="mt-10">
-                        <h3 className="text-xl font-bold mb-4 text-black">Видео</h3>
+                        <h3 className="text-xl font-bold mb-4 text-black">Videos</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                             {videos.map((url, index) => (
                                 <div key={`${section.id}-vid-${url}-${index}`} className="relative group">
@@ -611,7 +613,7 @@ const OrderDetail = ({ params }) => {
                         </div>
                     </div>
                 ) : (
-                    <p className="mt-4 text-sm text-gray-500">Нет видео в этом разделе.</p>
+                    <p className="mt-4 text-sm text-gray-500">No videos in this section.</p>
                 )}
                 {renderSectionUpload(section)}
             </div>
@@ -698,6 +700,19 @@ const OrderDetail = ({ params }) => {
         }
     };
 
+    const handleExportMediaReportPdf = async () => {
+        if (!id) return;
+        setMediaReportPdfLoading(true);
+        try {
+            await downloadMediaReportPdf(id);
+        } catch (error) {
+            console.error('Error exporting media report PDF:', error);
+            alert('Error exporting media report PDF');
+        } finally {
+            setMediaReportPdfLoading(false);
+        }
+    };
+
     if (!order) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -730,6 +745,16 @@ const OrderDetail = ({ params }) => {
                                 className="text-sm px-3 py-1.5 rounded border border-purple-300 bg-purple-50 hover:bg-purple-100 text-black disabled:opacity-50"
                             >
                                 {workOrderPdfLoading ? 'Generating PDF...' : 'Work order PDF'}
+                            </button>
+                        )}
+                        {can(permissions, PermissionsList.ORDERS_READ) && (
+                            <button
+                                type="button"
+                                onClick={handleExportMediaReportPdf}
+                                disabled={mediaReportPdfLoading}
+                                className="text-sm px-3 py-1.5 rounded border border-teal-300 bg-teal-50 hover:bg-teal-100 text-black disabled:opacity-50"
+                            >
+                                {mediaReportPdfLoading ? 'Generating PDF...' : 'Media report PDF'}
                             </button>
                         )}
                         <span className="text-sm text-gray-500">
@@ -1216,7 +1241,7 @@ const OrderDetail = ({ params }) => {
                         </div>
                     </div>
                 )}
-                <h2 className="text-2xl font-bold mb-3 text-black">Медиа-отчёт</h2>
+                <h2 className="text-2xl font-bold mb-3 text-black">Media report</h2>
                 <Tab.Group
                     selectedIndex={selectedMediaTabIndex}
                     onChange={(index) => {

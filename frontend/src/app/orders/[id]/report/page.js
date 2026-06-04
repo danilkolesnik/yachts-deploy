@@ -4,6 +4,7 @@ import React, { use, useEffect, useState } from 'react';
 import axios from 'axios';
 import { URL } from '@/utils/constants';
 import Loader from '@/ui/loader';
+import { downloadMediaReportPdf } from '@/utils/exportMediaReportPdf';
 
 const formatDt = (iso) => (iso ? new Date(iso).toLocaleString() : '—');
 
@@ -34,6 +35,7 @@ export default function OrderReportPage({ params }) {
   const [report, setReport] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [mediaPdfLoading, setMediaPdfLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -71,8 +73,29 @@ export default function OrderReportPage({ params }) {
     );
   }
 
-  const { order, createdByUser, timeline, statusHistory, assignmentHistory, timerSessions, timerEvents } =
-    report;
+  const {
+    order,
+    createdByUser,
+    timeline,
+    statusHistory,
+    assignmentHistory,
+    timerSessions,
+    timerEvents,
+    mediaSections,
+  } = report;
+
+  const handleDownloadMediaPdf = async () => {
+    if (!id) return;
+    setMediaPdfLoading(true);
+    try {
+      await downloadMediaReportPdf(id);
+    } catch (e) {
+      console.error(e);
+      alert('Error exporting media report PDF');
+    } finally {
+      setMediaPdfLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white text-black print:bg-white">
@@ -88,14 +111,24 @@ export default function OrderReportPage({ params }) {
       `}</style>
 
       <div className="max-w-4xl mx-auto p-8 space-y-8">
-        <div className="flex justify-between items-start gap-4 no-print">
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-          >
-            Print / Save as PDF
-          </button>
+        <div className="flex flex-wrap justify-between items-start gap-4 no-print">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+            >
+              Print / Save as PDF
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadMediaPdf}
+              disabled={mediaPdfLoading}
+              className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 text-sm disabled:opacity-50"
+            >
+              {mediaPdfLoading ? 'Generating…' : 'Media report PDF'}
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => window.close()}
@@ -137,6 +170,54 @@ export default function OrderReportPage({ params }) {
               </tr>
             </tbody>
           </table>
+        </section>
+
+        <section>
+          <h2 className="text-lg font-semibold mb-3">Media report</h2>
+          {(mediaSections || []).length === 0 ? (
+            <p className="text-sm text-gray-600">No media sections available.</p>
+          ) : (
+            <div className="space-y-8">
+              {(mediaSections || []).map((section) => (
+                <div key={section.id} className="border rounded p-4">
+                  <h3 className="font-semibold text-base mb-3">{section.label}</h3>
+                  {(section.images || []).length > 0 ? (
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-600 mb-2">Photos</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {(section.images || []).map((url, idx) => (
+                          <img
+                            key={`${section.id}-img-${idx}`}
+                            src={url}
+                            alt={`${section.label} ${idx + 1}`}
+                            className="w-full h-auto border rounded"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 mb-2">No photos in this section.</p>
+                  )}
+                  {(section.videos || []).length > 0 ? (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-2">Videos</p>
+                      <ul className="text-sm space-y-1 break-all">
+                        {(section.videos || []).map((url, idx) => (
+                          <li key={`${section.id}-vid-${idx}`}>
+                            <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                              Video {idx + 1}: {url}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No videos in this section.</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         <section>

@@ -5,6 +5,7 @@ import { getTranslations } from './translations';
 import { buildOfferExportHtml } from './offerExportPdf';
 import { buildInvoiceExportHtml } from './invoiceExportPdf';
 import { buildWorkOrderExportHtml } from './workOrderExportPdf';
+import { buildMediaReportExportHtml } from './mediaReportExportPdf';
 
 async function renderHtmlToPdf(html: string): Promise<Buffer> {
   const browser = await puppeteer.launch({
@@ -34,6 +35,10 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
 
     if (normalizedType === 'work-order' || normalizedType === 'work-order-export') {
       return renderHtmlToPdf(buildWorkOrderExportHtml(data));
+    }
+
+    if (normalizedType === 'media-report' || normalizedType === 'media-report-export') {
+      return renderHtmlToPdf(buildMediaReportExportHtml(data));
     }
 
     const templateName = normalizedType;

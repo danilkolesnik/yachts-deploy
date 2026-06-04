@@ -2,21 +2,21 @@
 export const ORDER_MEDIA_SECTIONS = [
   {
     id: 'before',
-    label: 'Было',
+    label: 'Before',
     apiTab: 'process',
     imageKey: 'processImageUrls',
     videoKey: 'processVideoUrls',
   },
   {
     id: 'in-progress',
-    label: 'Процесс',
+    label: 'In Progress',
     apiTab: 'result',
     imageKey: 'resultImageUrls',
     videoKey: 'resultVideoUrls',
   },
   {
     id: 'after',
-    label: 'Результат',
+    label: 'Result',
     apiTab: 'tab',
     imageKey: 'tabImageUrls',
     videoKey: 'tabVideoUrls',
