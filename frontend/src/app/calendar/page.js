@@ -5,9 +5,9 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import Link from 'next/link';
-import { Select, Option } from '@material-tailwind/react';
 import Header from '@/component/header';
 import Loader from '@/ui/loader';
+import FilterSelect from '@/ui/FilterSelect';
 import { URL } from '@/utils/constants';
 
 const TaskCalendar = dynamic(() => import('@/component/calendar/TaskCalendar'), {
@@ -241,6 +241,69 @@ const CalendarPage = () => {
         return [...fromOrders.values()];
     }, [workers, orders]);
 
+    const entityOptions = useMemo(
+        () => [
+            { value: 'all', label: 'All' },
+            { value: 'offers', label: 'Offers' },
+            { value: 'orders', label: 'Work orders' },
+        ],
+        [],
+    );
+
+    const statusSelectOptions = useMemo(
+        () => [
+            { value: '', label: 'All statuses' },
+            ...statusOptions.map((status) => ({ value: status, label: status })),
+        ],
+        [statusOptions],
+    );
+
+    const clientSelectOptions = useMemo(
+        () => [
+            { value: '', label: 'All clients' },
+            ...filterOptions.clients.map((client) => ({ value: client, label: client })),
+        ],
+        [filterOptions.clients],
+    );
+
+    const yachtSelectOptions = useMemo(
+        () => [
+            { value: '', label: 'All yachts' },
+            ...filterOptions.yachts.map((yacht) => ({ value: yacht, label: yacht })),
+        ],
+        [filterOptions.yachts],
+    );
+
+    const employeeSelectOptions = useMemo(() => {
+        const options = [];
+        if (!isFieldWorkerRole(role)) {
+            options.push({ value: '', label: 'All employees' });
+        }
+        if (isFieldWorkerRole(role) && userId) {
+            options.push({ value: String(userId), label: 'My tasks' });
+        }
+        if (canFilterByEmployee) {
+            for (const worker of workerOptions) {
+                const id = String(worker.id);
+                if (!options.some((o) => o.value === id)) {
+                    options.push({ value: id, label: worker.fullName });
+                }
+            }
+        }
+        return options;
+    }, [role, userId, canFilterByEmployee, workerOptions]);
+
+    useEffect(() => {
+        if (!employeeSelectOptions.length) return;
+        const isValid = employeeSelectOptions.some((o) => o.value === filters.employee);
+        if (!isValid) {
+            setFilters((prev) => ({
+                ...prev,
+                employee: employeeSelectOptions[0].value,
+            }));
+        }
+    }, [employeeSelectOptions, filters.employee]);
+
     const selectedDayTasks = tasksByDate[selectedDate] || [];
 
     const handleFilterChange = (name, value) => {
@@ -286,92 +349,45 @@ const CalendarPage = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
                             {canReadOffers && canReadOrders && (
-                                <Select
+                                <FilterSelect
                                     label="Type"
                                     value={filters.entity}
                                     onChange={(value) => handleFilterChange('entity', value)}
-                                    className="text-black"
-                                    labelProps={{ className: 'text-black' }}
-                                >
-                                    <Option value="all" className="text-black">All</Option>
-                                    <Option value="offers" className="text-black">Offers</Option>
-                                    <Option value="orders" className="text-black">Work orders</Option>
-                                </Select>
+                                    options={entityOptions}
+                                />
                             )}
 
-                            <Select
+                            <FilterSelect
                                 label="Status"
                                 value={filters.status}
                                 onChange={(value) => handleFilterChange('status', value)}
-                                className="text-black"
-                                labelProps={{ className: 'text-black' }}
-                            >
-                                <Option value="" className="text-black">All statuses</Option>
-                                {statusOptions.map((status) => (
-                                    <Option key={status} value={status} className="text-black">
-                                        {status}
-                                    </Option>
-                                ))}
-                            </Select>
+                                options={statusSelectOptions}
+                            />
 
-                            <Select
+                            <FilterSelect
                                 label="Client"
                                 value={filters.client}
                                 onChange={(value) => handleFilterChange('client', value)}
-                                className="text-black"
-                                labelProps={{ className: 'text-black' }}
-                            >
-                                <Option value="" className="text-black">All clients</Option>
-                                {filterOptions.clients.map((client) => (
-                                    <Option key={client} value={client} className="text-black">
-                                        {client}
-                                    </Option>
-                                ))}
-                            </Select>
+                                options={clientSelectOptions}
+                            />
 
-                            <Select
+                            <FilterSelect
                                 label="Yacht"
                                 value={filters.yacht}
                                 onChange={(value) => handleFilterChange('yacht', value)}
-                                className="text-black"
-                                labelProps={{ className: 'text-black' }}
-                            >
-                                <Option value="" className="text-black">All yachts</Option>
-                                {filterOptions.yachts.map((yacht) => (
-                                    <Option key={yacht} value={yacht} className="text-black">
-                                        {yacht}
-                                    </Option>
-                                ))}
-                            </Select>
+                                options={yachtSelectOptions}
+                            />
 
-                            {canReadOrders && (canFilterByEmployee || isFieldWorkerRole(role)) && (
-                                <Select
+                            {canReadOrders &&
+                                (canFilterByEmployee || isFieldWorkerRole(role)) &&
+                                employeeSelectOptions.length > 0 && (
+                                <FilterSelect
                                     label="Employee"
                                     value={filters.employee}
                                     onChange={(value) => handleFilterChange('employee', value)}
-                                    className="text-black"
-                                    labelProps={{ className: 'text-black' }}
+                                    options={employeeSelectOptions}
                                     disabled={isFieldWorkerRole(role) && !canFilterByEmployee}
-                                >
-                                    {!isFieldWorkerRole(role) && (
-                                        <Option value="" className="text-black">All employees</Option>
-                                    )}
-                                    {isFieldWorkerRole(role) && userId && (
-                                        <Option value={String(userId)} className="text-black">
-                                            My tasks
-                                        </Option>
-                                    )}
-                                    {canFilterByEmployee &&
-                                        workerOptions.map((worker) => (
-                                            <Option
-                                                key={worker.id}
-                                                value={String(worker.id)}
-                                                className="text-black"
-                                            >
-                                                {worker.fullName}
-                                            </Option>
-                                        ))}
-                                </Select>
+                                />
                             )}
 
                             <button

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale';
@@ -24,40 +24,14 @@ const TaskCalendar = ({
     onNavigate,
     onSelectDate,
 }) => {
-    const { components, eventPropGetter } = useMemo(
-        () => ({
-            eventPropGetter: (event) => ({
-                className:
-                    event.resource?.type === 'offer'
-                        ? 'rbc-event-offer'
-                        : 'rbc-event-order',
-            }),
-            components: {
-                month: {
-                    dateHeader: ({ label, date }) => {
-                        const dateKey = toDateKey(date);
-                        const count = events.filter(
-                            (e) => toDateKey(e.start) === dateKey,
-                        ).length;
-                        return (
-                            <button
-                                type="button"
-                                className="rbc-button-link"
-                                onClick={() => onSelectDate(dateKey)}
-                            >
-                                <span>{label}</span>
-                                {count > 0 && (
-                                    <span className="ml-1 text-[10px] text-gray-500">
-                                        ({count})
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    },
-                },
-            },
+    const eventPropGetter = useCallback(
+        (event) => ({
+            className:
+                event.resource?.type === 'offer'
+                    ? 'rbc-event-offer'
+                    : 'rbc-event-order',
         }),
-        [events, onSelectDate],
+        [],
     );
 
     return (
@@ -76,7 +50,6 @@ const TaskCalendar = ({
                 onSelectSlot={({ start }) => onSelectDate(toDateKey(start))}
                 onSelectEvent={(event) => onSelectDate(toDateKey(event.start))}
                 eventPropGetter={eventPropGetter}
-                components={components}
                 style={{ height: 680 }}
                 messages={{
                     next: 'Next',
