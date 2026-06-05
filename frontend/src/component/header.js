@@ -100,7 +100,7 @@ function NavList({ isOpen, setIsOpen }) {
   const showStaffSection = can(permissions, PermissionsList.USERS_READ);
 
   return (
-    <List className={`flex items-center ${isMobile ? 'flex-col' : 'flex-row'} w-full p-0`}>
+    <List className={`flex items-center ${isMobile ? 'flex-col' : 'flex-row'} w-full p-0 justify-end`}>
       {showOffers && (
       <Link href="/offers" onClick={handleClick} className="font-bold">
         <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium`}>
