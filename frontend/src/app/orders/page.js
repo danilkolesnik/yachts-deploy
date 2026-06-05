@@ -758,13 +758,15 @@ const OrderPage = () => {
                                     <Button className="w-full sm:w-auto bg-[#282828] text-white" onClick={exportToExcel}>
                                         Export to Excel
                                     </Button>
-                                <Button onClick={() => router.push('/archive?entity=orders')} color="white" className="w-full md:w-auto border-[2px] border-[#D33] text-[#000]">
-                                    <span>Archive &amp; History</span>
-                                </Button>
                                 <Button onClick={() => router.push('/orders/history')} color="white" className="w-full md:w-auto border border-gray-400 text-[#000]">
                                     <span>Timer history</span>
                                 </Button>
                                     </>
+                                )}
+                                {can(permissions, PermissionsList.ARCHIVE_READ) && (
+                                <Button onClick={() => router.push('/archive?entity=orders')} color="white" className="w-full md:w-auto border-[2px] border-[#D33] text-[#000]">
+                                    <span>Archive &amp; History</span>
+                                </Button>
                                 )}
                             </div>
                         </div>

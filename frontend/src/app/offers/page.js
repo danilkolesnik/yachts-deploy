@@ -1834,12 +1834,14 @@ const OfferPage = () => {
                                 >
                                     Create
                                 </Button>
+                                {can(permissions, PermissionsList.ARCHIVE_READ) && (
                                 <Button 
                                     onClick={() => router.push('/archive')} 
                                     className="bg-[white] w-full sm:w-auto border-2 border-[#dd3333] text-[#000] font-medium px-4 py-2 rounded-md transition-colors duration-200"
                                 >
                                     Archive &amp; History
                                 </Button>
+                                )}
                                 <Button 
                                     onClick={handleConfirmedOffersClick} 
                                     className="w-full sm:w-auto bg-[#3e4a66] hover:bg-[#2d3748] text-white font-medium px-4 py-2 rounded-md transition-colors duration-200"

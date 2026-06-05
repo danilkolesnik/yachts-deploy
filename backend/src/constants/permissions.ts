@@ -1,5 +1,9 @@
 export const PermissionsList = {
   OFFERS_READ: 'offers.read',
+  /** Calendar tab: active offers / work orders by date */
+  CALENDAR_READ: 'calendar.read',
+  /** Archive tab: completed, cancelled, archived records and change history */
+  ARCHIVE_READ: 'archive.read',
 
   // Orders
   ORDERS_READ: 'orders.read',

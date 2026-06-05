@@ -8,6 +8,8 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
   admin: ['*'],
   manager: [
     PermissionsList.OFFERS_READ,
+    PermissionsList.CALENDAR_READ,
+    PermissionsList.ARCHIVE_READ,
     PermissionsList.ORDERS_READ,
     PermissionsList.ORDERS_CREATE,
     PermissionsList.ORDERS_UPDATE,
@@ -31,6 +33,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     PermissionsList.USERS_AUDIT_READ,
   ],
   mechanic: [
+    PermissionsList.CALENDAR_READ,
     PermissionsList.ORDERS_READ,
     PermissionsList.ORDERS_UPDATE,
     PermissionsList.ORDERS_MATERIALS_ADD,
@@ -43,6 +46,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
     PermissionsList.ORDERS_TIMERS_HISTORY_READ,
   ],
   electrician: [
+    PermissionsList.CALENDAR_READ,
     PermissionsList.ORDERS_READ,
     PermissionsList.ORDERS_UPDATE,
     PermissionsList.ORDERS_MATERIALS_ADD,
@@ -56,6 +60,8 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
   ],
   user: [
     PermissionsList.OFFERS_READ,
+    PermissionsList.CALENDAR_READ,
+    PermissionsList.ARCHIVE_READ,
     PermissionsList.ORDERS_READ,
     PermissionsList.SELF_OFFERS_READ,
     PermissionsList.SELF_ORDERS_READ,

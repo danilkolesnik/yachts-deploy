@@ -26,6 +26,8 @@ const CLIENT_PROFILE_PERMISSION_OPTIONS = [
 
 const PROFILE_PERMISSION_OPTIONS = [
     { code: PermissionsList.OFFERS_READ, label: 'Offers: view' },
+    { code: PermissionsList.CALENDAR_READ, label: 'Calendar: view active offers & orders' },
+    { code: PermissionsList.ARCHIVE_READ, label: 'Archive: completed, cancelled, history' },
     { code: PermissionsList.ORDERS_READ, label: 'Orders: view' },
     // Note: Orders are created from confirmed offers; there is no standalone "create order" UI in the admin panel.
     // Keep permission codes in backend, but do not expose unused ones in UI to avoid confusion.

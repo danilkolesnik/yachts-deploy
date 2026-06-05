@@ -52,6 +52,7 @@ const ArchivePageContent = () => {
     const [loading, setLoading] = useState(true);
     const [searchValue, setSearchValue] = useState('');
 
+    const canAccessArchive = can(permissions, PermissionsList.ARCHIVE_READ);
     const canReadOffers = can(permissions, PermissionsList.OFFERS_READ);
     const canReadOrders = can(permissions, PermissionsList.ORDERS_READ);
 
@@ -61,12 +62,21 @@ const ArchivePageContent = () => {
             router.replace('/client/orders');
             return;
         }
+        if (!canAccessArchive) {
+            const landing =
+                can(permissions, PermissionsList.OFFERS_READ) ? '/offers'
+                : can(permissions, PermissionsList.ORDERS_READ) ? '/orders'
+                : can(permissions, PermissionsList.USERS_READ) ? '/yachts'
+                : '/login';
+            router.replace(landing);
+            return;
+        }
         if (!canReadOffers && !canReadOrders) {
             const landing =
                 can(permissions, PermissionsList.USERS_READ) ? '/yachts' : '/login';
             router.replace(landing);
         }
-    }, [session, role, permissions, router, canReadOffers, canReadOrders]);
+    }, [session, role, permissions, router, canAccessArchive, canReadOffers, canReadOrders]);
 
     useEffect(() => {
         const tab = ARCHIVE_TABS.some((t) => t.id === tabParam) ? tabParam : 'completed';
@@ -145,10 +155,10 @@ const ArchivePageContent = () => {
     }, [canReadOffers, canReadOrders]);
 
     useEffect(() => {
-        if (session === true && (canReadOffers || canReadOrders)) {
+        if (session === true && canAccessArchive && (canReadOffers || canReadOrders)) {
             fetchData();
         }
-    }, [session, canReadOffers, canReadOrders, fetchData]);
+    }, [session, canAccessArchive, canReadOffers, canReadOrders, fetchData]);
 
     useEffect(() => {
         if (!canReadOffers && canReadOrders && activeEntity === 'offers') {

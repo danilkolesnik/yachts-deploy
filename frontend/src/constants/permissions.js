@@ -1,6 +1,8 @@
 /** Mirrors backend `src/constants/permissions.ts` — used for UI gating. */
 export const PermissionsList = {
   OFFERS_READ: 'offers.read',
+  CALENDAR_READ: 'calendar.read',
+  ARCHIVE_READ: 'archive.read',
   ORDERS_READ: 'orders.read',
   ORDERS_CREATE: 'orders.create',
   ORDERS_UPDATE: 'orders.update',

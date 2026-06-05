@@ -99,6 +99,7 @@ const CalendarPage = () => {
         useAppSelector((s) => s.userData?.role) ||
         (typeof window !== 'undefined' ? localStorage.getItem('role') : '');
 
+    const canAccessCalendar = can(permissions, PermissionsList.CALENDAR_READ);
     const canReadOffers = can(permissions, PermissionsList.OFFERS_READ);
     const canReadOrders = can(permissions, PermissionsList.ORDERS_READ);
     const canFilterByEmployee =
@@ -134,11 +135,20 @@ const CalendarPage = () => {
             router.replace('/client/orders');
             return;
         }
+        if (!canAccessCalendar) {
+            const landing =
+                can(permissions, PermissionsList.OFFERS_READ) ? '/offers'
+                : can(permissions, PermissionsList.ORDERS_READ) ? '/orders'
+                : can(permissions, PermissionsList.USERS_READ) ? '/yachts'
+                : '/login';
+            router.replace(landing);
+            return;
+        }
         if (!canReadOffers && !canReadOrders) {
             const landing = can(permissions, PermissionsList.USERS_READ) ? '/yachts' : '/login';
             router.replace(landing);
         }
-    }, [session, role, permissions, router, canReadOffers, canReadOrders]);
+    }, [session, role, permissions, router, canAccessCalendar, canReadOffers, canReadOrders]);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -184,10 +194,10 @@ const CalendarPage = () => {
     }, [canReadOffers, canReadOrders, canFilterByEmployee]);
 
     useEffect(() => {
-        if (session === true && (canReadOffers || canReadOrders)) {
+        if (session === true && canAccessCalendar && (canReadOffers || canReadOrders)) {
             fetchData();
         }
-    }, [session, canReadOffers, canReadOrders, fetchData]);
+    }, [session, canAccessCalendar, canReadOffers, canReadOrders, fetchData]);
 
     useEffect(() => {
         if (isFieldWorkerRole(role) && userId && !filters.employee) {
