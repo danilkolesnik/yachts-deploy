@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import DataTable from 'react-data-table-component';
@@ -30,7 +30,7 @@ const StatusBadge = ({ status }) => (
     </span>
 );
 
-const ArchivePage = () => {
+const ArchivePageContent = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const session = useAppSelector((s) => s.userData?.session);
@@ -152,12 +152,13 @@ const ArchivePage = () => {
 
     useEffect(() => {
         if (!canReadOffers && canReadOrders && activeEntity === 'offers') {
-            handleEntityChange('orders');
+            setActiveEntity('orders');
+            updateUrl(activeTab, 'orders');
+        } else if (canReadOffers && !canReadOrders && activeEntity === 'orders') {
+            setActiveEntity('offers');
+            updateUrl(activeTab, 'offers');
         }
-        if (canReadOffers && !canReadOrders && activeEntity === 'orders') {
-            handleEntityChange('offers');
-        }
-    }, [canReadOffers, canReadOrders, activeEntity]);
+    }, [canReadOffers, canReadOrders, activeEntity, activeTab, updateUrl]);
 
     const filteredOffers = useMemo(() => {
         const search = searchValue.trim().toLowerCase();
@@ -472,5 +473,17 @@ const ArchivePage = () => {
         </div>
     );
 };
+
+const ArchivePage = () => (
+    <Suspense
+        fallback={
+            <div className="flex justify-center items-center min-h-screen">
+                <Loader loading />
+            </div>
+        }
+    >
+        <ArchivePageContent />
+    </Suspense>
+);
 
 export default ArchivePage;
