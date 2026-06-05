@@ -49,10 +49,10 @@ export class InvoiceController {
   @Post('by-offer/:offerId/send-email')
   async sendEmailByOffer(
     @Param('offerId') offerId: string,
-    @Body() body: { email: string },
+    @Body() body: { email?: string; useCustomerEmail?: boolean },
   ) {
     try {
-      return await this.invoiceService.sendInvoiceEmailByOffer(offerId, body.email);
+      return await this.invoiceService.sendInvoiceEmailByOffer(offerId, body);
     } catch (error) {
       console.error('Error sending invoice email:', error);
       return { code: 500, message: 'Error sending invoice email' };

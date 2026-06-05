@@ -10,6 +10,7 @@ import { users } from 'src/auth/entities/users.entity';
 import { warehouse } from 'src/warehouse/entities/warehouse.entity';
 import { OfferHistory } from './entities/offer-history.entity';
 import { isEqual } from 'lodash';
+import { resolveOfferEmailRecipient } from 'src/utils/emailRecipient';
 
 import getBearerToken from 'src/methods/getBearerToken';
 import { JwtPayload } from 'jsonwebtoken';
@@ -27,6 +28,49 @@ export class OfferService {
     @InjectRepository(OfferHistory)
     private readonly offerHistoryRepository: Repository<OfferHistory>,
   ) {}
+
+  private async enrichOfferWithCustomerEmail<T extends offer | null>(offerData: T) {
+    if (!offerData) return offerData;
+    if (!offerData.customerId) {
+      return { ...offerData, customerEmail: '' };
+    }
+    const customer = await this.usersRepository.findOne({
+      where: { id: offerData.customerId },
+    });
+    return {
+      ...offerData,
+      customerEmail: customer?.email?.trim() || '',
+    };
+  }
+
+  private async enrichOffersWithCustomerEmail(offersList: offer[]) {
+    const customerIds = [
+      ...new Set(offersList.map((o) => o.customerId).filter(Boolean)),
+    ];
+    const customers =
+      customerIds.length > 0
+        ? await this.usersRepository.find({ where: { id: In(customerIds) } })
+        : [];
+    const emailByCustomerId = new Map(
+      customers.map((c) => [c.id, c.email?.trim() || '']),
+    );
+    return offersList.map((o) => ({
+      ...o,
+      customerEmail: emailByCustomerId.get(o.customerId) || '',
+    }));
+  }
+
+  async resolveSendEmailRecipient(
+    offerId: string,
+    body: { email?: string; useCustomerEmail?: boolean },
+  ) {
+    return resolveOfferEmailRecipient(
+      this.offerRepository,
+      this.usersRepository,
+      offerId,
+      body,
+    );
+  }
 
   async create(data: CreateOfferDto) {
     // if (!data.customerFullName || (!data.yachts || data.yachts.length === 0) || !data.services || !data.parts || !data.status || !data.location) {
@@ -229,9 +273,10 @@ export class OfferService {
         });
       }
   
+      const enriched = await this.enrichOffersWithCustomerEmail(offers);
       return {
         code: 200,
-        data: offers,
+        data: enriched,
       };
     } catch (err) {
       return {
@@ -249,9 +294,10 @@ export class OfferService {
         },
         order: { createdAt: 'DESC' },
       });
+      const enriched = await this.enrichOffersWithCustomerEmail(offers);
       return {
         code: 200,
-        data: offers,
+        data: enriched,
       };
     } catch (err) {
       console.log(err);
@@ -319,9 +365,10 @@ export class OfferService {
   async getOfferById(id: string) {
     try {
       const offer = await this.offerRepository.findOne({ where: { id } });
+      const enriched = await this.enrichOfferWithCustomerEmail(offer);
       return {
         code: 200,
-        data: offer,  
+        data: enriched,  
       };
     } catch (err) {
       return {

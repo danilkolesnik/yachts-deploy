@@ -23,6 +23,9 @@ import ExcelJS from 'exceljs';
 import { ClipLoader } from 'react-spinners';
 import { downloadOfferPdf } from '@/utils/exportOfferPdf';
 import { downloadInvoicePdfByOffer, sendInvoiceEmailByOffer } from '@/utils/exportInvoicePdf';
+import { getCustomerEmailForOffer } from '@/utils/customerEmail';
+import { sendOfferEmail } from '@/utils/sendOfferEmail';
+import SendEmailModal from '@/ui/SendEmailModal';
 
 const OfferPage = () => {
     const router = useRouter();
@@ -46,7 +49,7 @@ const OfferPage = () => {
     const [emailModalOpen, setEmailModalOpen] = useState(false);
     const [emailKind, setEmailKind] = useState('offer');
     const [emailLoading, setEmailLoading] = useState(false);
-    const [emailAddress, setEmailAddress] = useState('');
+    const [emailRecipient, setEmailRecipient] = useState({ name: '', email: '' });
     const [selectedOfferId, setSelectedOfferId] = useState(null);
     const [emailSendingLoading, setEmailSendingLoading] = useState({});
     const [loadingCreateOffer, setLoadingCreateOffer] = useState(false);
@@ -1372,53 +1375,53 @@ const OfferPage = () => {
         }
     };
 
-    const handleSendEmail = async (offerId) => {
-        setEmailKind('offer');
+    const findOfferRowById = (offerId) =>
+        (data || []).find((row) => row.id === offerId)
+        || (historyData || []).find((row) => row.id === offerId)
+        || (filteredHistoryData || []).find((row) => row.id === offerId);
+
+    const openEmailModalForOffer = (offerId, kind) => {
+        const offer = findOfferRowById(offerId);
+        setEmailRecipient({
+            name: offer?.customerFullName || '',
+            email: getCustomerEmailForOffer(offer, users),
+        });
+        setEmailKind(kind);
         setSelectedOfferId(offerId);
         setEmailModalOpen(true);
     };
 
+    const handleSendEmail = async (offerId) => {
+        openEmailModalForOffer(offerId, 'offer');
+    };
+
     const handleSendInvoiceEmail = (offerId) => {
-        setEmailKind('invoice');
-        setSelectedOfferId(offerId);
-        setEmailModalOpen(true);
+        openEmailModalForOffer(offerId, 'invoice');
     };
 
     const handleHistorySendEmail = (offerId) => {
         handleSendEmail(offerId);
     };
 
-    const handleEmailSubmit = async () => {
-        if (!emailAddress.trim()) {
-            alert('Please enter an email address');
-            return;
-        }
-
+    const handleEmailSubmit = async (payload) => {
         setEmailLoading(true);
         setEmailSendingLoading(prev => ({ ...prev, [selectedOfferId]: true }));
         try {
             const response = emailKind === 'invoice'
-                ? await sendInvoiceEmailByOffer(selectedOfferId, emailAddress)
-                : (await axios.post(`${URL}/offer/${selectedOfferId}/send-email`, 
-                { email: emailAddress },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Content-Type': 'application/json'
-                    }
-                })).data;
+                ? await sendInvoiceEmailByOffer(selectedOfferId, payload)
+                : await sendOfferEmail(selectedOfferId, payload);
             
             if (response.code === 200) {
                 alert(emailKind === 'invoice' ? 'Invoice email sent successfully!' : 'Email sent successfully!');
                 setEmailModalOpen(false);
-                setEmailAddress('');
+                setEmailRecipient({ name: '', email: '' });
                 setSelectedOfferId(null);
             } else {
-                alert('Error sending email: ' + response.data.message);
+                alert('Error sending email: ' + (response.message || 'Unknown error'));
             }
         } catch (error) {
             console.error('Error sending email:', error);
-            alert('Error sending email');
+            alert(error.response?.data?.message || 'Error sending email');
         } finally {
             setEmailLoading(false);
             setEmailSendingLoading(prev => ({ ...prev, [selectedOfferId]: false }));
@@ -2469,25 +2472,19 @@ const OfferPage = () => {
                         </div>
                     </form>
                 </Modal>
-                <Modal isOpen={emailModalOpen} onClose={() => setEmailModalOpen(false)} title={emailKind === 'invoice' ? 'Send Invoice Email' : 'Send Email'}>
-                    <div className="space-y-4">
-                        <Input
-                            label="Email Address"
-                            name="emailAddress"
-                            value={emailAddress}
-                            onChange={(e) => setEmailAddress(e.target.value)}
-                            required
-                        />
-                        <div className="flex justify-end space-x-2">
-                            <Button variant="text" color="red" onClick={() => setEmailModalOpen(false)} className="mr-1">
-                                <span>Cancel</span>
-                            </Button>
-                            <Button color="green" onClick={handleEmailSubmit}>
-                                <span>Send</span>
-                            </Button>
-                        </div>
-                    </div>
-                </Modal>
+                <SendEmailModal
+                    isOpen={emailModalOpen}
+                    onClose={() => {
+                        setEmailModalOpen(false);
+                        setEmailRecipient({ name: '', email: '' });
+                        setSelectedOfferId(null);
+                    }}
+                    title={emailKind === 'invoice' ? 'Send Invoice Email' : 'Send Email'}
+                    customerName={emailRecipient.name}
+                    customerEmail={emailRecipient.email}
+                    loading={emailLoading}
+                    onSend={handleEmailSubmit}
+                />
                 <Modal isOpen={deleteConfirmModalOpen} onClose={cancelDelete} title="Confirm Deletion">
                     <div className="space-y-4">
                         <p className="text-gray-700">

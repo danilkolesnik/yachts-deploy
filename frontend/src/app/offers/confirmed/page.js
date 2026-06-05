@@ -15,6 +15,9 @@ import Link from 'next/link';
 import ExcelJS from 'exceljs';
 import { downloadOfferPdf } from '@/utils/exportOfferPdf';
 import { downloadInvoicePdfByOffer, sendInvoiceEmailByOffer } from '@/utils/exportInvoicePdf';
+import { getCustomerEmailForOffer } from '@/utils/customerEmail';
+import { sendOfferEmail } from '@/utils/sendOfferEmail';
+import SendEmailModal from '@/ui/SendEmailModal';
 
 const ConfirmedOffersPage = () => {
     const router = useRouter();
@@ -26,7 +29,7 @@ const ConfirmedOffersPage = () => {
     const [emailModalOpen, setEmailModalOpen] = useState(false);
     const [emailKind, setEmailKind] = useState('offer');
     const [emailLoading, setEmailLoading] = useState(false);
-    const [emailAddress, setEmailAddress] = useState('');
+    const [emailRecipient, setEmailRecipient] = useState({ name: '', email: '' });
     const [selectedOfferId, setSelectedOfferId] = useState(null);
     const [emailSendingLoading, setEmailSendingLoading] = useState({});
     const session = useAppSelector((s) => s.userData?.session);
@@ -227,50 +230,44 @@ const ConfirmedOffersPage = () => {
         }
     };
 
-    const handleSendEmail = async (offerId) => {
-        setEmailKind('offer');
+    const openEmailModalForOffer = (offerId, kind) => {
+        const offer = (data || []).find((row) => row.id === offerId);
+        setEmailRecipient({
+            name: offer?.customerFullName || '',
+            email: getCustomerEmailForOffer(offer),
+        });
+        setEmailKind(kind);
         setSelectedOfferId(offerId);
         setEmailModalOpen(true);
+    };
+
+    const handleSendEmail = async (offerId) => {
+        openEmailModalForOffer(offerId, 'offer');
     };
 
     const handleSendInvoiceEmail = (offerId) => {
-        setEmailKind('invoice');
-        setSelectedOfferId(offerId);
-        setEmailModalOpen(true);
+        openEmailModalForOffer(offerId, 'invoice');
     };
 
-    const handleEmailSubmit = async () => {
-        if (!emailAddress.trim()) {
-            alert('Please enter an email address');
-            return;
-        }
-
+    const handleEmailSubmit = async (payload) => {
         setEmailLoading(true);
         setEmailSendingLoading(prev => ({ ...prev, [selectedOfferId]: true }));
         try {
             const response = emailKind === 'invoice'
-                ? await sendInvoiceEmailByOffer(selectedOfferId, emailAddress)
-                : (await axios.post(`${URL}/offer/${selectedOfferId}/send-email`, 
-                { email: emailAddress },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            )).data;
+                ? await sendInvoiceEmailByOffer(selectedOfferId, payload)
+                : await sendOfferEmail(selectedOfferId, payload);
             
             if (response.code === 200) {
                 alert(emailKind === 'invoice' ? 'Invoice email sent successfully!' : 'Email sent successfully!');
                 setEmailModalOpen(false);
-                setEmailAddress('');
+                setEmailRecipient({ name: '', email: '' });
                 setSelectedOfferId(null);
             } else {
-                alert('Error sending email: ' + response.data.message);
+                alert('Error sending email: ' + (response.message || 'Unknown error'));
             }
         } catch (error) {
             console.error('Error sending email:', error);
-            alert('Error sending email');
+            alert(error.response?.data?.message || 'Error sending email');
         } finally {
             setEmailLoading(false);
             setEmailSendingLoading(prev => ({ ...prev, [selectedOfferId]: false }));
@@ -431,41 +428,19 @@ const ConfirmedOffersPage = () => {
                 )}
             </div>
 
-            {/* Email Modal */}
-            {emailModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg w-96">
-                        <h3 className="text-lg font-bold mb-4 text-black">Send Offer PDF to Email</h3>
-                        <input
-                            type="email"
-                            placeholder="Enter email address"
-                            value={emailAddress}
-                            onChange={(e) => setEmailAddress(e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded mb-4 text-black"
-                        />
-                        <div className="flex justify-end gap-2">
-                            <Button 
-                                variant="text" 
-                                color="red" 
-                                onClick={() => {
-                                    setEmailModalOpen(false);
-                                    setEmailAddress('');
-                                    setSelectedOfferId(null);
-                                }}
-                            >
-                                Cancel
-                            </Button>
-                            <Button 
-                                color="green" 
-                                onClick={handleEmailSubmit}
-                                disabled={emailLoading}
-                            >
-                                {emailLoading ? 'Sending...' : 'Send'}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <SendEmailModal
+                isOpen={emailModalOpen}
+                onClose={() => {
+                    setEmailModalOpen(false);
+                    setEmailRecipient({ name: '', email: '' });
+                    setSelectedOfferId(null);
+                }}
+                title={emailKind === 'invoice' ? 'Send Invoice Email' : 'Send Email'}
+                customerName={emailRecipient.name}
+                customerEmail={emailRecipient.email}
+                loading={emailLoading}
+                onSend={handleEmailSubmit}
+            />
         </>
     );
 };

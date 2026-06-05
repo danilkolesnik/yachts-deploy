@@ -17,6 +17,9 @@ import { PermissionsList } from '@/constants/permissions';
 import { can } from '@/utils/canPermission';
 import { downloadOfferPdf } from '@/utils/exportOfferPdf';
 import { downloadInvoicePdfByOffer, sendInvoiceEmailByOffer } from '@/utils/exportInvoicePdf';
+import { getCustomerEmailForOffer } from '@/utils/customerEmail';
+import { sendOfferEmail } from '@/utils/sendOfferEmail';
+import SendEmailModal from '@/ui/SendEmailModal';
 import { uploadOfferMedia, getUploadErrorMessage } from '@/utils/uploadMedia';
 
 const OfferDetail = ({ params }) => {
@@ -34,7 +37,6 @@ const OfferDetail = ({ params }) => {
     const [emailModalOpen, setEmailModalOpen] = useState(false);
     const [emailKind, setEmailKind] = useState('offer');
     const [emailLoading, setEmailLoading] = useState(false);
-    const [emailAddress, setEmailAddress] = useState('');
     const router = useRouter();
     const session = useAppSelector((s) => s.userData?.session);
     const permissions = useAppSelector((s) => s.userData?.permissions || []);
@@ -151,36 +153,22 @@ const OfferDetail = ({ params }) => {
         }
     };
 
-    const handleSendEmail = async () => {
-        if (!emailAddress.trim()) {
-            alert('Please enter an email address');
-            return;
-        }
-
+    const handleSendEmail = async (payload) => {
         setEmailLoading(true);
         try {
             const response = emailKind === 'invoice'
-                ? await sendInvoiceEmailByOffer(id, emailAddress)
-                : (await axios.post(`${URL}/offer/${id}/send-email`, 
-                { email: emailAddress },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            )).data;
+                ? await sendInvoiceEmailByOffer(id, payload)
+                : await sendOfferEmail(id, payload);
             
             if (response.code === 200) {
                 alert(emailKind === 'invoice' ? 'Invoice email sent successfully!' : 'Email sent successfully!');
                 setEmailModalOpen(false);
-                setEmailAddress('');
             } else {
-                alert('Error sending email: ' + response.data.message);
+                alert('Error sending email: ' + (response.message || 'Unknown error'));
             }
         } catch (error) {
             console.error('Error sending email:', error);
-            alert('Error sending email');
+            alert(error.response?.data?.message || 'Error sending email');
         } finally {
             setEmailLoading(false);
         }
@@ -550,40 +538,15 @@ const OfferDetail = ({ params }) => {
                 </div>
             )}
 
-            {/* Email Modal */}
-            {emailModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg w-96">
-                        <h3 className="text-lg font-bold mb-4 text-black">Send Offer PDF to Email</h3>
-                        <input
-                            type="email"
-                            placeholder="Enter email address"
-                            value={emailAddress}
-                            onChange={(e) => setEmailAddress(e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded mb-4 text-black"
-                        />
-                        <div className="flex justify-end gap-2">
-                            <Button 
-                                variant="text" 
-                                color="red" 
-                                onClick={() => {
-                                    setEmailModalOpen(false);
-                                    setEmailAddress('');
-                                }}
-                            >
-                                Cancel
-                            </Button>
-                            <Button 
-                                color="green" 
-                                onClick={handleSendEmail}
-                                disabled={emailLoading}
-                            >
-                                {emailLoading ? 'Sending...' : 'Send'}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <SendEmailModal
+                isOpen={emailModalOpen}
+                onClose={() => setEmailModalOpen(false)}
+                title={emailKind === 'invoice' ? 'Send Invoice Email' : 'Send Email'}
+                customerName={offer?.customerFullName || ''}
+                customerEmail={getCustomerEmailForOffer(offer)}
+                loading={emailLoading}
+                onSend={handleSendEmail}
+            />
         </div>
     );
 };

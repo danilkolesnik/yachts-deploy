@@ -48,17 +48,25 @@ export class OfferController {
   }
 
   @Post(':id/send-email')
-  async sendEmail(@Param('id') id: string, @Body() body: { email: string }) {
+  async sendEmail(
+    @Param('id') id: string,
+    @Body() body: { email?: string; useCustomerEmail?: boolean },
+  ) {
     try {
       const offer = await this.offerService.getOfferById(id);
       if (offer.code !== 200) {
         return { code: 404, message: 'Offer not found' };
       }
 
+      const recipient = await this.offerService.resolveSendEmailRecipient(id, body);
+      if (recipient.code !== 200 || !recipient.email) {
+        return { code: recipient.code, message: recipient.message || 'Invalid recipient' };
+      }
+
       const subject = 'Offer PDF';
       const message = '<p>Please find the attached offer PDF.</p>';
 
-      const result = await sendEmail(body.email, offer.data, 'offer-export', subject, message);
+      const result = await sendEmail(recipient.email, offer.data, 'offer-export', subject, message);
       
       return result;
     } catch (error) {

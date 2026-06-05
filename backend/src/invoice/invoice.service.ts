@@ -8,6 +8,7 @@ import { users } from 'src/auth/entities/users.entity';
 import generateRandomId from 'src/methods/generateRandomId';
 import { computeInvoiceTotals } from 'src/utils/invoiceExportPdf';
 import { sendEmail } from 'src/utils/sendEmail';
+import { resolveOfferEmailRecipient } from 'src/utils/emailRecipient';
 
 @Injectable()
 export class InvoiceService {
@@ -155,7 +156,20 @@ export class InvoiceService {
     return sendEmail(email, invoice, 'invoice', subject, message);
   }
 
-  async sendInvoiceEmailByOffer(offerId: string, email: string) {
+  async sendInvoiceEmailByOffer(
+    offerId: string,
+    body: { email?: string; useCustomerEmail?: boolean },
+  ) {
+    const recipient = await resolveOfferEmailRecipient(
+      this.offerRepository,
+      this.usersRepository,
+      offerId,
+      body,
+    );
+    if (recipient.code !== 200 || !recipient.email) {
+      return { code: recipient.code, message: recipient.message || 'Invalid recipient' };
+    }
+
     const invoiceResult = await this.getOrCreateFromOffer(offerId);
     if (invoiceResult.code !== 200 && invoiceResult.code !== 201) {
       return invoiceResult;
@@ -164,6 +178,6 @@ export class InvoiceService {
     if (!invoice) {
       return { code: 500, message: 'Invoice data missing' };
     }
-    return this.sendInvoiceEmail(invoice.id, email);
+    return this.sendInvoiceEmail(invoice.id, recipient.email);
   }
 }

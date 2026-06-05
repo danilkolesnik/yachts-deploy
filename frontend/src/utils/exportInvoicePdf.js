@@ -37,7 +37,11 @@ export async function downloadInvoicePdfByOffer(offerId) {
 /**
  * Sends invoice PDF to email (creates invoice automatically if missing).
  */
-export async function sendInvoiceEmailByOffer(offerId, email) {
+/**
+ * @param {string} offerId
+ * @param {{ email?: string; useCustomerEmail?: boolean }} payload
+ */
+export async function sendInvoiceEmailByOffer(offerId, payload) {
   const token = localStorage.getItem('token');
   const headers = {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -45,7 +49,7 @@ export async function sendInvoiceEmailByOffer(offerId, email) {
   };
   const response = await axios.post(
     `${URL}/invoice/by-offer/${offerId}/send-email`,
-    { email },
+    payload,
     { headers },
   );
   return response.data;
