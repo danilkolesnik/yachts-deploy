@@ -26,6 +26,7 @@ import ExcelJS from 'exceljs';
 import { downloadWorkOrderPdf } from '@/utils/exportWorkOrderPdf';
 import { toast } from 'react-toastify';
 import ReactSelect from 'react-select';
+import { isActiveOrderStatus } from '@/constants/workflowStatus';
 
 const OrderPage = () => {
     const router = useRouter();
@@ -302,7 +303,7 @@ const OrderPage = () => {
         };
 
         return (
-            order.status !== 'finished' &&
+            isActiveOrderStatus(order.status) &&
             (filters.status ? order.status === filters.status : true) &&
             (filters.client ? order.offer && order.offer.customerFullName === filters.client : true) &&
             (filterDate ? orderDate.toDateString() === filterDate.toDateString() : true) &&
@@ -726,15 +727,12 @@ const OrderPage = () => {
                                     containerProps={{ className: 'w-full md:w-auto' }}
                                     menuProps={{ className: 'text-black' }}
                                 >
-                                    <Option className="text-black" value="">All</Option>
+                                    <Option className="text-black" value="">All active</Option>
                                     <Option className="text-black" value="created">Created</Option>
                                     <Option className="text-black" value="confirmed">Confirmed</Option>
-                                    <Option className="text-black" value="canceled">Canceled</Option>
                                     <Option className="text-black" value="in-progress">In Progress</Option>
                                     <Option className="text-black" value="waiting">Waiting</Option>
                                     <Option className="text-black" value="awaiting-approval">Awaiting Approval</Option>
-                                    <Option className="text-black" value="completed">Completed</Option>
-                                    <Option className="text-black" value="closed">Closed</Option>
                                 </Select>
                                 <input
                                     type="date"
@@ -760,8 +758,11 @@ const OrderPage = () => {
                                     <Button className="w-full sm:w-auto bg-[#282828] text-white" onClick={exportToExcel}>
                                         Export to Excel
                                     </Button>
-                                <Button  onClick={() => router.push('/orders/history')} color="white" className="w-full md:w-auto border-[2px] border-[#D33] text-[#000]">
-                                    <span>History</span>
+                                <Button onClick={() => router.push('/archive?entity=orders')} color="white" className="w-full md:w-auto border-[2px] border-[#D33] text-[#000]">
+                                    <span>Archive &amp; History</span>
+                                </Button>
+                                <Button onClick={() => router.push('/orders/history')} color="white" className="w-full md:w-auto border border-gray-400 text-[#000]">
+                                    <span>Timer history</span>
                                 </Button>
                                     </>
                                 )}

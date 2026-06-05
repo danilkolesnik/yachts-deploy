@@ -15,6 +15,7 @@ import {
   UserIcon,
   Bars3Icon,
   XMarkIcon,
+  RectangleStackIcon,
 } from "@heroicons/react/24/solid";
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
 import { PermissionsList } from '@/constants/permissions';
@@ -95,6 +96,7 @@ function NavList({ isOpen, setIsOpen }) {
 
   const showOffers = can(permissions, PermissionsList.OFFERS_READ);
   const showOrders = can(permissions, PermissionsList.ORDERS_READ);
+  const showArchive = showOffers || showOrders;
   const showStaffSection = can(permissions, PermissionsList.USERS_READ);
 
   return (
@@ -116,6 +118,14 @@ function NavList({ isOpen, setIsOpen }) {
           <span
           style={{ color: pathname === '/orders' ? '#dd3333' : 'black' }}
           >Orders</span>
+        </ListItem>
+      </Link>
+      )}
+      {showArchive && (
+      <Link href="/archive" onClick={handleClick} className="font-bold">
+        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
+          <RectangleStackIcon className={`h-5 w-5 mr-2 ${pathname?.startsWith('/archive') ? 'text-[#dd3333]' : 'text-black'}`} />
+          <span style={{ color: pathname?.startsWith('/archive') ? '#dd3333' : 'black' }}>Archive</span>
         </ListItem>
       </Link>
       )}

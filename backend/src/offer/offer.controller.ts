@@ -24,6 +24,11 @@ export class OfferController {
     return this.offerService.getCanceledOffers();
   }
 
+  @Get('changes/history')
+  getAllOfferChangesHistory() {
+    return this.offerService.getOfferHistory();
+  }
+
   @Get(':id/export-pdf')
   async exportPdf(@Param('id') id: string, @Res() res: Response) {
     try {
@@ -75,14 +80,36 @@ export class OfferController {
     }
   }
 
+  @Get(':id/history')
+  getOfferHistory(@Param('id') id: string) {
+    return this.offerService.getOfferHistoryByOfferId(id);
+  }
+
+  @Get(':id/versions/:versionNumber')
+  getOfferVersion(
+    @Param('id') id: string,
+    @Param('versionNumber') versionNumber: string,
+  ) {
+    return this.offerService.getOfferVersionSnapshot(id, Number(versionNumber));
+  }
+
+  @Get(':id/versions')
+  getOfferVersions(@Param('id') id: string) {
+    return this.offerService.getOfferVersions(id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.offerService.getOfferById(id);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateOfferDto: CreateOfferDto) {
-    return this.offerService.update(id, updateOfferDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateOfferDto: CreateOfferDto,
+    @Req() req: Request,
+  ) {
+    return this.offerService.update(id, updateOfferDto, req);
   }
 
   @Post('delete/:id')

@@ -26,6 +26,7 @@ import { downloadInvoicePdfByOffer, sendInvoiceEmailByOffer } from '@/utils/expo
 import { getCustomerEmailForOffer } from '@/utils/customerEmail';
 import { sendOfferEmail } from '@/utils/sendOfferEmail';
 import SendEmailModal from '@/ui/SendEmailModal';
+import { isActiveOfferStatus } from '@/constants/workflowStatus';
 
 const OfferPage = () => {
     const router = useRouter();
@@ -1509,7 +1510,7 @@ const OfferPage = () => {
         };
 
         return (
-
+            isActiveOfferStatus(offer.status) &&
             (filters.searchValue ? matchesSearch() : true) &&
             (filterDate ? offerDate.toDateString() === filterDate.toDateString() : true)
         );
@@ -1833,12 +1834,11 @@ const OfferPage = () => {
                                 >
                                     Create
                                 </Button>
-                                {/* Modified History Button */}
                                 <Button 
-                                    onClick={openHistoryModal} 
+                                    onClick={() => router.push('/archive')} 
                                     className="bg-[white] w-full sm:w-auto border-2 border-[#dd3333] text-[#000] font-medium px-4 py-2 rounded-md transition-colors duration-200"
                                 >
-                                    History
+                                    Archive &amp; History
                                 </Button>
                                 <Button 
                                     onClick={handleConfirmedOffersClick} 
@@ -1992,7 +1992,7 @@ const OfferPage = () => {
                                         <ul className="space-y-2 text-sm text-blue-600">
                                             <li>Use <strong>Search</strong> and <strong>Date</strong> to filter offers</li>
                                             <li>Click <strong>Create</strong> to add a new offer</li>
-                                            <li>Use <strong>History</strong> for finished/confirmed offers</li>
+                                            <li>Use <strong>Archive &amp; History</strong> for completed, cancelled, and archived offers</li>
                                             <li>Use <strong>Export to Excel</strong> to download the list</li>
                                         </ul>
                                     </div>

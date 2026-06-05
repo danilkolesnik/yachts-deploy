@@ -712,6 +712,7 @@ export class OrderService {
   
       // FINISHED status handling
       if (newStatus === 'finished') {
+        const previousOfferStatus = offer.status;
         // 1. Set offer status to "finished"
         offer.status = 'finished';
         offer.finishedAt = new Date();
@@ -720,12 +721,18 @@ export class OrderService {
         // 2. Create offer history entry
         const offerHistory = this.offerHistoryRepository.create({
           offerId: offer.id,
-          userId: order.customerId,
+          userId: changedBy || order.customerId,
           changeDate: new Date(),
-          changeDescription: JSON.stringify({ 
-            status: 'finished',
+          changeDescription: JSON.stringify({
             trigger: 'order_finished',
-            orderId: orderId 
+            orderId,
+            changes: [
+              {
+                field: 'status',
+                oldValue: previousOfferStatus,
+                newValue: 'finished',
+              },
+            ],
           }),
         });
         await this.offerHistoryRepository.save(offerHistory);
@@ -856,14 +863,21 @@ export class OrderService {
       await this.offerRepository.save(offer);
   
       // Create history entry
+      const previousOfferStatus = offer.status;
       const offerHistory = this.offerHistoryRepository.create({
         offerId: offer.id,
         userId: userId,
         changeDate: new Date(),
-        changeDescription: JSON.stringify({ 
-          status: 'closed',
+        changeDescription: JSON.stringify({
           closedBy: userId,
-          closedAt: new Date().toISOString()
+          closedAt: new Date().toISOString(),
+          changes: [
+            {
+              field: 'status',
+              oldValue: previousOfferStatus,
+              newValue: 'closed',
+            },
+          ],
         }),
       });
       await this.offerHistoryRepository.save(offerHistory);

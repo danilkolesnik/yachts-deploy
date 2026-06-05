@@ -37,6 +37,7 @@ const OfferDetail = ({ params }) => {
     const [emailModalOpen, setEmailModalOpen] = useState(false);
     const [emailKind, setEmailKind] = useState('offer');
     const [emailLoading, setEmailLoading] = useState(false);
+    const [offerHistory, setOfferHistory] = useState([]);
     const router = useRouter();
     const session = useAppSelector((s) => s.userData?.session);
     const permissions = useAppSelector((s) => s.userData?.permissions || []);
@@ -65,11 +66,21 @@ const OfferDetail = ({ params }) => {
     }, [session, reduxRole, role, permissions, router]);
 
     useEffect(() => {
-        if (id) {
-            axios.get(`${URL}/offer/${id}`)
-                .then(response => setOffer(response.data.data))
-                .catch(error => console.error('Error fetching offer:', error));
-        }
+        if (!id) return;
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        axios
+            .get(`${URL}/offer/${id}`, { headers })
+            .then((response) => setOffer(response.data.data))
+            .catch((error) => console.error('Error fetching offer:', error));
+        axios
+            .get(`${URL}/offer/${id}/history`, { headers })
+            .then((response) => {
+                if (response.data?.code === 200) {
+                    setOfferHistory(response.data.data || []);
+                }
+            })
+            .catch((error) => console.error('Error fetching offer history:', error));
     }, [id]);
 
     const handleFileChange = (event) => {
@@ -238,6 +249,17 @@ const OfferDetail = ({ params }) => {
                             <span className="font-semibold text-gray-800 pr-2 min-w-[120px]">ID:</span>
                             <span className="text-black">#{offer.id}</span>
                         </div>
+                        {offer.currentVersionNumber != null && (
+                            <div className="flex items-start">
+                                <span className="font-semibold text-gray-800 pr-2 min-w-[120px]">Version:</span>
+                                <span className="text-black">
+                                    v{offer.currentVersionNumber}
+                                    {offer.versionCount > 0
+                                        ? ` (${offer.versionCount} archived)`
+                                        : ''}
+                                </span>
+                            </div>
+                        )}
                         <div className="flex items-start">
                             <span className="font-semibold text-gray-800 pr-2 min-w-[120px]">Date:</span>
                             <span className="text-black">{new Date(offer.createdAt).toLocaleString()}</span>
@@ -422,6 +444,80 @@ const OfferDetail = ({ params }) => {
                         <p className="text-black whitespace-pre-wrap">{offer.comment}</p>
                     </div>
                 ) : null}
+
+                {role !== 'user' && role !== 'client' && (
+                    <div className="bg-gray-50 p-6 rounded-lg mb-6">
+                        <h2 className="text-2xl font-bold mb-2 text-black">Change chronology</h2>
+                        <p className="text-sm text-gray-600 mb-4">
+                            Each edit records date, time, author, and changed fields. Offer ID stays the same
+                            (work orders remain linked).
+                        </p>
+                        {(offerHistory || []).length === 0 ? (
+                            <p className="text-sm text-gray-600">No changes recorded yet.</p>
+                        ) : (
+                            <ul className="text-sm space-y-3 max-h-96 overflow-y-auto">
+                                {[...(offerHistory || [])].reverse().map((entry) => (
+                                    <li key={entry.id} className="border rounded p-3 bg-white">
+                                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600 mb-2">
+                                            <span>
+                                                <span className="font-semibold text-gray-800">Date:</span>{' '}
+                                                {entry.changedDate ||
+                                                    (entry.changedAt
+                                                        ? new Date(entry.changedAt).toLocaleDateString()
+                                                        : '—')}
+                                            </span>
+                                            <span>
+                                                <span className="font-semibold text-gray-800">Time:</span>{' '}
+                                                {entry.changedTime ||
+                                                    (entry.changedAt
+                                                        ? new Date(entry.changedAt).toLocaleTimeString()
+                                                        : '—')}
+                                            </span>
+                                            <span>
+                                                <span className="font-semibold text-gray-800">Author:</span>{' '}
+                                                {entry.author?.fullName ||
+                                                    entry.user?.fullName ||
+                                                    'Unknown'}
+                                            </span>
+                                            {entry.versionNumber != null && (
+                                                <span>
+                                                    <span className="font-semibold text-gray-800">Version:</span>{' '}
+                                                    v{entry.versionNumber}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {(entry.changes || []).length > 0 ? (
+                                            <ul className="text-gray-800 space-y-1 list-disc list-inside">
+                                                {entry.changes.map((c, idx) => (
+                                                    <li key={`${entry.id}-${c.field}-${idx}`}>
+                                                        {c.summary ||
+                                                            `${c.fieldLabel || c.field}: ${String(c.oldValue ?? '—')} → ${String(c.newValue ?? '—')}`}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <p className="text-gray-500 text-xs">No field details recorded.</p>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        {(offer.versionsSummary || []).length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-gray-200">
+                                <h3 className="text-sm font-semibold text-gray-800 mb-2">Archived snapshots</h3>
+                                <ul className="text-xs space-y-1 text-gray-600">
+                                    {(offer.versionsSummary || []).map((v) => (
+                                        <li key={v.versionNumber}>
+                                            v{v.versionNumber}
+                                            {v.savedAt ? ` · ${new Date(v.savedAt).toLocaleString()}` : ''}
+                                            {v.savedByName ? ` · ${v.savedByName}` : ''}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                )}
                 {offer.imageUrls.length > 0 && (
                     <div className="mt-10">
                         <h2 className="text-3xl font-bold mb-6 text-black">Images</h2>
