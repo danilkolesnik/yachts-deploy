@@ -618,6 +618,27 @@ export class OrderService {
     await this.logOrderTimerEvent(orderId, null, 'items.updated', changedBy, meta);
   }
 
+  private normalizeOrderStatus(status?: string | null): string {
+    if (!status) return '';
+    const raw = String(status).trim();
+    const aliases: Record<string, string> = {
+      Created: 'created',
+      Confirmed: 'confirmed',
+      'In Progress': 'in-progress',
+      in_progress: 'in-progress',
+      Waiting: 'waiting',
+      'Awaiting Approval': 'awaiting-approval',
+      awaiting_approval: 'awaiting-approval',
+      Completed: 'completed',
+      Finished: 'finished',
+      Closed: 'closed',
+      Canceled: 'canceled',
+      Cancelled: 'canceled',
+    };
+    if (aliases[raw]) return aliases[raw];
+    return raw.toLowerCase().replace(/_/g, '-');
+  }
+
   async allOrder(req: Request) {
     const token = getBearerToken(req);
     
@@ -633,7 +654,11 @@ export class OrderService {
           const offer = await this.offerRepository.findOne({
             where: { id: order.offerId },
           });
-          return { ...order, offer };
+          return {
+            ...order,
+            status: this.normalizeOrderStatus(order.status),
+            offer,
+          };
         })
       ) as any[];
   
@@ -644,11 +669,21 @@ export class OrderService {
         return { code: 200, data: ordersWithOffers };
       } else if (userRoles.includes(login.role)) {
         filteredOrders = ordersWithOffers.filter(order =>
-          order.assignedWorkers.some((worker: any) => String(worker.id) === String(login.id))
+          (order.assignedWorkers || []).some(
+            (worker: any) => String(worker.id) === String(login.id),
+          )
         );
-      } else if (login.role === 'user' || login.role === 'client') {
+      } else if (login.role === 'client') {
         filteredOrders = ordersWithOffers.filter(order =>
           String(order.customerId) === String(login.id)
+        );
+      } else if (login.role === 'user') {
+        filteredOrders = ordersWithOffers.filter(
+          (order) =>
+            String(order.customerId) === String(login.id) ||
+            (order.assignedWorkers || []).some(
+              (worker: any) => String(worker.id) === String(login.id),
+            ),
         );
       } else {
         return { code: 403, message: 'Access denied' };

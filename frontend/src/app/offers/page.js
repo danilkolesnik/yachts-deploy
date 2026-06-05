@@ -1345,7 +1345,8 @@ const OfferPage = () => {
             setOrderOfferIds((prev) => new Set([...prev, id]));
             toast.success("Order created successfully");
             closeCreateOrderModal();
-            router.push('/orders');
+            const newOrderId = response.data?.data?.id;
+            router.push(newOrderId ? `/orders/${newOrderId}` : '/orders');
         } catch (error) {
             toast.error("Error creating order");
         }

@@ -26,7 +26,7 @@ import ExcelJS from 'exceljs';
 import { downloadWorkOrderPdf } from '@/utils/exportWorkOrderPdf';
 import { toast } from 'react-toastify';
 import ReactSelect from 'react-select';
-import { isActiveOrderStatus } from '@/constants/workflowStatus';
+import { isActiveOrderStatus, normalizeOrderStatus } from '@/constants/workflowStatus';
 
 const OrderPage = () => {
     const router = useRouter();
@@ -260,10 +260,23 @@ const OrderPage = () => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            setOrders(response.data.data || []);
-            return response.data.data;
+            const code = response.data?.code;
+            if (code !== undefined && code !== 200) {
+                toast.error(response.data?.message || 'Failed to load orders');
+                setOrders([]);
+                return [];
+            }
+            const list = (response.data?.data || []).map((order) => ({
+                ...order,
+                status: normalizeOrderStatus(order.status),
+            }));
+            setOrders(list);
+            return list;
         } catch (error) {
             console.error('Error fetching orders:', error);
+            toast.error(error?.response?.data?.message || 'Failed to load orders');
+            setOrders([]);
+            return [];
         } finally {
             setLoading(false);
         }
@@ -302,9 +315,11 @@ const OrderPage = () => {
             }
         };
 
+        const orderStatus = normalizeOrderStatus(order.status);
+
         return (
-            isActiveOrderStatus(order.status) &&
-            (filters.status ? order.status === filters.status : true) &&
+            isActiveOrderStatus(orderStatus) &&
+            (filters.status ? orderStatus === filters.status : true) &&
             (filters.client ? order.offer && order.offer.customerFullName === filters.client : true) &&
             (filterDate ? orderDate.toDateString() === filterDate.toDateString() : true) &&
             (filters.searchValue ? matchesSearch() : true)
@@ -721,6 +736,7 @@ const OrderPage = () => {
                                 <Select
                                     label="Status"
                                     name="status"
+                                    value={filters.status}
                                     onChange={(value) => handleFilterChange(value, 'status')}
                                     className="text-black border-gray-300 rounded-xs w-full md:w-48"
                                     labelProps={{ className: 'text-black' }}

@@ -34,12 +34,52 @@ const ARCHIVE_STATUS_MAP = {
     },
 };
 
+const ORDER_STATUS_ALIASES = {
+    Created: 'created',
+    Confirmed: 'confirmed',
+    'In Progress': 'in-progress',
+    in_progress: 'in-progress',
+    Waiting: 'waiting',
+    'Awaiting Approval': 'awaiting-approval',
+    awaiting_approval: 'awaiting-approval',
+    Completed: 'completed',
+    Finished: 'finished',
+    Closed: 'closed',
+    Canceled: 'canceled',
+    Cancelled: 'canceled',
+};
+
+const OFFER_STATUS_ALIASES = {
+    Created: 'created',
+    Sent: 'sent',
+    Discussing: 'discussing',
+    Confirmed: 'confirmed',
+    Finished: 'finished',
+    Closed: 'closed',
+    Canceled: 'canceled',
+    Cancelled: 'canceled',
+};
+
+export function normalizeOrderStatus(status) {
+    if (status == null || status === '') return '';
+    const raw = String(status).trim();
+    if (ORDER_STATUS_ALIASES[raw]) return ORDER_STATUS_ALIASES[raw];
+    return raw.toLowerCase().replace(/_/g, '-');
+}
+
+export function normalizeOfferStatus(status) {
+    if (status == null || status === '') return '';
+    const raw = String(status).trim();
+    if (OFFER_STATUS_ALIASES[raw]) return OFFER_STATUS_ALIASES[raw];
+    return raw.toLowerCase().replace(/_/g, '-');
+}
+
 export function isActiveOfferStatus(status) {
-    return ACTIVE_OFFER_STATUSES.includes(status);
+    return ACTIVE_OFFER_STATUSES.includes(normalizeOfferStatus(status));
 }
 
 export function isActiveOrderStatus(status) {
-    return ACTIVE_ORDER_STATUSES.includes(status);
+    return ACTIVE_ORDER_STATUSES.includes(normalizeOrderStatus(status));
 }
 
 export function getArchiveStatuses(entity, tab) {
@@ -47,5 +87,9 @@ export function getArchiveStatuses(entity, tab) {
 }
 
 export function matchesArchiveTab(status, entity, tab) {
-    return getArchiveStatuses(entity, tab).includes(status);
+    const normalized =
+        entity === 'orders'
+            ? normalizeOrderStatus(status)
+            : normalizeOfferStatus(status);
+    return getArchiveStatuses(entity, tab).includes(normalized);
 }

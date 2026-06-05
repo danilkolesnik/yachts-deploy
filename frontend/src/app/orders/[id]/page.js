@@ -1,5 +1,5 @@
 "use client"
-import React, { use, useState, useEffect } from 'react';
+import React, { use, useState, useEffect, useMemo } from 'react';
 import { Button } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import { XMarkIcon } from '@heroicons/react/24/solid';
@@ -26,6 +26,25 @@ import { downloadWorkOrderPdf } from '@/utils/exportWorkOrderPdf';
 import { downloadMediaReportPdf } from '@/utils/exportMediaReportPdf';
 import { uploadOrderMedia, getUploadErrorMessage } from '@/utils/uploadMedia';
 import { ORDER_MEDIA_SECTIONS, normalizeOrderMedia } from '@/constants/orderMediaSections';
+
+const mapAssignedWorkersToOptions = (assignedWorkers = []) =>
+    (assignedWorkers || []).map((worker) => ({
+        value: worker.id,
+        label: worker.fullName,
+    }));
+
+const mergeWorkerOptions = (baseOptions, assignedWorkers = []) => {
+    const byId = new Map((baseOptions || []).map((option) => [option.value, option]));
+    for (const worker of assignedWorkers || []) {
+        if (worker?.id && !byId.has(worker.id)) {
+            byId.set(worker.id, {
+                value: worker.id,
+                label: worker.fullName || String(worker.id),
+            });
+        }
+    }
+    return [...byId.values()];
+};
 
 const OrderDetail = ({ params }) => {
     const { id } = use(params);
@@ -317,25 +336,22 @@ const OrderDetail = ({ params }) => {
         if (id) {
             axios.get(`${URL}/orders/${id}`)
                 .then(response => {
-                    setOrder(normalizeOrderMedia(response.data.data));
-                    const initialSelected = (data.assignedWorkers || []).map(worker => ({
-                        value: worker.id,
-                        label: worker.fullName,
-                    }));
-                    setSelectedWorkers(initialSelected);
+                    const orderData = normalizeOrderMedia(response.data.data);
+                    setOrder(orderData);
+                    setSelectedWorkers(mapAssignedWorkersToOptions(orderData.assignedWorkers));
                     // Source of truth is still offer; order snapshots (if present) override it.
                     setDraftServices(
-                        Array.isArray(data?.services) && data.services.length > 0
-                            ? data.services
-                            : Array.isArray(data?.offer?.services)
-                              ? data.offer.services
+                        Array.isArray(orderData?.services) && orderData.services.length > 0
+                            ? orderData.services
+                            : Array.isArray(orderData?.offer?.services)
+                              ? orderData.offer.services
                               : [],
                     );
                     setDraftParts(
-                        Array.isArray(data?.parts) && data.parts.length > 0
-                            ? data.parts
-                            : Array.isArray(data?.offer?.parts)
-                              ? data.offer.parts
+                        Array.isArray(orderData?.parts) && orderData.parts.length > 0
+                            ? orderData.parts
+                            : Array.isArray(orderData?.offer?.parts)
+                              ? orderData.offer.parts
                               : [],
                     );
                 })
@@ -644,7 +660,9 @@ const OrderDetail = ({ params }) => {
             setAssignmentReasonPreset('');
             setAssignmentReasonOther('');
             const updatedOrderRes = await axios.get(`${URL}/orders/${order.id}`);
-            setOrder(updatedOrderRes.data.data);
+            const updatedOrder = normalizeOrderMedia(updatedOrderRes.data.data);
+            setOrder(updatedOrder);
+            setSelectedWorkers(mapAssignedWorkersToOptions(updatedOrder.assignedWorkers));
             const historyRes = await axios.get(`${URL}/orders/${order.id}/assignment-history`);
             setAssignmentHistory(historyRes.data.data || []);
         } catch (error) {
@@ -713,6 +731,11 @@ const OrderDetail = ({ params }) => {
         }
     };
 
+    const workerSelectOptions = useMemo(
+        () => mergeWorkerOptions(availableWorkers, order?.assignedWorkers),
+        [availableWorkers, order?.assignedWorkers],
+    );
+
     if (!order) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -780,7 +803,7 @@ const OrderDetail = ({ params }) => {
                     <div className="space-y-3">
                         <h3 className="text-lg font-semibold text-black">Assigned employees</h3>
                         <ReactSelect
-                            options={availableWorkers}
+                            options={workerSelectOptions}
                             value={selectedWorkers}
                             onChange={(selected) => setSelectedWorkers(selected || [])}
                             isMulti
