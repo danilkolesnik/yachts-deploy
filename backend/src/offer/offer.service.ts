@@ -394,7 +394,7 @@ export class OfferService {
       const skipKeys = new Set(['userId', 'customerId', 'yachtId', 'description', 'price']);
       for (const key in data) {
         if (!Object.prototype.hasOwnProperty.call(data, key) || skipKeys.has(key)) continue;
-        const oldValue: unknown = (offer as Record<string, unknown>)[key];
+        const oldValue: unknown = (offer as unknown as Record<string, unknown>)[key];
         const newValue: unknown = (data as Record<string, unknown>)[key];
         if (newValue === undefined) continue;
 
