@@ -1,0 +1,66 @@
+.task-calendar .rbc-calendar {
+    font-family: inherit;
+}
+
+.task-calendar .rbc-toolbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.task-calendar .rbc-toolbar button {
+    color: #111;
+    border-color: #d1d5db;
+}
+
+.task-calendar .rbc-toolbar button:hover,
+.task-calendar .rbc-toolbar button:active,
+.task-calendar .rbc-toolbar button.rbc-active {
+    background-color: #dd3333;
+    border-color: #dd3333;
+    color: #fff;
+}
+
+.task-calendar .rbc-toolbar-label {
+    font-weight: 600;
+    color: #111;
+}
+
+.task-calendar .rbc-header {
+    padding: 0.5rem 0;
+    font-weight: 600;
+    color: #374151;
+}
+
+.task-calendar .rbc-today {
+    background-color: #fef2f2;
+}
+
+.task-calendar .rbc-off-range-bg {
+    background-color: #f9fafb;
+}
+
+.task-calendar .rbc-event {
+    border: none;
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-size: 11px;
+}
+
+.task-calendar .rbc-event-offer {
+    background-color: #2563eb;
+}
+
+.task-calendar .rbc-event-order {
+    background-color: #ea580c;
+}
+
+.task-calendar .rbc-selected-cell,
+.task-calendar .rbc-slot-selection {
+    background-color: rgba(221, 51, 51, 0.12);
+}
+
+.task-calendar .rbc-show-more {
+    color: #dd3333;
+    font-weight: 600;
+}

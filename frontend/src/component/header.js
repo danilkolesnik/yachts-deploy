@@ -16,6 +16,7 @@ import {
   Bars3Icon,
   XMarkIcon,
   RectangleStackIcon,
+  CalendarDaysIcon,
 } from "@heroicons/react/24/solid";
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
 import { PermissionsList } from '@/constants/permissions';
@@ -97,6 +98,7 @@ function NavList({ isOpen, setIsOpen }) {
   const showOffers = can(permissions, PermissionsList.OFFERS_READ);
   const showOrders = can(permissions, PermissionsList.ORDERS_READ);
   const showArchive = showOffers || showOrders;
+  const showCalendar = showOffers || showOrders;
   const showStaffSection = can(permissions, PermissionsList.USERS_READ);
 
   return (
@@ -118,6 +120,14 @@ function NavList({ isOpen, setIsOpen }) {
           <span
           style={{ color: pathname === '/orders' ? '#dd3333' : 'black' }}
           >Orders</span>
+        </ListItem>
+      </Link>
+      )}
+      {showCalendar && (
+      <Link href="/calendar" onClick={handleClick} className="font-bold">
+        <ListItem className={`flex items-center gap-2 py-2 pr-4 font-medium text-black`}>
+          <CalendarDaysIcon className={`h-5 w-5 mr-2 ${pathname === '/calendar' ? 'text-[#dd3333]' : 'text-black'}`} />
+          <span style={{ color: pathname === '/calendar' ? '#dd3333' : 'black' }}>Calendar</span>
         </ListItem>
       </Link>
       )}
