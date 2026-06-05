@@ -199,14 +199,13 @@ const Header = () => {
   }, []);
 
   return (
-    <Navbar className="mx-auto max-w-screen-xl px-4 py-2 rounded-none bg-white">
-      <div className="flex items-center justify-between text-blue-gray-900 relative">
-         <div className="absolute left-[10px] top-[10px]">
-            <Image src={logo} alt="logo" width={120} height={80} />
-          </div>
-        
-        <div className="flex-grow"></div>
-        <div className={isMobile ? 'hidden' : 'block'}>
+    <Navbar className="w-full max-w-none px-4 py-2 rounded-none bg-white shadow-sm">
+      <div className="flex w-full items-center justify-between text-blue-gray-900 gap-4">
+        <div className="shrink-0">
+          <Image src={logo} alt="logo" width={120} height={80} priority />
+        </div>
+
+        <div className={`${isMobile ? 'hidden' : 'flex'} flex-1 justify-end`}>
           <NavList isOpen={isOpen} setIsOpen={setIsOpen} />
         </div>
         <div className={isMobile ? 'block' : 'hidden'}>
