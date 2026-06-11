@@ -83,6 +83,19 @@ CREATE TABLE IF NOT EXISTS public.order_client_message (
 
 CREATE INDEX IF NOT EXISTS "IDX_order_client_message_orderId" ON public.order_client_message ("orderId");
 
+-- Worker notes on work orders (issues with parts/materials)
+CREATE TABLE IF NOT EXISTS public.order_worker_note (
+  id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+  "orderId" character varying NOT NULL,
+  "userId" character varying NOT NULL,
+  category character varying DEFAULT 'other'::character varying NOT NULL,
+  message text NOT NULL,
+  "createdAt" timestamp without time zone DEFAULT now() NOT NULL,
+  CONSTRAINT "PK_order_worker_note_id" PRIMARY KEY (id)
+);
+
+CREATE INDEX IF NOT EXISTS "IDX_order_worker_note_orderId" ON public.order_worker_note ("orderId");
+
 -- Order status history (used in /orders/:id/status-history)
 CREATE TABLE IF NOT EXISTS public.order_status_history (
   id uuid DEFAULT public.uuid_generate_v4() NOT NULL,

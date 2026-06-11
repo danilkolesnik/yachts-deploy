@@ -190,7 +190,7 @@ export class OrderController {
   }
 
   @Post(':id/items')
-  @Permissions(PermissionsList.ORDERS_UPDATE)
+  @Permissions(PermissionsList.ORDERS_MATERIALS_ADD)
   async updateOrderItems(
     @Param('id') orderId: string,
     @Body() body: UpdateOrderItemsDto,
@@ -335,5 +335,21 @@ export class OrderController {
   @Permissions(PermissionsList.ORDERS_READ)
   async getAssignmentHistory(@Param('orderId') orderId: string, @Req() req: Request) {
     return this.orderService.getOrderAssignmentHistory(orderId, req);
+  }
+
+  @Get(':orderId/worker-notes')
+  @Permissions(PermissionsList.ORDERS_READ)
+  async getWorkerNotes(@Param('orderId') orderId: string, @Req() req: Request) {
+    return this.orderService.getWorkerNotes(orderId, req);
+  }
+
+  @Post(':orderId/worker-notes')
+  @Permissions(PermissionsList.ORDERS_COMMENT_ADD)
+  async addWorkerNote(
+    @Param('orderId') orderId: string,
+    @Req() req: Request,
+    @Body() body: { category?: string; message: string },
+  ) {
+    return this.orderService.addWorkerNote(orderId, req, body);
   }
 }

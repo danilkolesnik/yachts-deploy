@@ -14,12 +14,13 @@ import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { OrderAssignmentHistory } from './entities/order-assignment-history.entity';
 import { OrderTimerHistory } from './entities/order-timer-history.entity';
 import { OrderClientMessage } from './entities/order-client-message.entity';
+import { OrderWorkerNote } from './entities/order-worker-note.entity';
 import { EmployeeProfile } from 'src/users/entities/employee-profile.entity';
 import { InvoiceModule } from 'src/invoice/invoice.module';
 
 @Module({
   imports:[
-    TypeOrmModule.forFeature([offer,users,order,File,OrderTimer,warehouse,WarehouseHistory,OfferHistory,OrderStatusHistory,OrderAssignmentHistory,OrderTimerHistory,OrderClientMessage,EmployeeProfile]),
+    TypeOrmModule.forFeature([offer,users,order,File,OrderTimer,warehouse,WarehouseHistory,OfferHistory,OrderStatusHistory,OrderAssignmentHistory,OrderTimerHistory,OrderClientMessage,OrderWorkerNote,EmployeeProfile]),
     InvoiceModule,
   ],
   controllers: [OrderController],

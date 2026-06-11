@@ -27,6 +27,10 @@ import { getOrderDocumentNumber } from '@/utils/documentNumbers';
 import { downloadMediaReportPdf } from '@/utils/exportMediaReportPdf';
 import { uploadOrderMedia, getUploadErrorMessage } from '@/utils/uploadMedia';
 import { ORDER_MEDIA_SECTIONS, normalizeOrderMedia } from '@/constants/orderMediaSections';
+import {
+    WORKER_NOTE_CATEGORIES,
+    getWorkerNoteCategoryLabel,
+} from '@/constants/orderWorkerNotes';
 
 const mapAssignedWorkersToOptions = (assignedWorkers = []) =>
     (assignedWorkers || []).map((worker) => ({
@@ -68,6 +72,11 @@ const OrderDetail = ({ params }) => {
     const [statusHistory, setStatusHistory] = useState([]);
     const [assignmentHistory, setAssignmentHistory] = useState([]);
     const [clientMessages, setClientMessages] = useState([]);
+    const [workerNotes, setWorkerNotes] = useState([]);
+    const [workerNoteCategory, setWorkerNoteCategory] = useState('other');
+    const [workerNoteMessage, setWorkerNoteMessage] = useState('');
+    const [workerNoteSaving, setWorkerNoteSaving] = useState(false);
+    const [workerNoteError, setWorkerNoteError] = useState('');
     const [availableWorkers, setAvailableWorkers] = useState([]);
     const [selectedWorkers, setSelectedWorkers] = useState([]);
     const [updatingWorkers, setUpdatingWorkers] = useState(false);
@@ -370,6 +379,14 @@ const OrderDetail = ({ params }) => {
                 })
                 .catch(error => console.error('Error fetching assignment history:', error));
 
+            axios.get(`${URL}/orders/${id}/worker-notes`)
+                .then((res) => {
+                    if (res.data?.code === 200) {
+                        setWorkerNotes(res.data.data || []);
+                    }
+                })
+                .catch((error) => console.error('Error fetching worker notes:', error));
+
             // Client messages (visible to admins and assigned workers)
             axios.get(`${URL}/orders/client/${id}/messages`)
                 .then(res => {
@@ -637,6 +654,46 @@ const OrderDetail = ({ params }) => {
         );
     };
 
+    const submitWorkerNote = async () => {
+        if (!order || !workerNoteMessage.trim()) return;
+        setWorkerNoteSaving(true);
+        setWorkerNoteError('');
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post(
+                `${URL}/orders/${order.id}/worker-notes`,
+                {
+                    category: workerNoteCategory,
+                    message: workerNoteMessage.trim(),
+                },
+                {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                },
+            );
+            if (res.data?.code === 400) {
+                setWorkerNoteError(res.data.message || 'Validation failed');
+                return;
+            }
+            if (res.data?.code !== 201) {
+                setWorkerNoteError(res.data?.message || 'Could not save note');
+                return;
+            }
+            setWorkerNoteMessage('');
+            setWorkerNoteCategory('other');
+            const listRes = await axios.get(`${URL}/orders/${order.id}/worker-notes`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (listRes.data?.code === 200) {
+                setWorkerNotes(listRes.data.data || []);
+            }
+        } catch (error) {
+            setWorkerNoteError(error.response?.data?.message || 'Could not save note');
+            console.error('Error saving worker note:', error);
+        } finally {
+            setWorkerNoteSaving(false);
+        }
+    };
+
     const handleWorkersUpdate = async (changeReason) => {
         if (!order) return;
         const userIds = (selectedWorkers || []).map((w) => w.value);
@@ -845,7 +902,7 @@ const OrderDetail = ({ params }) => {
                 <div className="border rounded-lg p-4 bg-gray-50">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
                         <h2 className="text-xl font-bold text-black">Order works & materials</h2>
-                        {can(permissions, PermissionsList.ORDERS_UPDATE) && (
+                        {can(permissions, PermissionsList.ORDERS_MATERIALS_ADD) && (
                             <div className="flex gap-2">
                                 {!itemsEditMode ? (
                                     <Button color="blue" onClick={() => setItemsEditMode(true)}>
@@ -1032,6 +1089,80 @@ const OrderDetail = ({ params }) => {
                     <div className="mt-4 text-xs text-gray-600">
                         Offer snapshot (read-only): {getOfferServices().length} services, {getOfferParts().length} parts.
                     </div>
+                </div>
+
+                <div className="border rounded-lg p-4 bg-gray-50 mb-6">
+                    <h2 className="text-xl font-bold text-black mb-2">Worker notes</h2>
+                    <p className="text-sm text-gray-600 mb-4">
+                        Report issues with materials or works: wrong part, missing item, needs replacement, etc.
+                        Workers cannot add services or parts here — only leave remarks for the office.
+                    </p>
+
+                    {can(permissions, PermissionsList.ORDERS_COMMENT_ADD) && (
+                        <div className="bg-white border rounded-lg p-4 mb-4 space-y-3">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <label className="text-sm text-black md:col-span-1">
+                                    <span className="block font-medium mb-1">Category</span>
+                                    <select
+                                        value={workerNoteCategory}
+                                        onChange={(e) => setWorkerNoteCategory(e.target.value)}
+                                        className="w-full border rounded p-2 text-black"
+                                    >
+                                        {WORKER_NOTE_CATEGORIES.map((item) => (
+                                            <option key={item.value} value={item.value}>
+                                                {item.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                                <label className="text-sm text-black md:col-span-2">
+                                    <span className="block font-medium mb-1">Note</span>
+                                    <textarea
+                                        value={workerNoteMessage}
+                                        onChange={(e) => setWorkerNoteMessage(e.target.value)}
+                                        rows={3}
+                                        className="w-full border rounded p-2 text-black"
+                                        placeholder="Describe what is wrong, missing, or needs to be changed..."
+                                    />
+                                </label>
+                            </div>
+                            {workerNoteError ? (
+                                <p className="text-sm text-red-600">{workerNoteError}</p>
+                            ) : null}
+                            <div className="flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={submitWorkerNote}
+                                    disabled={workerNoteSaving || !workerNoteMessage.trim()}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-60"
+                                >
+                                    {workerNoteSaving ? 'Saving...' : 'Add note'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {workerNotes.length === 0 ? (
+                        <p className="text-sm text-gray-600">No worker notes yet.</p>
+                    ) : (
+                        <ul className="space-y-3 text-sm text-black">
+                            {workerNotes.map((note) => (
+                                <li key={note.id} className="border rounded p-3 bg-white">
+                                    <div className="flex flex-wrap justify-between gap-2 text-xs text-gray-600 mb-1">
+                                        <span className="font-medium text-gray-800">
+                                            {getWorkerNoteCategoryLabel(note.category)}
+                                        </span>
+                                        <span>
+                                            {note.author?.fullName || 'Employee'}
+                                            {' · '}
+                                            {note.createdAt ? new Date(note.createdAt).toLocaleString() : ''}
+                                        </span>
+                                    </div>
+                                    <div className="whitespace-pre-wrap">{note.message}</div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
 
                 {statusHistory && statusHistory.length > 0 && (

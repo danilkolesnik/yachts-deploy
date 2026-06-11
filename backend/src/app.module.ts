@@ -35,6 +35,7 @@ import { EmployeeProfile } from './users/entities/employee-profile.entity';
 import { UserPermissionHistory } from './users/entities/user-permission-history.entity';
 import { UserAuditHistory } from './users/entities/user-audit-history.entity';
 import { OrderClientMessage } from './order/entities/order-client-message.entity';
+import { OrderWorkerNote } from './order/entities/order-worker-note.entity';
 import { Invoice } from './invoice/entities/invoice.entity';
 import { InvoiceModule } from './invoice/invoice.module';
 
@@ -58,6 +59,7 @@ const typeOrmEntities = [
   OrderAssignmentHistory,
   OrderTimerHistory,
   OrderClientMessage,
+  OrderWorkerNote,
   Yacht,
   EmployeeProfile,
   UserPermissionHistory,

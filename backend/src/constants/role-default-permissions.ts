@@ -35,8 +35,6 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
   mechanic: [
     PermissionsList.CALENDAR_READ,
     PermissionsList.ORDERS_READ,
-    PermissionsList.ORDERS_UPDATE,
-    PermissionsList.ORDERS_MATERIALS_ADD,
     PermissionsList.ORDERS_STATUS_CHANGE,
     PermissionsList.ORDERS_MEDIA_ADD,
     PermissionsList.ORDERS_MEDIA_DELETE,
@@ -48,8 +46,6 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
   electrician: [
     PermissionsList.CALENDAR_READ,
     PermissionsList.ORDERS_READ,
-    PermissionsList.ORDERS_UPDATE,
-    PermissionsList.ORDERS_MATERIALS_ADD,
     PermissionsList.ORDERS_STATUS_CHANGE,
     PermissionsList.ORDERS_MEDIA_ADD,
     PermissionsList.ORDERS_MEDIA_DELETE,

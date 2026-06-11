@@ -22,6 +22,7 @@ import { OrderStatusHistory } from './entities/order-status-history.entity';
 import { OrderAssignmentHistory } from './entities/order-assignment-history.entity';
 import { OrderTimerHistory } from './entities/order-timer-history.entity';
 import { OrderClientMessage } from './entities/order-client-message.entity';
+import { OrderWorkerNote } from './entities/order-worker-note.entity';
 import { EmployeeProfile } from 'src/users/entities/employee-profile.entity';
 import { PermissionsList } from 'src/constants/permissions';
 import { WORKER_TIMER_INDEX_BASE, isWorkerTimerIndex } from 'src/constants/order-timer';
@@ -44,6 +45,13 @@ import { buildMediaSectionsFromOrder } from 'src/utils/mediaReportExportPdf';
 
 @Injectable()
 export class OrderService {
+  private static readonly WORKER_NOTE_CATEGORIES = new Set([
+    'not_fit',
+    'replace',
+    'missing',
+    'other',
+  ]);
+
   constructor(
     @InjectRepository(offer)
     private readonly offerRepository: Repository<offer>,
@@ -69,6 +77,8 @@ export class OrderService {
     private readonly orderTimerHistoryRepository: Repository<OrderTimerHistory>,
     @InjectRepository(OrderClientMessage)
     private readonly orderClientMessageRepository: Repository<OrderClientMessage>,
+    @InjectRepository(OrderWorkerNote)
+    private readonly orderWorkerNoteRepository: Repository<OrderWorkerNote>,
     @InjectRepository(EmployeeProfile)
     private readonly employeeProfileRepository: Repository<EmployeeProfile>,
     private readonly invoiceService: InvoiceService,
@@ -407,6 +417,85 @@ export class OrderService {
       return { code: 200, data: msgs };
     } catch (err) {
       return { code: 401, message: err instanceof Error ? err.message : 'Unauthorized' };
+    }
+  }
+
+  async getWorkerNotes(orderId: string, req: Request) {
+    const token = getBearerToken(req);
+    if (!token) return { code: 401, message: 'Authorization token missing' };
+    try {
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+      const requester = { id: String(login.id), role: String(login.role) };
+
+      const access = await this.canAccessOrder(orderId, requester);
+      if (!access.ok) return { code: access.code, message: access.message };
+
+      const notes = await this.orderWorkerNoteRepository.find({
+        where: { orderId },
+        order: { createdAt: 'ASC' },
+      });
+
+      const userIds = notes.map((n) => n.userId);
+      const usersById = await this.loadUsersByIds(userIds);
+
+      const data = notes.map((note) => ({
+        ...note,
+        author: this.userRef(note.userId, usersById),
+      }));
+
+      return { code: 200, data };
+    } catch (err) {
+      return { code: 401, message: err instanceof Error ? err.message : 'Unauthorized' };
+    }
+  }
+
+  async addWorkerNote(
+    orderId: string,
+    req: Request,
+    payload: { category?: string; message: string },
+  ) {
+    const token = getBearerToken(req);
+    if (!token) return { code: 401, message: 'Authorization token missing' };
+    try {
+      const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+      const requester = { id: String(login.id), role: String(login.role) };
+
+      if (!payload?.message || !payload.message.trim()) {
+        return { code: 400, message: 'Message is required' };
+      }
+
+      const access = await this.canAccessOrder(orderId, requester);
+      if (!access.ok) return { code: access.code, message: access.message };
+
+      const categoryRaw = String(payload.category || 'other').trim();
+      const category = OrderService.WORKER_NOTE_CATEGORIES.has(categoryRaw)
+        ? categoryRaw
+        : 'other';
+
+      const saved = await this.orderWorkerNoteRepository.save(
+        this.orderWorkerNoteRepository.create({
+          orderId,
+          userId: requester.id,
+          category,
+          message: payload.message.trim().slice(0, 4000),
+        }),
+      );
+
+      await this.logOrderTimerEvent(orderId, null, 'worker.note.added', requester.id, {
+        noteId: saved.id,
+        category: saved.category,
+      });
+
+      const usersById = await this.loadUsersByIds([requester.id]);
+      return {
+        code: 201,
+        data: {
+          ...saved,
+          author: this.userRef(requester.id, usersById),
+        },
+      };
+    } catch (err) {
+      return { code: 500, message: err instanceof Error ? err.message : 'Internal server error' };
     }
   }
 
