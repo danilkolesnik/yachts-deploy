@@ -1,8 +1,8 @@
 export const WORKER_NOTE_CATEGORIES = [
-    { value: 'not_fit', label: 'Does not fit / не подходит' },
-    { value: 'replace', label: 'Needs replacement / нужно заменить' },
-    { value: 'missing', label: 'Missing / не хватает' },
-    { value: 'other', label: 'Other / другое' },
+    { value: 'not_fit', label: 'Does not fit' },
+    { value: 'replace', label: 'Needs replacement' },
+    { value: 'missing', label: 'Missing' },
+    { value: 'other', label: 'Other' },
 ];
 
 export function getWorkerNoteCategoryLabel(category) {
