@@ -8,7 +8,19 @@ export class CreateOfferDto {
     comment?: string;
     countryCode: string;
     yachts: { id: string; name: string; model: string; countryCode: string; userId: string; userName: string }[];
-    services: { serviceName: string; priceInEuroWithoutVAT: number } | { serviceName: string; priceInEuroWithoutVAT: number }[];
+    services:
+      | {
+          serviceName: string;
+          priceInEuroWithoutVAT: number;
+          quantity?: number;
+          unitsOfMeasurement?: string;
+        }
+      | {
+          serviceName: string;
+          priceInEuroWithoutVAT: number;
+          quantity?: number;
+          unitsOfMeasurement?: string;
+        }[];
     parts: { partName: string; quantity: number }[];
     status: string;
     yachtId: string;

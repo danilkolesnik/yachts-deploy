@@ -2,6 +2,8 @@ import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import { Button, Select, Option } from "@material-tailwind/react";
 import ReactSelect from 'react-select';
+import OfferLineItemsFields from '@/component/OfferLineItemsFields';
+import { mergeSelectedParts, mergeSelectedServices } from '@/utils/offerLineItems';
 
 const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal, openCreateCustomerModal, yachts, handleYachtSelect }) => {
     const combinedParts = partOptions.map(part => ({
@@ -156,8 +158,11 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     value={selectedServiceOptions}
                     onChange={(selectedOptions) =>
                         handleSelectChange(
-                            (selectedOptions || []).map(option => option.value),
-                            'services'
+                            mergeSelectedServices(
+                                formData.services,
+                                (selectedOptions || []).map((option) => option.value),
+                            ),
+                            'services',
                         )
                     }
                     placeholder="Select services..."
@@ -186,6 +191,12 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
             <Button onClick={openCreateServiceModal} color="blue">
                 Add Service
             </Button>
+            <OfferLineItemsFields
+                services={formData.services}
+                parts={[]}
+                onServicesChange={(nextServices) => handleSelectChange(nextServices, 'services')}
+                onPartsChange={() => {}}
+            />
             <div className="mb-4">
                 <label htmlFor="parts-select" className="block text-sm font-medium text-gray-700">
                     Select Parts
@@ -195,7 +206,9 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     isMulti
                     options={combinedParts}
                     value={selectedPartOptions}
-                    onChange={(selectedOptions) => handleSelectChange(selectedOptions || [], 'parts')}
+                    onChange={(selectedOptions) =>
+                        handleSelectChange(mergeSelectedParts(formData.parts, selectedOptions || []), 'parts')
+                    }
                     placeholder="Select parts..."
                     className="mt-1"
                     menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
@@ -226,6 +239,12 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
             <Button onClick={openCreatePartModal} color="blue">
                 Add Part
             </Button>
+            <OfferLineItemsFields
+                services={[]}
+                parts={formData.parts}
+                onServicesChange={() => {}}
+                onPartsChange={(nextParts) => handleSelectChange(nextParts, 'parts')}
+            />
 
             <Select
                 label="Status"

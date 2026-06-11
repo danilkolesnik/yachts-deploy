@@ -10,6 +10,8 @@ import {
   getPartQuantity,
   getServiceName,
   getServicePrice,
+  getServiceQuantity,
+  getServiceLineTotal,
   normalizeServices,
 } from './pdfFormatters';
 
@@ -66,7 +68,7 @@ export function computeInvoiceTotals(parts: any[], services: any[]) {
   }, 0);
 
   const servicesTotal = normalizeServices(services).reduce(
-    (acc, service) => acc + getServicePrice(service),
+    (acc, service) => acc + getServiceLineTotal(service),
     0,
   );
 
@@ -104,14 +106,16 @@ export function buildInvoiceExportHtml(data: any): string {
 
   const invoiceServicesRows = services
     .map((service: any, index: number) => {
-      const price = getServicePrice(service);
+      const quantity = getServiceQuantity(service);
+      const unitPrice = getServicePrice(service);
+      const lineTotal = getServiceLineTotal(service);
       return `
       <div>
         <span>${index + 1}</span>
         <span>${getServiceName(service)}</span>
-        <span>1</span>
-        <span>${formatMoney(price)}</span>
-        <span>${formatMoney(price)}</span>
+        <span>${quantity}</span>
+        <span>${formatMoney(unitPrice)}</span>
+        <span>${formatMoney(lineTotal)}</span>
       </div>
     `;
     })
@@ -132,7 +136,7 @@ export function buildInvoiceExportHtml(data: any): string {
     .replace('{{paymentDueDate}}', formatDateHr(paymentDueAt))
     .replace('{{issueDateTime}}', issueDateTime)
     .replace('{{offerIdInvoice}}', String(data?.offerId ?? ''))
-    .replace('{{orderId}}', String(data?.orderId || data?.offerId || ''))
+    .replace('{{orderId}}', String(data?.offerId || ''))
     .replace('{{customerFullName}}', String(data?.customerFullName ?? ''))
     .replace('{{yachtNameOffer}}', String(data?.yachtName ?? ''))
     .replace('{{yachtModelOffer}}', String(data?.yachtModel ?? ''))

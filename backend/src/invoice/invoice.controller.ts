@@ -2,6 +2,7 @@ import { Controller, Get, Post, Param, Body, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { InvoiceService } from './invoice.service';
 import { createPdfBuffer } from '../utils/createPdf';
+import { invoicePdfFilename } from '../utils/pdfFilenames';
 
 @Controller('invoice')
 export class InvoiceController {
@@ -36,7 +37,7 @@ export class InvoiceController {
 
       res.set({
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="invoice-${invoice.id}.pdf"`,
+        'Content-Disposition': `attachment; filename="${invoicePdfFilename(invoice.offerId || offerId)}"`,
         'Content-Length': pdfBuffer.length,
       });
       res.end(pdfBuffer);
@@ -76,7 +77,7 @@ export class InvoiceController {
 
       res.set({
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="invoice-${invoice.id}.pdf"`,
+        'Content-Disposition': `attachment; filename="${invoicePdfFilename(invoice.offerId || invoice.id)}"`,
         'Content-Length': pdfBuffer.length,
       });
       res.end(pdfBuffer);

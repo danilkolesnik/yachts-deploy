@@ -256,6 +256,7 @@ export class OrderService {
         cleaned.services = cleaned.services.map((s: any) => ({
           serviceName: s?.serviceName,
           unitsOfMeasurement: s?.unitsOfMeasurement,
+          quantity: s?.quantity,
           description: s?.description,
         }));
       } else if (typeof cleaned.services === 'object') {

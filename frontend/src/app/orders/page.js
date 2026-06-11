@@ -24,6 +24,7 @@ import { statusStyles } from '@/utils/statusStyles';
 import { useRouter } from 'next/navigation';
 import ExcelJS from 'exceljs';
 import { downloadWorkOrderPdf } from '@/utils/exportWorkOrderPdf';
+import { getOrderDocumentNumber } from '@/utils/documentNumbers';
 import { toast } from 'react-toastify';
 import ReactSelect from 'react-select';
 import { isActiveOrderStatus, normalizeOrderStatus } from '@/constants/workflowStatus';
@@ -303,7 +304,7 @@ const OrderPage = () => {
         const matchesSearch = () => {
             switch(filters.searchCriteria) {
                 case 'id':
-                    return order.id.toString().includes(searchValue);
+                    return getOrderDocumentNumber(order).toLowerCase().includes(searchValue);
                 case 'customer':
                     return order.offer?.customerFullName?.toLowerCase().includes(searchValue);
                 case 'worker':
@@ -399,11 +400,15 @@ const OrderPage = () => {
         window.open(`/orders/${orderId}/report`, '_blank', 'noopener,noreferrer,width=960,height=900');
     };
 
-    const handleExportWorkOrderPdf = async (orderId, e) => {
+    const handleExportWorkOrderPdf = async (order, e) => {
         if (e) e.stopPropagation();
+        const orderId = typeof order === 'string' ? order : order?.id;
+        if (!orderId) return;
+        const documentNumber =
+            typeof order === 'object' ? getOrderDocumentNumber(order) : undefined;
         setWorkOrderPdfLoading((prev) => ({ ...prev, [orderId]: true }));
         try {
-            await downloadWorkOrderPdf(orderId);
+            await downloadWorkOrderPdf(orderId, documentNumber);
         } catch (error) {
             console.error('Error exporting work order PDF:', error);
             alert('Error exporting work order PDF');
@@ -546,11 +551,11 @@ const OrderPage = () => {
     };
 
     const columns = [
-        { name: 'Order Number', selector: row => (
+        { name: 'Order Number', selector: row => getOrderDocumentNumber(row), sortable: true, cell: row => (
             <Link href={`/orders/${row.id}`} className="text-black">
-                    <div className="text-blue-500 hover:underline">{row.id}</div>
+                    <div className="text-blue-500 hover:underline">{getOrderDocumentNumber(row)}</div>
             </Link>
-        ), sortable: true },
+        ) },
         { name: 'Creation Date', selector: row => {
             return new Date(row.createdAt).toLocaleString();
         }, sortable: true },
@@ -588,7 +593,7 @@ const OrderPage = () => {
                         color="purple"
                         className="normal-case text-xs px-3 py-1"
                         disabled={workOrderPdfLoading[row.id]}
-                        onClick={(e) => handleExportWorkOrderPdf(row.id, e)}
+                        onClick={(e) => handleExportWorkOrderPdf(row, e)}
                     >
                         {workOrderPdfLoading[row.id] ? '...' : 'PDF'}
                     </Button>
@@ -678,7 +683,7 @@ const OrderPage = () => {
 
     const exportToExcel = async () => {
         const exportData = sortedOrders.map(row => ({
-            'Order Number': row.id,
+            'Order Number': getOrderDocumentNumber(row),
             'Creation Date': new Date(row.createdAt).toLocaleString(),
             'Customer': row.offer?.customerFullName || 'N/A',
             'Yacht': row.offer?.yachtName || '',
@@ -721,6 +726,7 @@ const OrderPage = () => {
                                         labelProps={{ className: 'text-black' }}
                                         containerProps={{ className: 'min-w-[120px] w-full md:w-auto' }}
                                     >
+                                        <Option className="text-black" value="id">Number</Option>
                                         <Option className="text-black" value="yachtName">Yacht Name</Option>
                                         <Option className="text-black" value="customer">Customer</Option>
                                         <Option className="text-black" value="worker">Worker</Option>
@@ -801,7 +807,7 @@ const OrderPage = () => {
                                 <tbody>
                                     {sortedOrders.map((row) => (
                                         <tr key={row.id}>
-                                            <td>{row.id}</td>
+                                            <td>{getOrderDocumentNumber(row)}</td>
                                             <td>{new Date(row.createdAt).toLocaleDateString('en-US', {
                                                 year: 'numeric',
                                                 month: '2-digit',

@@ -36,10 +36,9 @@ export class InvoiceService {
     };
   }
 
-  private async generateInvoiceNumber(): Promise<string> {
-    const year = new Date().getFullYear();
-    const count = await this.invoiceRepository.count();
-    return `${year}/${String(count + 1).padStart(4, '0')}`;
+  /** Invoice number follows the linked offer number (digits only, accounting). */
+  private resolveInvoiceNumber(offerId: string): string {
+    return String(offerId ?? '').trim();
   }
 
   async getByOfferId(offerId: string) {
@@ -105,7 +104,7 @@ export class InvoiceService {
           id: generateRandomId(),
           offerId: offerData.id,
           orderId: linkedOrder?.id || '',
-          invoiceNumber: await this.generateInvoiceNumber(),
+          invoiceNumber: this.resolveInvoiceNumber(offerData.id),
           customerId: offerData.customerId,
           customerFullName: offerData.customerFullName,
           yachtName: yacht.yachtName,

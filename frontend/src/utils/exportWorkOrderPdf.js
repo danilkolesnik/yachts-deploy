@@ -1,11 +1,14 @@
 import axios from 'axios';
 import { URL } from '@/utils/constants';
+import { downloadPdfBlob } from '@/utils/downloadPdf';
+import { getOrderDocumentNumber } from '@/utils/documentNumbers';
 
 /**
  * Downloads work order (заказ-наряд) PDF from the company HTML template.
- * @param {string} orderId
+ * @param {string} orderId - internal order UUID
+ * @param {string} [documentNumber] - offer / ZN number for fallback filename
  */
-export async function downloadWorkOrderPdf(orderId) {
+export async function downloadWorkOrderPdf(orderId, documentNumber) {
   const token = localStorage.getItem('token');
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
@@ -14,13 +17,16 @@ export async function downloadWorkOrderPdf(orderId) {
     headers,
   });
 
-  const blob = new Blob([response.data], { type: 'application/pdf' });
-  const downloadUrl = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = downloadUrl;
-  link.download = `work-order-${orderId}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(downloadUrl);
+  const fallback = documentNumber
+    ? `work-order-${documentNumber}.pdf`
+    : `work-order-${orderId}.pdf`;
+  downloadPdfBlob(response, fallback);
+}
+
+/**
+ * @param {object} order
+ */
+export function downloadWorkOrderPdfForOrder(order) {
+  if (!order?.id) return Promise.resolve();
+  return downloadWorkOrderPdf(order.id, getOrderDocumentNumber(order));
 }

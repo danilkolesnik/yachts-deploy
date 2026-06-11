@@ -29,6 +29,15 @@ export function getServicePrice(service: any): number {
   );
 }
 
+export function getServiceQuantity(service: any): number {
+  const quantity = Number(service?.quantity ?? service?.value?.quantity ?? 1);
+  return Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+}
+
+export function getServiceLineTotal(service: any): number {
+  return getServiceQuantity(service) * getServicePrice(service);
+}
+
 export function getPartLabel(part: any): string {
   return String(
     part?.label ?? part?.name ?? part?.partName ?? part?.value?.label ?? '',

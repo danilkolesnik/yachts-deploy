@@ -1,6 +1,7 @@
 import * as nodemailer from 'nodemailer';
 import { createPdfBuffer } from './createPdf';
 import { getEmailFromAddress } from './emailFrom';
+import { resolveEmailPdfFilename } from './pdfFilenames';
 
 export async function sendEmail(to: string, data: any, type: string, subject: string, message:string) {
   try {
@@ -52,7 +53,7 @@ export async function sendEmail(to: string, data: any, type: string, subject: st
       html: message,
       attachments: [
         {
-          filename: `${type}.pdf`,
+          filename: resolveEmailPdfFilename(type, data),
           content: pdfBuffer
         }
       ]

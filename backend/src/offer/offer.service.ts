@@ -4,7 +4,7 @@ import { In, Repository } from 'typeorm';
 import { offer } from './entities/offer.entity';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { Request } from 'express';
-import generateRandomId from 'src/methods/generateRandomId';
+import { generateOfferNumber } from 'src/methods/generateOfferNumber';
 import { sendEmail } from 'src/utils/sendEmail';
 import { users } from 'src/auth/entities/users.entity';
 import { warehouse } from 'src/warehouse/entities/warehouse.entity';
@@ -309,7 +309,7 @@ export class OfferService {
         };
       }
 
-      const generateId = generateRandomId();
+      const generateId = await generateOfferNumber(this.offerRepository);
 
       // //@ts-expect-error: value property exists in runtime data
       // const partIds = data.parts.map(part => part.value);

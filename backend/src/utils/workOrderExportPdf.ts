@@ -7,6 +7,7 @@ import {
   getPartLabel,
   getPartQuantity,
   getServiceName,
+  getServiceQuantity,
   normalizeServices,
   resolveYachtFields,
 } from './pdfFormatters';
@@ -81,7 +82,7 @@ export function buildWorkOrderExportHtml(data: {
       <tr>
         <td>${index + 1}</td>
         <td>${getServiceName(service)}</td>
-        <td>1</td>
+        <td>${getServiceQuantity(service)}</td>
       </tr>
     `)
     .join('');
@@ -91,10 +92,12 @@ export function buildWorkOrderExportHtml(data: {
     ? ''
     : createdAt.toLocaleString();
 
+  const documentNumber = String(offer.id ?? order.offerId ?? '');
+
   templateString = templateString
     .replace(/\{\{logoUrl\}\}/g, getLogoUrl())
-    .replace('{{orderId}}', String(order.id ?? ''))
-    .replace('{{offerId}}', String(offer.id ?? order.offerId ?? ''))
+    .replace('{{orderId}}', documentNumber)
+    .replace('{{offerId}}', documentNumber)
     .replace('{{customerFullName}}', String(offer.customerFullName ?? ''))
     .replace('{{yachtName}}', yacht.yachtName)
     .replace('{{yachtModel}}', yacht.yachtModel)

@@ -21,6 +21,15 @@ import { getCustomerEmailForOffer } from '@/utils/customerEmail';
 import { sendOfferEmail } from '@/utils/sendOfferEmail';
 import SendEmailModal from '@/ui/SendEmailModal';
 import { uploadOfferMedia, getUploadErrorMessage } from '@/utils/uploadMedia';
+import {
+    formatEuroAmount,
+    getPartLineTotal,
+    getPartUnitPrice,
+    getServiceLineTotal,
+    getServiceUnitPrice,
+    normalizeOfferPart,
+    normalizeOfferService,
+} from '@/utils/offerLineItems';
 
 const OfferDetail = ({ params }) => {
     const { id } = use(params);
@@ -354,49 +363,51 @@ const OfferDetail = ({ params }) => {
                                 <thead>
                                     <tr className="bg-gray-200">
                                         <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Service Name</th>
-                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Price (€)</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Quantity</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Price per unit (€)</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Total (€)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {Array.isArray(offer.services) ? (
                                         offer.services.map((service, index) => {
-                                            const name =
-                                                service.serviceName ||
-                                                service.value?.serviceName ||
-                                                '';
-                                            const price =
-                                                service.priceInEuroWithoutVAT ??
-                                                service.value?.priceInEuroWithoutVAT ??
-                                                0;
+                                            const normalized = normalizeOfferService(service);
                                             return (
                                                 <tr key={index}>
                                                     <td className="border border-gray-300 px-4 py-2 text-black">
-                                                        {name}
+                                                        {normalized.serviceName}
+                                                        {normalized.unitsOfMeasurement
+                                                            ? ` (${normalized.unitsOfMeasurement})`
+                                                            : ''}
                                                     </td>
                                                     <td className="border border-gray-300 px-4 py-2 text-black">
-                                                        {price} €
+                                                        {normalized.quantity}
+                                                    </td>
+                                                    <td className="border border-gray-300 px-4 py-2 text-black">
+                                                        {formatEuroAmount(getServiceUnitPrice(service))} €
+                                                    </td>
+                                                    <td className="border border-gray-300 px-4 py-2 text-black font-medium">
+                                                        {formatEuroAmount(getServiceLineTotal(service))} €
                                                     </td>
                                                 </tr>
                                             );
                                         })
                                     ) : (
                                         (() => {
-                                            const service = offer.services || {};
-                                            const name =
-                                                service.serviceName ||
-                                                service.value?.serviceName ||
-                                                '';
-                                            const price =
-                                                service.priceInEuroWithoutVAT ??
-                                                service.value?.priceInEuroWithoutVAT ??
-                                                0;
+                                            const normalized = normalizeOfferService(offer.services || {});
                                             return (
                                                 <tr>
                                                     <td className="border border-gray-300 px-4 py-2 text-black">
-                                                        {name}
+                                                        {normalized.serviceName}
                                                     </td>
                                                     <td className="border border-gray-300 px-4 py-2 text-black">
-                                                        {price} €
+                                                        {normalized.quantity}
+                                                    </td>
+                                                    <td className="border border-gray-300 px-4 py-2 text-black">
+                                                        {formatEuroAmount(getServiceUnitPrice(offer.services))} €
+                                                    </td>
+                                                    <td className="border border-gray-300 px-4 py-2 text-black font-medium">
+                                                        {formatEuroAmount(getServiceLineTotal(offer.services))} €
                                                     </td>
                                                 </tr>
                                             );
@@ -419,18 +430,23 @@ const OfferDetail = ({ params }) => {
                                         <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Part Name</th>
                                         <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Article Number</th>
                                         <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Quantity</th>
-                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Price per Unit (€)</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Price per unit (€)</th>
+                                        <th className="border border-gray-300 px-4 py-2 text-left font-semibold text-gray-800">Total (€)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {offer.parts.map((part, index) => (
+                                    {offer.parts.map((part, index) => {
+                                        const normalized = normalizeOfferPart(part);
+                                        return (
                                         <tr key={index}>
-                                            <td className="border border-gray-300 px-4 py-2 text-black">{part.label || part.name || part.partName || 'N/A'}</td>
-                                            <td className="border border-gray-300 px-4 py-2 text-black">{part.articleNumber || '-'}</td>
-                                            <td className="border border-gray-300 px-4 py-2 text-black">{part.quantity || 1}</td>
-                                            <td className="border border-gray-300 px-4 py-2 text-black">{part.pricePerUnit || '0'} €</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-black">{normalized.label || 'N/A'}</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-black">{normalized.articleNumber || '-'}</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-black">{normalized.quantity}</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-black">{formatEuroAmount(getPartUnitPrice(part))} €</td>
+                                            <td className="border border-gray-300 px-4 py-2 text-black font-medium">{formatEuroAmount(getPartLineTotal(part))} €</td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>

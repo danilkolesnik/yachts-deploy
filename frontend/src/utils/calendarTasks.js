@@ -83,7 +83,7 @@ export function buildCalendarTasks(offers = [], orders = [], options = {}) {
                     id: w.id,
                     fullName: w.fullName,
                 })),
-                label: `Work order ${order.id}`,
+                label: `Work order ${order.offerId || order.offer?.id || order.id}`,
                 href: `/orders/${order.id}`,
             });
         }

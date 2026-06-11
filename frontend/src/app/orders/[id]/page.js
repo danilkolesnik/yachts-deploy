@@ -23,6 +23,7 @@ import ImageGallery from 'react-image-gallery';
 import "react-image-gallery/styles/css/image-gallery.css";
 import ReactSelect from 'react-select';
 import { downloadWorkOrderPdf } from '@/utils/exportWorkOrderPdf';
+import { getOrderDocumentNumber } from '@/utils/documentNumbers';
 import { downloadMediaReportPdf } from '@/utils/exportMediaReportPdf';
 import { uploadOrderMedia, getUploadErrorMessage } from '@/utils/uploadMedia';
 import { ORDER_MEDIA_SECTIONS, normalizeOrderMedia } from '@/constants/orderMediaSections';
@@ -709,7 +710,7 @@ const OrderDetail = ({ params }) => {
         if (!id) return;
         setWorkOrderPdfLoading(true);
         try {
-            await downloadWorkOrderPdf(id);
+            await downloadWorkOrderPdf(id, getOrderDocumentNumber(order));
         } catch (error) {
             console.error('Error exporting work order PDF:', error);
             alert('Error exporting work order PDF');
@@ -781,7 +782,7 @@ const OrderDetail = ({ params }) => {
                             </button>
                         )}
                         <span className="text-sm text-gray-500">
-                            Order ID: <span className="font-mono">{order.id}</span>
+                            Number: <span className="font-mono">{getOrderDocumentNumber(order)}</span>
                         </span>
                     </div>
                 </div>
@@ -893,9 +894,6 @@ const OrderDetail = ({ params }) => {
                                                 <div className="font-medium">{s.serviceName}</div>
                                                 <div className="text-right text-gray-700 whitespace-nowrap">
                                                     <span>{String(s.quantity || 1)} {s.unitsOfMeasurement || ''}</span>
-                                                    {!hidePrices && s.priceInEuroWithoutVAT !== null && s.priceInEuroWithoutVAT !== undefined && s.priceInEuroWithoutVAT !== '' && (
-                                                        <span className="ml-3">{String(s.priceInEuroWithoutVAT)} €</span>
-                                                    )}
                                                 </div>
                                             </div>
                                         ))}
@@ -969,9 +967,6 @@ const OrderDetail = ({ params }) => {
                                                 <div className="font-medium">{p.partName}</div>
                                                 <div className="text-right text-gray-700 whitespace-nowrap">
                                                     <span>{String(p.quantity || 1)}</span>
-                                                    {!hidePrices && p.pricePerUnit !== null && p.pricePerUnit !== undefined && p.pricePerUnit !== '' && (
-                                                        <span className="ml-3">{String(p.pricePerUnit)} €</span>
-                                                    )}
                                                 </div>
                                             </div>
                                         ))}

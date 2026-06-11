@@ -2,6 +2,7 @@ import { Controller, Post, Get, Patch, Param, Body, Req, Res, UploadedFile, UseI
 import { Response } from 'express';
 import { OrderService } from './order.service';
 import { createPdfBuffer } from '../utils/createPdf';
+import { workOrderPdfFilename } from '../utils/pdfFilenames';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderItemsDto } from './dto/update-order-items.dto';
 import { Request } from 'express';
@@ -162,9 +163,11 @@ export class OrderController {
       }
 
       const pdfBuffer = await createPdfBuffer(payload.data, 'work-order');
+      const offerNumber =
+        payload.data?.offer?.id || payload.data?.order?.offerId || orderId;
       res.set({
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="work-order-${orderId}.pdf"`,
+        'Content-Disposition': `attachment; filename="${workOrderPdfFilename(offerNumber)}"`,
         'Content-Length': pdfBuffer.length,
       });
       res.end(pdfBuffer);

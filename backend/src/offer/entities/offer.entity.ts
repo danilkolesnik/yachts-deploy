@@ -30,7 +30,12 @@ export class offer {
   yachts: { id: string; name: string; model: string; countryCode: string; userId: string; userName: string }[];
 
   @Column('json', { default: [] })
-  services: { serviceName: string; priceInEuroWithoutVAT: number }[];
+  services: {
+    serviceName: string;
+    priceInEuroWithoutVAT: number;
+    quantity?: number;
+    unitsOfMeasurement?: string;
+  }[];
 
   @Column('json', { default: [] })
   parts: { partName: string; quantity: number }[];

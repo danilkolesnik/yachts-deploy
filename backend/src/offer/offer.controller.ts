@@ -3,6 +3,7 @@ import { OfferService } from './offer.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { Request, Response } from 'express';
 import { createPdfBuffer } from '../utils/createPdf';
+import { offerPdfFilename } from '../utils/pdfFilenames';
 import { sendEmail } from '../utils/sendEmail';
 
 @Controller('offer')
@@ -41,7 +42,7 @@ export class OfferController {
       
       res.set({
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="offer-${id}.pdf"`,
+        'Content-Disposition': `attachment; filename="${offerPdfFilename(id)}"`,
         'Content-Length': pdfBuffer.length,
       });
       

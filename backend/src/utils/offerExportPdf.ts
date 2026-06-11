@@ -10,6 +10,8 @@ import {
   getPartQuantity,
   getServiceName,
   getServicePrice,
+  getServiceQuantity,
+  getServiceLineTotal,
   normalizeServices,
   resolveYachtFields,
 } from './pdfFormatters';
@@ -94,14 +96,16 @@ export function buildOfferExportHtml(data: any): string {
 
   const servicesTableRows = services
     .map((service: any, index: number) => {
-      const price = getServicePrice(service);
+      const quantity = getServiceQuantity(service);
+      const unitPrice = getServicePrice(service);
+      const lineTotal = getServiceLineTotal(service);
       return `
       <tr>
         <td>${index + 1}</td>
         <td>${getServiceName(service)}</td>
-        <td>1</td>
-        <td>${formatMoney(price)}</td>
-        <td>${formatMoney(price)}</td>
+        <td>${quantity}</td>
+        <td>${formatMoney(unitPrice)}</td>
+        <td>${formatMoney(lineTotal)}</td>
       </tr>
     `;
     })
@@ -112,7 +116,7 @@ export function buildOfferExportHtml(data: any): string {
   }, 0);
 
   const totalPriceAllServices = services.reduce(
-    (acc: number, service: any) => acc + getServicePrice(service),
+    (acc: number, service: any) => acc + getServiceLineTotal(service),
     0,
   );
 

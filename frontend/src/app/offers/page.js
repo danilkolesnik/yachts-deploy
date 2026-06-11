@@ -27,6 +27,7 @@ import { getCustomerEmailForOffer } from '@/utils/customerEmail';
 import { sendOfferEmail } from '@/utils/sendOfferEmail';
 import SendEmailModal from '@/ui/SendEmailModal';
 import { isActiveOfferStatus } from '@/constants/workflowStatus';
+import { normalizeOfferPart, normalizeOfferService } from '@/utils/offerLineItems';
 
 const OfferPage = () => {
     const router = useRouter();
@@ -1056,10 +1057,12 @@ const OfferPage = () => {
         setLoadingCreateOffer(true);
 
         const normalizedServices = Array.isArray(formData.services)
-            ? formData.services.map(service => service?.value ?? service).filter(Boolean)
+            ? formData.services.map((service) => normalizeOfferService(service)).filter((s) => s.serviceName)
             : [];
 
-        const normalizedParts = Array.isArray(formData.parts) ? formData.parts : [];
+        const normalizedParts = Array.isArray(formData.parts)
+            ? formData.parts.map((part) => normalizeOfferPart(part)).filter((p) => p.label)
+            : [];
 
         switch (true) {
             case !Array.isArray(formData.yachts) || formData.yachts.length === 0:
@@ -1455,7 +1458,16 @@ const OfferPage = () => {
     const handleEditSubmit = async (e) => {
         e.preventDefault();
         try {
-            const offerData = { ...editFormData, userId: id };
+            const offerData = {
+                ...editFormData,
+                userId: id,
+                services: Array.isArray(editFormData.services)
+                    ? editFormData.services.map((service) => normalizeOfferService(service)).filter((s) => s.serviceName)
+                    : [],
+                parts: Array.isArray(editFormData.parts)
+                    ? editFormData.parts.map((part) => normalizeOfferPart(part)).filter((p) => p.label)
+                    : [],
+            };
             await axios.put(`${URL}/offer/${editId}`, offerData);
             getData()
                 .then((res) => {
@@ -2247,7 +2259,10 @@ const OfferPage = () => {
                                                 {selectedRow.services.map((service, index) => (
                                                     <li key={index} className="flex justify-between">
                                                         <span>{service.serviceName || service.label || `Service ${index + 1}`}</span>
-                                                        {/* Prices are intentionally hidden in work order preview */}
+                                                        <span className="ml-2 text-gray-700">
+                                                            x{service.quantity ?? 1}
+                                                            {service.unitsOfMeasurement ? ` ${service.unitsOfMeasurement}` : ''}
+                                                        </span>
                                                     </li>
                                                 ))}
                                             </ul>

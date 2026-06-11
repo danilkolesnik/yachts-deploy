@@ -189,6 +189,7 @@ const ArchivePageContent = () => {
             if (!matchesArchiveTab(order.status, 'orders', activeTab)) return false;
             if (!search) return true;
             return (
+                String(order.offerId || order.id).includes(search) ||
                 String(order.id).includes(search) ||
                 order.offer?.customerFullName?.toLowerCase().includes(search) ||
                 order.offer?.yachtName?.toLowerCase().includes(search)
@@ -248,14 +249,16 @@ const ArchivePageContent = () => {
         },
     ];
 
+    const getOrderNumber = (row) => row.offerId || row.offer?.id || row.id;
+
     const orderColumns = [
         {
             name: 'Order #',
-            selector: (row) => row.id,
+            selector: (row) => getOrderNumber(row),
             sortable: true,
             cell: (row) => (
                 <Link href={`/orders/${row.id}`} className="text-blue-600 hover:underline">
-                    {row.id}
+                    {getOrderNumber(row)}
                 </Link>
             ),
         },

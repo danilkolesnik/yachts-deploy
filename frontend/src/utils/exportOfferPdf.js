@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { URL } from '@/utils/constants';
+import { downloadPdfBlob } from '@/utils/downloadPdf';
 
 /**
  * Downloads an offer PDF generated on the server from the approved HTML template.
@@ -15,13 +16,5 @@ export async function downloadOfferPdf(offerId) {
     headers,
   });
 
-  const blob = new Blob([response.data], { type: 'application/pdf' });
-  const downloadUrl = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = downloadUrl;
-  link.download = `offer-${offerId}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(downloadUrl);
+  downloadPdfBlob(response, `offer-${offerId}.pdf`);
 }
