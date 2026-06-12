@@ -44,6 +44,7 @@ export class WarehouseService {
               name: data.name,
               quantity: data.quantity,
               pricePerUnit: data.pricePerUnit,
+              articleNumber: data.articleNumber || '',
               comment: data.comment,
               countryCode: data.countryCode,
               unofficially: data.unofficially,

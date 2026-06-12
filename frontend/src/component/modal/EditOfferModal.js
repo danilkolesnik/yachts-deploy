@@ -246,6 +246,16 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                 onPartsChange={(nextParts) => handleSelectChange(nextParts, 'parts')}
             />
 
+            <Input
+                label="Discount (EUR)"
+                name="discountAmount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.discountAmount ?? ''}
+                onChange={handleChange}
+            />
+
             <Select
                 label="Status"
                 value={formData.status}

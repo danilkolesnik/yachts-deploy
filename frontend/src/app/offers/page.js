@@ -95,7 +95,8 @@ const OfferPage = () => {
         services: [],
         parts: [],
         status: 'created',
-        language: 'en'
+        language: 'en',
+        discountAmount: '',
     });
 
     const [createServiceFormData, setCreateServiceFormData] = useState({
@@ -139,7 +140,8 @@ const OfferPage = () => {
         services: [],
         parts: [],
         status: 'created',
-        language: 'en'
+        language: 'en',
+        discountAmount: '',
     });
 
     const [filters, setFilters] = useState({
@@ -920,6 +922,15 @@ const OfferPage = () => {
         }
     };
 
+    const refreshOffersAndOrders = async () => {
+        const [offersRes, ordersRes] = await Promise.all([getData(), getOrders()]);
+        setData(offersRes || []);
+        const offerIdsWithOrders = (ordersRes || [])
+            .map((order) => order?.offerId)
+            .filter(Boolean);
+        setOrderOfferIds(new Set(offerIdsWithOrders));
+    };
+
     const getYachts = async () => {
         try {
             const res = await axios.get(`${URL}/yachts`);
@@ -1009,6 +1020,7 @@ const OfferPage = () => {
                     value: createdPart.id,
                     label: createdPart.name,
                     pricePerUnit: createdPart.pricePerUnit,
+                    articleNumber: createdPart.articleNumber || createPartFormData.articleNumber || '',
                     quantity: partForOfferQuantity || 1,
                     unofficially: isUnofficialWarehouse
                 };
@@ -1095,6 +1107,7 @@ const OfferPage = () => {
                 customerId: resolvedCustomerId,
                 services: normalizedServices,
                 parts: normalizedParts,
+                discountAmount: Math.max(0, Number(formData.discountAmount) || 0),
                 price: 0,
                 description: formData.comment || ''
             };
@@ -1108,6 +1121,13 @@ const OfferPage = () => {
                 });
                 if (hasServerBusinessError(response, "Error updating offer")) {
                     return;
+                }
+                const previousOfferId = response.data?.previousOfferId;
+                const newOfferId = response.data?.data?.id;
+                if (previousOfferId && newOfferId && previousOfferId !== newOfferId) {
+                    toast.success(`Revised offer #${newOfferId} created. Work Order is available for the new offer.`);
+                } else {
+                    toast.success("Offer updated successfully");
                 }
             } else {
                 const response = await axios.post(`${URL}/offer`, offerData, {
@@ -1130,18 +1150,18 @@ const OfferPage = () => {
                     services: [],
                     parts: [],
                     status: 'created',
-                    language: 'en'
+                    language: 'en',
+                    discountAmount: '',
                 });
             }
-            getData()
-                .then((res) => {
-                    setData(res);
-                });
+            await refreshOffersAndOrders();
 
             setModalIsOpen(false);
             setEditMode(false);
             setEditId(null);
-            toast.success(editMode ? "Offer updated successfully" : "Offer created successfully");
+            if (!editMode) {
+                toast.success("Offer created successfully");
+            }
         } catch (error) {
             console.error('Error creating offer:', error);
             showServerError(error, "Error creating offer");
@@ -1189,7 +1209,8 @@ const OfferPage = () => {
             services: Array.isArray(row.services) ? row.services : (row.services ? [row.services] : []),
             parts: row.parts,
             status: row.status,
-            language: row.language || 'en'
+            language: row.language || 'en',
+            discountAmount: row.discountAmount != null ? String(row.discountAmount) : '',
         });
         setEditMode(true);
         setEditId(row.id);
@@ -1441,6 +1462,7 @@ const OfferPage = () => {
         value: part.id,
         label: part.name,
         pricePerUnit: part.pricePerUnit,
+        articleNumber: part.articleNumber || '',
         quantity: '1',
         unofficially: part.unofficially || false
     }));
@@ -1467,18 +1489,27 @@ const OfferPage = () => {
                 parts: Array.isArray(editFormData.parts)
                     ? editFormData.parts.map((part) => normalizeOfferPart(part)).filter((p) => p.label)
                     : [],
+                discountAmount: Math.max(0, Number(editFormData.discountAmount) || 0),
             };
-            await axios.put(`${URL}/offer/${editId}`, offerData);
-            getData()
-                .then((res) => {
-                    setData(res);
-                });
+            const response = await axios.put(`${URL}/offer/${editId}`, offerData);
+            if (hasServerBusinessError(response, "Error updating offer")) {
+                return;
+            }
+            const previousOfferId = response.data?.previousOfferId;
+            const newOfferId = response.data?.data?.id;
+            if (previousOfferId && newOfferId && previousOfferId !== newOfferId) {
+                toast.success(`Revised offer #${newOfferId} created. Work Order is available for the new offer.`);
+            } else {
+                toast.success("Offer updated successfully");
+            }
+            await refreshOffersAndOrders();
 
             setEditModalIsOpen(false);
             setEditMode(false);
             setEditId(null);
         } catch (error) {
             console.error(error);
+            showServerError(error, "Error updating offer");
         }
     };
 

@@ -28,6 +28,10 @@ type TranslationKeys =
   | 'PROVIDED_SERVICES'
   | 'SERVICE'
   | 'TOTAL_AMOUNT'
+  | 'GROSS_AMOUNT'
+  | 'DISCOUNT'
+  | 'SUBTOTAL_AFTER_DISCOUNT'
+  | 'VAT_25'
   | 'BANK_DETAILS'
   | 'IMAGES'
   | 'VIDEOS'
@@ -101,6 +105,10 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     PROVIDED_SERVICES: 'Provided Services',
     SERVICE: 'Service',
     TOTAL_AMOUNT: 'TOTAL AMOUNT',
+    GROSS_AMOUNT: 'AMOUNT',
+    DISCOUNT: 'discount',
+    SUBTOTAL_AFTER_DISCOUNT: 'SUBTOTAL',
+    VAT_25: 'VAT (25%)',
     BANK_DETAILS: 'BANK DETAILS',
     IMAGES: 'Images',
     VIDEOS: 'Videos',
@@ -172,6 +180,10 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     PROVIDED_SERVICES: 'Erbrachte Leistungen',
     SERVICE: 'Leistung',
     TOTAL_AMOUNT: 'GESAMTBETRAG',
+    GROSS_AMOUNT: 'BETRAG',
+    DISCOUNT: 'Rabatt',
+    SUBTOTAL_AFTER_DISCOUNT: 'ZWISCHENSUMME',
+    VAT_25: 'MwSt. (25%)',
     BANK_DETAILS: 'BANKVERBINDUNG',
     IMAGES: 'Bilder',
     VIDEOS: 'Videos',
@@ -243,6 +255,10 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     PROVIDED_SERVICES: 'Pružene usluge',
     SERVICE: 'Servis',
     TOTAL_AMOUNT: 'SVEUKUPNI IZNOS',
+    GROSS_AMOUNT: 'IZNOS',
+    DISCOUNT: 'rabat',
+    SUBTOTAL_AFTER_DISCOUNT: 'UKUPNO',
+    VAT_25: 'PDV (25%)',
     BANK_DETAILS: 'BANKOVNI DETALJI',
     IMAGES: 'Slike',
     VIDEOS: 'Video',

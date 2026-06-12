@@ -11,6 +11,7 @@ import { warehouse } from 'src/warehouse/entities/warehouse.entity';
 import { OfferHistory } from './entities/offer-history.entity';
 import { isEqual } from 'lodash';
 import { resolveOfferEmailRecipient } from 'src/utils/emailRecipient';
+import { order } from 'src/order/entities/order.entity';
 
 import getBearerToken from 'src/methods/getBearerToken';
 import { JwtPayload } from 'jsonwebtoken';
@@ -32,6 +33,7 @@ const OFFER_FIELD_LABELS: Record<string, string> = {
   comment: 'Comment',
   customerFullName: 'Customer',
   language: 'Language',
+  discountAmount: 'Discount (EUR)',
   yachtName: 'Yacht name',
   yachtModel: 'Yacht model',
   countryCode: 'Country code',
@@ -50,6 +52,8 @@ export class OfferService {
     private readonly warehouseRepository: Repository<warehouse>,
     @InjectRepository(OfferHistory)
     private readonly offerHistoryRepository: Repository<OfferHistory>,
+    @InjectRepository(order)
+    private readonly orderRepository: Repository<order>,
   ) {}
 
   private async enrichOfferWithCustomerEmail<T extends offer | null>(offerData: T) {
@@ -270,6 +274,99 @@ export class OfferService {
     }));
   }
 
+  private resolvePartWarehouseId(part: unknown): string {
+    if (!part || typeof part !== 'object') return '';
+    const record = part as Record<string, unknown>;
+    const raw = record.value ?? record.id ?? '';
+    if (raw && typeof raw === 'object') {
+      const nested = raw as Record<string, unknown>;
+      return nested.id != null ? String(nested.id).trim() : '';
+    }
+    return String(raw ?? '').trim();
+  }
+
+  private enrichPartArticleNumber(
+    part: any,
+    warehouseById: Map<string, warehouse>,
+  ) {
+    const partId = this.resolvePartWarehouseId(part);
+    const warehouseRow = partId ? warehouseById.get(partId) : undefined;
+    const articleNumber =
+      String(part?.articleNumber ?? '').trim() ||
+      String(warehouseRow?.articleNumber ?? '').trim();
+    return { ...part, articleNumber };
+  }
+
+  private enrichOfferPartsSync(
+    offerData: offer,
+    warehouseById: Map<string, warehouse>,
+  ): offer {
+    if (!Array.isArray(offerData.parts) || offerData.parts.length === 0) {
+      return offerData;
+    }
+    const parts = offerData.parts.map((part: any) =>
+      this.enrichPartArticleNumber(part, warehouseById),
+    );
+    return { ...offerData, parts };
+  }
+
+  private async enrichPartsArray(parts: unknown[]): Promise<any[]> {
+    if (!Array.isArray(parts) || parts.length === 0) return parts as any[];
+    const ids = [
+      ...new Set(
+        parts
+          .map((part) => this.resolvePartWarehouseId(part))
+          .filter(Boolean),
+      ),
+    ];
+    if (!ids.length) {
+      return parts.map((part: any) => ({
+        ...part,
+        articleNumber: String(part?.articleNumber ?? '').trim(),
+      }));
+    }
+    const rows = await this.warehouseRepository.find({ where: { id: In(ids) } });
+    const byId = new Map(rows.map((row) => [String(row.id), row]));
+    return parts.map((part: any) => this.enrichPartArticleNumber(part, byId));
+  }
+
+  private async enrichOfferParts<T extends offer | null>(offerData: T): Promise<T> {
+    if (!offerData || !Array.isArray(offerData.parts) || offerData.parts.length === 0) {
+      return offerData;
+    }
+    const ids = [
+      ...new Set(
+        offerData.parts
+          .map((part: unknown) => this.resolvePartWarehouseId(part))
+          .filter(Boolean),
+      ),
+    ];
+    if (!ids.length) return offerData;
+    const rows = await this.warehouseRepository.find({ where: { id: In(ids) } });
+    const byId = new Map(rows.map((row) => [String(row.id), row]));
+    return this.enrichOfferPartsSync(offerData, byId) as T;
+  }
+
+  private async enrichOffersWithParts(offersList: offer[]) {
+    const ids = new Set<string>();
+    for (const offerRow of offersList) {
+      for (const part of offerRow.parts || []) {
+        const partId = this.resolvePartWarehouseId(part);
+        if (partId) ids.add(partId);
+      }
+    }
+    if (!ids.size) return offersList;
+    const rows = await this.warehouseRepository.find({ where: { id: In([...ids]) } });
+    const byId = new Map(rows.map((row) => [String(row.id), row]));
+    return offersList.map((offerRow) => this.enrichOfferPartsSync(offerRow, byId));
+  }
+
+  private async enrichOffer<T extends offer | null>(offerData: T): Promise<T> {
+    if (!offerData) return offerData;
+    const withEmail = await this.enrichOfferWithCustomerEmail(offerData);
+    return this.enrichOfferParts(withEmail);
+  }
+
   async resolveSendEmailRecipient(
     offerId: string,
     body: { email?: string; useCustomerEmail?: boolean },
@@ -328,6 +425,7 @@ export class OfferService {
 
   
       const normalizedServices = Array.isArray(data.services) ? data.services : [data.services];
+      const enrichedParts = await this.enrichPartsArray(data.parts || []);
 
       // Set yachtName, yachtModel, countryCode from first yacht for backward compatibility
       const firstYacht = data.yachts[0];
@@ -347,9 +445,10 @@ export class OfferService {
           countryCode: countryCode,
           yachts: data.yachts,
           services: normalizedServices,
-          parts: data.parts,
+          parts: enrichedParts,
           status: data.status,
           language: data.language || 'en',
+          discountAmount: Math.max(0, Number(data.discountAmount) || 0),
           versions: [],
           createdAt: new Date(),
         })
@@ -368,7 +467,7 @@ export class OfferService {
      
       return {
         code: 201,
-        data: result,
+        data: this.stripVersionsFromOfferResponse(await this.enrichOffer(result)),
       };
     } catch (err) {
       console.log(err);
@@ -377,6 +476,117 @@ export class OfferService {
         message: err,
       };
     }
+  }
+
+  private buildMergedOfferPayload(
+    offer: offer,
+    data: Partial<CreateOfferDto>,
+    yachtData: {
+      yachtName?: string;
+      yachtModel?: string;
+      countryCode?: string;
+      yachts?: CreateOfferDto['yachts'];
+    },
+    enrichedParts?: any[],
+  ) {
+    const services = Array.isArray(data.services)
+      ? data.services
+      : data.services
+        ? [data.services]
+        : offer.services;
+
+    return {
+      customerId: data.customerId || offer.customerId,
+      customerFullName: data.customerFullName ?? offer.customerFullName,
+      yachtName: yachtData.yachtName ?? offer.yachtName,
+      yachtModel: yachtData.yachtModel ?? offer.yachtModel,
+      countryCode: yachtData.countryCode ?? offer.countryCode,
+      location: data.location ?? offer.location,
+      comment: data.comment ?? offer.comment,
+      yachts: yachtData.yachts ?? offer.yachts,
+      services,
+      parts: enrichedParts ?? offer.parts,
+      status: data.status ?? offer.status,
+      language: data.language ?? offer.language,
+      discountAmount: Math.max(
+        0,
+        Number(data.discountAmount ?? offer.discountAmount) || 0,
+      ),
+      imageUrls: data.imageUrls ?? offer.imageUrls ?? [],
+      videoUrls: data.videoUrls ?? offer.videoUrls ?? [],
+    };
+  }
+
+  private async forkOfferAfterWorkOrderExists(
+    previousOfferId: string,
+    offer: offer,
+    data: Partial<CreateOfferDto>,
+    changedFields: Record<string, { oldValue: unknown; newValue: unknown }>,
+    yachtData: {
+      yachtName?: string;
+      yachtModel?: string;
+      countryCode?: string;
+      yachts?: CreateOfferDto['yachts'];
+    },
+    enrichedParts: any[] | undefined,
+    savedBy: string | null,
+  ) {
+    const newId = await generateOfferNumber(this.offerRepository);
+    const merged = this.buildMergedOfferPayload(
+      offer,
+      data,
+      yachtData,
+      enrichedParts,
+    );
+
+    const result = await this.offerRepository.save(
+      this.offerRepository.create({
+        id: newId,
+        ...merged,
+        versions: [],
+        createdAt: new Date(),
+      }),
+    );
+
+    const historyUserId = savedBy || data.userId || 'unknown';
+    const changeEntries = Object.entries(changedFields).map(([field, v]) => ({
+      field,
+      oldValue: v.oldValue,
+      newValue: v.newValue,
+    }));
+
+    await this.offerHistoryRepository.save(
+      this.offerHistoryRepository.create({
+        offerId: newId,
+        userId: String(historyUserId),
+        changeDate: new Date(),
+        changeDescription: JSON.stringify({
+          _forkedFromOfferId: previousOfferId,
+          _reason: 'work_order_exists',
+          changes: changeEntries,
+        }),
+      }),
+    );
+
+    await this.offerHistoryRepository.save(
+      this.offerHistoryRepository.create({
+        offerId: previousOfferId,
+        userId: String(historyUserId),
+        changeDate: new Date(),
+        changeDescription: JSON.stringify({
+          _revisedAsOfferId: newId,
+          _reason: 'work_order_exists',
+          changes: changeEntries,
+        }),
+      }),
+    );
+
+    return {
+      code: 200,
+      message: `Revised offer created with new ID ${newId}`,
+      previousOfferId,
+      data: this.stripVersionsFromOfferResponse(await this.enrichOffer(result)),
+    };
   }
 
   async update(id: string, data: Partial<CreateOfferDto>, req?: Request) {
@@ -408,7 +618,7 @@ export class OfferService {
       }
 
       if (Object.keys(changedFields).length === 0) {
-        const enriched = await this.enrichOfferWithCustomerEmail(offer);
+        const enriched = await this.enrichOffer(offer);
         return {
           code: 200,
           message: 'No changes detected',
@@ -438,9 +648,32 @@ export class OfferService {
         snapshot: this.deepCloneOfferRow(offer),
       };
 
+      const enrichedParts =
+        data.parts !== undefined
+          ? await this.enrichPartsArray(
+              Array.isArray(data.parts) ? data.parts : [data.parts],
+            )
+          : undefined;
+
+      const hasWorkOrder =
+        (await this.orderRepository.count({ where: { offerId: id } })) > 0;
+
+      if (hasWorkOrder) {
+        return this.forkOfferAfterWorkOrderExists(
+          id,
+          offer,
+          data,
+          changedFields,
+          yachtData,
+          enrichedParts,
+          savedBy,
+        );
+      }
+
       const updatedOffer = Object.assign(offer, {
         ...data,
         ...yachtData,
+        ...(enrichedParts !== undefined ? { parts: enrichedParts } : {}),
         services: Array.isArray(data.services)
           ? data.services
           : data.services
@@ -471,7 +704,7 @@ export class OfferService {
       return {
         code: 200,
         data: this.stripVersionsFromOfferResponse(
-          await this.enrichOfferWithCustomerEmail(result),
+          await this.enrichOffer(result),
         ),
       };
     } catch (err) {
@@ -618,9 +851,10 @@ export class OfferService {
       }
   
       const enriched = await this.enrichOffersWithCustomerEmail(offers);
+      const withParts = await this.enrichOffersWithParts(enriched);
       return {
         code: 200,
-        data: enriched,
+        data: withParts,
       };
     } catch (err) {
       return {
@@ -639,9 +873,10 @@ export class OfferService {
         order: { createdAt: 'DESC' },
       });
       const enriched = await this.enrichOffersWithCustomerEmail(offers);
+      const withParts = await this.enrichOffersWithParts(enriched);
       return {
         code: 200,
-        data: enriched,
+        data: withParts,
       };
     } catch (err) {
       console.log(err);
@@ -726,7 +961,7 @@ export class OfferService {
           ? await this.usersRepository.find({ where: { id: In(userIds) } })
           : [];
       const usersById = new Map(users.map((u) => [u.id, u]));
-      const enriched = await this.enrichOfferWithCustomerEmail(offerRow);
+      const enriched = await this.enrichOffer(offerRow);
       return {
         code: 200,
         data: {

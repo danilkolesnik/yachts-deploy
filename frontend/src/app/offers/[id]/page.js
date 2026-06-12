@@ -30,6 +30,7 @@ import {
     normalizeOfferPart,
     normalizeOfferService,
 } from '@/utils/offerLineItems';
+import OfferTotalsSummary from '@/component/OfferTotalsSummary';
 
 const OfferDetail = ({ params }) => {
     const { id } = use(params);
@@ -452,6 +453,8 @@ const OfferDetail = ({ params }) => {
                         </div>
                     </div>
                 ) : null}
+
+                <OfferTotalsSummary offer={offer} />
 
                 {/* Comment */}
                 {offer.comment && String(offer.comment).trim() ? (

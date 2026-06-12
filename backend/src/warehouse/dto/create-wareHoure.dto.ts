@@ -5,5 +5,6 @@ export class CreateWareHourehDto {
     comment: string;
     countryCode: string;
     pricePerUnit: string;
+    articleNumber?: string;
     unofficially: boolean;
   }

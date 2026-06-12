@@ -133,15 +133,40 @@
         .subtotal div:nth-child(2) {
             text-align: right;
         }
+        .summary-block {
+            width: 70%;
+            margin-left: auto;
+            margin-top: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            border: 1.2px solid black;
+            border-bottom: none;
+        }
+        .summary-row:last-of-type {
+            border-bottom: 1.2px solid black;
+        }
+        .summary-row div {
+            padding: 4px;
+            width: 50%;
+        }
+        .summary-row div:nth-child(1) {
+            border-right: 1.2px solid black;
+        }
+        .summary-row div:nth-child(2) {
+            text-align: right;
+        }
         .total-amount {
             display: flex;
             justify-content: space-between;
             border: 1.2px solid black;
-            margin-top: 20px;
+            margin-top: 0;
             font-size: 12px;
             font-weight: 500;
-            width: 70%;
-            margin-left: auto;
+            width: 100%;
         }
         .total-amount div {
             padding: 4px;
@@ -235,9 +260,28 @@
                 <div>SUBTOTAL / UKUPNO:</div>
                 <div>EUR {{totalPriceAllServices}}</div>
             </div>
-            <div class="total-amount">
-                <div>TOTAL AMOUNT / SVEUKUPNI IZNOS:</div>
-                <div>EUR {{totalPriceAll}}</div>
+
+            <div class="summary-block">
+                <div class="summary-row">
+                    <div>IZNOS / AMOUNT:</div>
+                    <div>EUR {{grossAmount}}</div>
+                </div>
+                <div class="summary-row">
+                    <div>discount / rabat:</div>
+                    <div>EUR {{discountAmount}}</div>
+                </div>
+                <div class="summary-row">
+                    <div>UKUPNO / SUBTOTAL:</div>
+                    <div>EUR {{subtotalAfterDiscount}}</div>
+                </div>
+                <div class="summary-row">
+                    <div>PDV (25%) / VAT (25%):</div>
+                    <div>EUR {{vatAmount}}</div>
+                </div>
+                <div class="total-amount">
+                    <div>TOTAL AMOUNT / SVEUKUPNI IZNOS:</div>
+                    <div>EUR {{grandTotal}}</div>
+                </div>
             </div>
         </div>
         <div class="bank-details">

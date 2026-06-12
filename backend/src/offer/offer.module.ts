@@ -6,6 +6,7 @@ import { offer } from './entities/offer.entity';
 import { users } from 'src/auth/entities/users.entity';
 import { OfferHistory } from './entities/offer-history.entity';
 import { warehouse } from 'src/warehouse/entities/warehouse.entity';
+import { order } from 'src/order/entities/order.entity';
 
 @Module({
   imports:[
@@ -13,7 +14,8 @@ import { warehouse } from 'src/warehouse/entities/warehouse.entity';
         offer,
         users,
         OfferHistory,
-        warehouse
+        warehouse,
+        order,
       ]),
   ],
   controllers: [OfferController],

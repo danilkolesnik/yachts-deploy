@@ -235,9 +235,28 @@
                 <div>SUBTOTAL / UKUPNO:</div>
                 <div>EUR {{totalPriceAllServices}}</div>
             </div>
-            <div class="total-amount">
-                <div>TOTAL AMOUNT / SVEUKUPNI IZNOS:</div>
-                <div>EUR {{totalPriceAll}}</div>
+
+            <div class="summary-block">
+                <div class="summary-row">
+                    <div>IZNOS / AMOUNT:</div>
+                    <div>EUR {{grossAmount}}</div>
+                </div>
+                <div class="summary-row">
+                    <div>discount / rabat:</div>
+                    <div>EUR {{discountAmount}}</div>
+                </div>
+                <div class="summary-row">
+                    <div>UKUPNO / SUBTOTAL:</div>
+                    <div>EUR {{subtotalAfterDiscount}}</div>
+                </div>
+                <div class="summary-row">
+                    <div>PDV (25%) / VAT (25%):</div>
+                    <div>EUR {{vatAmount}}</div>
+                </div>
+                <div class="total-amount">
+                    <div>TOTAL AMOUNT / SVEUKUPNI IZNOS:</div>
+                    <div>EUR {{grandTotal}}</div>
+                </div>
             </div>
         </div>
         <div class="bank-details">

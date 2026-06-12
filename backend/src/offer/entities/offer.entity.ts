@@ -55,6 +55,10 @@ export class offer {
   @Column({ default: 'en' })
   language: string;
 
+  /** Discount in EUR applied before VAT (rabat). */
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  discountAmount: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

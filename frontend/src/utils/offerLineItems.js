@@ -19,7 +19,7 @@ export function normalizeOfferPart(part) {
         value: part?.value ?? part?.id,
         label,
         partName: label,
-        articleNumber: part?.articleNumber ?? '',
+        articleNumber: part?.articleNumber ?? part?.value?.articleNumber ?? '',
         pricePerUnit: Number.isFinite(unitPrice) ? unitPrice : 0,
         quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
         unofficially: Boolean(part?.unofficially),
@@ -50,6 +50,44 @@ export function getPartQuantity(part) {
 export function getPartLineTotal(part) {
     const normalized = normalizeOfferPart(part);
     return normalized.quantity * normalized.pricePerUnit;
+}
+
+export const DEFAULT_OFFER_VAT_RATE = 0.25;
+
+export function computeOfferTotals(offerOrParts, servicesArg, discountAmountArg) {
+    let parts = [];
+    let services = [];
+    let discountAmount = 0;
+
+    if (Array.isArray(offerOrParts) || servicesArg !== undefined) {
+        parts = Array.isArray(offerOrParts) ? offerOrParts : [];
+        services = servicesArg;
+        discountAmount = Number(discountAmountArg) || 0;
+    } else {
+        const offer = offerOrParts || {};
+        parts = Array.isArray(offer.parts) ? offer.parts : [];
+        services = offer.services;
+        discountAmount = Number(offer.discountAmount) || 0;
+    }
+
+    const partsTotal = parts.reduce((acc, part) => acc + getPartLineTotal(part), 0);
+    const serviceList = Array.isArray(services) ? services : services ? [services] : [];
+    const servicesTotal = serviceList.reduce((acc, service) => acc + getServiceLineTotal(service), 0);
+    const grossAmount = partsTotal + servicesTotal;
+    const discount = Math.max(0, Math.min(discountAmount, grossAmount));
+    const subtotalAfterDiscount = grossAmount - discount;
+    const vatAmount = subtotalAfterDiscount * DEFAULT_OFFER_VAT_RATE;
+    const grandTotal = subtotalAfterDiscount + vatAmount;
+
+    return {
+        partsTotal,
+        servicesTotal,
+        grossAmount,
+        discountAmount: discount,
+        subtotalAfterDiscount,
+        vatAmount,
+        grandTotal,
+    };
 }
 
 export function formatEuroAmount(value) {
@@ -85,6 +123,7 @@ export function mergeSelectedParts(previous = [], selected = []) {
         });
         return {
             ...option,
+            articleNumber: option.articleNumber ?? existing?.articleNumber ?? '',
             quantity: Number(existing?.quantity) > 0 ? Number(existing.quantity) : 1,
         };
     });

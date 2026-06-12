@@ -15,6 +15,7 @@ import {
   normalizeServices,
   resolveYachtFields,
 } from './pdfFormatters';
+import { computeOfferTotals } from './offerTotals';
 
 function applyOfferTranslations(template: string, lang?: string): string {
   const t = getTranslations(lang);
@@ -53,6 +54,10 @@ function applyOfferTranslations(template: string, lang?: string): string {
     .replace('SUBTOTAL / UKUPNO:', `${t.SUBTOTAL}:`)
     .replace('Provided Services / Pružene usluge:', `${t.PROVIDED_SERVICES}:`)
     .replace('<th>Service / Servis</th>', `<th>${t.SERVICE}</th>`)
+    .replace('IZNOS / AMOUNT:', `${t.GROSS_AMOUNT}:`)
+    .replace('discount / rabat:', `${t.DISCOUNT}:`)
+    .replace('UKUPNO / SUBTOTAL:', `${t.SUBTOTAL_AFTER_DISCOUNT}:`)
+    .replace('PDV (25%) / VAT (25%):', `${t.VAT_25}:`)
     .replace('TOTAL AMOUNT / SVEUKUPNI IZNOS:', `${t.TOTAL_AMOUNT}:`)
     .replace('BANK DETAILS / BANKOVNI DETALJI:', `${t.BANK_DETAILS}:`)
     .replace('Beneficiary / Korisnik:', `${t.BENEFICIARY}:`)
@@ -120,7 +125,11 @@ export function buildOfferExportHtml(data: any): string {
     0,
   );
 
-  const totalPriceAll = totalPrice + totalPriceAllServices;
+  const totals = computeOfferTotals(
+    exportData.parts,
+    services,
+    exportData.discountAmount,
+  );
 
   const imagesHtml =
     exportData.imageUrls.length > 0
@@ -187,7 +196,12 @@ export function buildOfferExportHtml(data: any): string {
     .replace('{{servicesTableRows}}', servicesTableRows)
     .replace('{{totalPrice}}', formatMoney(totalPrice))
     .replace('{{totalPriceAllServices}}', formatMoney(totalPriceAllServices))
-    .replace('{{totalPriceAll}}', formatMoney(totalPriceAll))
+    .replace('{{grossAmount}}', formatMoney(totals.grossAmount))
+    .replace('{{discountAmount}}', formatMoney(totals.discountAmount))
+    .replace('{{subtotalAfterDiscount}}', formatMoney(totals.subtotalAfterDiscount))
+    .replace('{{vatAmount}}', formatMoney(totals.vatAmount))
+    .replace('{{grandTotal}}', formatMoney(totals.grandTotal))
+    .replace('{{totalPriceAll}}', formatMoney(totals.grandTotal))
     .replace('{{imagesSection}}', imagesHtml)
     .replace('{{videosSection}}', videosHtml);
 

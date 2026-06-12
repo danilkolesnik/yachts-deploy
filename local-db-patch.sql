@@ -135,3 +135,9 @@ CREATE TABLE IF NOT EXISTS public.user_audit_history (
 
 CREATE INDEX IF NOT EXISTS "IDX_user_audit_history_userId" ON public.user_audit_history ("userId");
 
+-- Offer discount before VAT (rabat)
+ALTER TABLE public.offer ADD COLUMN IF NOT EXISTS "discountAmount" numeric(12,2) NOT NULL DEFAULT 0;
+
+-- Warehouse article number (catalog / offer PDF)
+ALTER TABLE public.warehouse ADD COLUMN IF NOT EXISTS "articleNumber" character varying NOT NULL DEFAULT '';
+
