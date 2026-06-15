@@ -4,9 +4,12 @@ export default function OfferTotalsSummary({ offer }) {
     if (!offer) return null;
 
     const totals = computeOfferTotals(offer);
-    const hasLineItems = totals.grossAmount > 0 || totals.discountAmount > 0;
+    const hasServices = Array.isArray(offer.services)
+        ? offer.services.length > 0
+        : Boolean(offer.services);
+    const hasParts = Array.isArray(offer.parts) && offer.parts.length > 0;
 
-    if (!hasLineItems) return null;
+    if (!hasServices && !hasParts) return null;
 
     const rows = [
         { label: 'Amount / IZNOS', value: totals.grossAmount },

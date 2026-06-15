@@ -1,3 +1,11 @@
+export function parseEuroNumber(value: unknown): number {
+  if (value == null || value === '') return 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const normalized = String(value).trim().replace(/\s/g, '').replace(',', '.');
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export function formatMoney(value: number): string {
   return Number.isFinite(value) ? value.toFixed(2) : '0.00';
 }
@@ -22,16 +30,14 @@ export function getServiceName(service: any): string {
 }
 
 export function getServicePrice(service: any): number {
-  return Number(
-    service?.priceInEuroWithoutVAT ??
-      service?.value?.priceInEuroWithoutVAT ??
-      0,
+  return parseEuroNumber(
+    service?.priceInEuroWithoutVAT ?? service?.value?.priceInEuroWithoutVAT,
   );
 }
 
 export function getServiceQuantity(service: any): number {
-  const quantity = Number(service?.quantity ?? service?.value?.quantity ?? 1);
-  return Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+  const quantity = parseEuroNumber(service?.quantity ?? service?.value?.quantity ?? 1);
+  return quantity > 0 ? quantity : 1;
 }
 
 export function getServiceLineTotal(service: any): number {
@@ -51,11 +57,12 @@ export function getPartArticleNumber(part: any): string {
 }
 
 export function getPartQuantity(part: any): number {
-  return Number(part?.quantity ?? part?.value?.quantity ?? 1);
+  const quantity = parseEuroNumber(part?.quantity ?? part?.value?.quantity ?? 1);
+  return quantity > 0 ? quantity : 1;
 }
 
 export function getPartPricePerUnit(part: any): number {
-  return Number(part?.pricePerUnit ?? part?.value?.pricePerUnit ?? 0);
+  return parseEuroNumber(part?.pricePerUnit ?? part?.value?.pricePerUnit);
 }
 
 export function resolveYachtFields(data: any) {

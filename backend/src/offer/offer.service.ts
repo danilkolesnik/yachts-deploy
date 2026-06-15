@@ -341,7 +341,15 @@ export class OfferService {
           .filter(Boolean),
       ),
     ];
-    if (!ids.length) return offerData;
+    if (!ids.length) {
+      return {
+        ...offerData,
+        parts: offerData.parts.map((part: any) => ({
+          ...part,
+          articleNumber: String(part?.articleNumber ?? '').trim(),
+        })),
+      } as T;
+    }
     const rows = await this.warehouseRepository.find({ where: { id: In(ids) } });
     const byId = new Map(rows.map((row) => [String(row.id), row]));
     return this.enrichOfferPartsSync(offerData, byId) as T;

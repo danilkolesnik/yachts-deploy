@@ -1,7 +1,15 @@
+export function parseEuroNumber(value) {
+    if (value == null || value === '') return 0;
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    const normalized = String(value).trim().replace(/\s/g, '').replace(',', '.');
+    const parsed = parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export function normalizeOfferService(service) {
     const base = service?.value ?? service ?? {};
-    const quantity = Number(base.quantity);
-    const unitPrice = Number(base.priceInEuroWithoutVAT ?? 0);
+    const quantity = parseEuroNumber(base.quantity);
+    const unitPrice = parseEuroNumber(base.priceInEuroWithoutVAT);
     return {
         id: base.id,
         serviceName: base.serviceName ?? '',
@@ -13,8 +21,8 @@ export function normalizeOfferService(service) {
 
 export function normalizeOfferPart(part) {
     const label = part?.label ?? part?.partName ?? part?.name ?? '';
-    const quantity = Number(part?.quantity);
-    const unitPrice = Number(part?.pricePerUnit ?? part?.value?.pricePerUnit ?? 0);
+    const quantity = parseEuroNumber(part?.quantity ?? part?.value?.quantity);
+    const unitPrice = parseEuroNumber(part?.pricePerUnit ?? part?.value?.pricePerUnit);
     return {
         value: part?.value ?? part?.id,
         label,
@@ -62,19 +70,25 @@ export function computeOfferTotals(offerOrParts, servicesArg, discountAmountArg)
     if (Array.isArray(offerOrParts) || servicesArg !== undefined) {
         parts = Array.isArray(offerOrParts) ? offerOrParts : [];
         services = servicesArg;
-        discountAmount = Number(discountAmountArg) || 0;
+        discountAmount = parseEuroNumber(discountAmountArg);
     } else {
         const offer = offerOrParts || {};
         parts = Array.isArray(offer.parts) ? offer.parts : [];
         services = offer.services;
-        discountAmount = Number(offer.discountAmount) || 0;
+        discountAmount = parseEuroNumber(offer.discountAmount);
     }
 
-    const partsTotal = parts.reduce((acc, part) => acc + getPartLineTotal(part), 0);
+    const partsTotal = parts.reduce(
+        (acc, part) => acc + parseEuroNumber(getPartLineTotal(part)),
+        0,
+    );
     const serviceList = Array.isArray(services) ? services : services ? [services] : [];
-    const servicesTotal = serviceList.reduce((acc, service) => acc + getServiceLineTotal(service), 0);
+    const servicesTotal = serviceList.reduce(
+        (acc, service) => acc + parseEuroNumber(getServiceLineTotal(service)),
+        0,
+    );
     const grossAmount = partsTotal + servicesTotal;
-    const discount = Math.max(0, Math.min(discountAmount, grossAmount));
+    const discount = Math.max(0, Math.min(parseEuroNumber(discountAmount), grossAmount));
     const subtotalAfterDiscount = grossAmount - discount;
     const vatAmount = subtotalAfterDiscount * DEFAULT_OFFER_VAT_RATE;
     const grandTotal = subtotalAfterDiscount + vatAmount;

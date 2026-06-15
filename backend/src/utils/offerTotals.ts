@@ -3,6 +3,7 @@ import {
   getPartQuantity,
   getServiceLineTotal,
   normalizeServices,
+  parseEuroNumber,
 } from './pdfFormatters';
 
 export const DEFAULT_OFFER_VAT_RATE = 0.25;
@@ -28,17 +29,18 @@ export function computeOfferTotals(
   const servicesList = normalizeServices(services);
 
   const partsTotal = partsList.reduce(
-    (acc, part) => acc + getPartQuantity(part) * getPartPricePerUnit(part),
+    (acc, part) =>
+      acc + parseEuroNumber(getPartQuantity(part) * getPartPricePerUnit(part)),
     0,
   );
 
   const servicesTotal = servicesList.reduce(
-    (acc, service) => acc + getServiceLineTotal(service),
+    (acc, service) => acc + parseEuroNumber(getServiceLineTotal(service)),
     0,
   );
 
   const grossAmount = partsTotal + servicesTotal;
-  const rawDiscount = Number(discountAmount) || 0;
+  const rawDiscount = parseEuroNumber(discountAmount);
   const discount = Math.max(0, Math.min(rawDiscount, grossAmount));
   const subtotalAfterDiscount = grossAmount - discount;
   const rate = Number.isFinite(vatRate) && vatRate >= 0 ? vatRate : DEFAULT_OFFER_VAT_RATE;
