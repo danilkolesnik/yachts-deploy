@@ -197,6 +197,59 @@ export class OrderService {
     };
   }
 
+  private resolvePartWarehouseId(part: unknown): string {
+    if (!part || typeof part !== 'object') return '';
+    const record = part as Record<string, unknown>;
+    const raw = record.value ?? record.id ?? '';
+    if (raw && typeof raw === 'object') {
+      const nested = raw as Record<string, unknown>;
+      return nested.id != null ? String(nested.id).trim() : '';
+    }
+    return String(raw ?? '').trim();
+  }
+
+  private enrichPartArticleNumber(
+    part: any,
+    warehouseById: Map<string, warehouse>,
+  ) {
+    const partId = this.resolvePartWarehouseId(part);
+    const warehouseRow = partId ? warehouseById.get(partId) : undefined;
+    const articleNumber =
+      String(part?.articleNumber ?? part?.value?.articleNumber ?? '').trim() ||
+      String(warehouseRow?.articleNumber ?? '').trim();
+    return { ...part, articleNumber };
+  }
+
+  private async enrichOrderPartsArray(parts: unknown[]): Promise<any[]> {
+    if (!Array.isArray(parts) || parts.length === 0) return [];
+    const ids = [
+      ...new Set(
+        parts
+          .map((part) => this.resolvePartWarehouseId(part))
+          .filter(Boolean),
+      ),
+    ];
+    if (!ids.length) {
+      return parts.map((part: any) => ({
+        ...part,
+        articleNumber: String(part?.articleNumber ?? part?.value?.articleNumber ?? '').trim(),
+      }));
+    }
+    const rows = await this.warehouseRepository.find({ where: { id: In(ids) } });
+    const byId = new Map(rows.map((row) => [String(row.id), row]));
+    return parts.map((part: any) => this.enrichPartArticleNumber(part, byId));
+  }
+
+  private async enrichOrderEntityParts<T extends order>(orderEntity: T): Promise<T> {
+    if (!Array.isArray(orderEntity.parts) || orderEntity.parts.length === 0) {
+      return orderEntity;
+    }
+    return {
+      ...orderEntity,
+      parts: await this.enrichOrderPartsArray(orderEntity.parts),
+    };
+  }
+
   private async loadUsersByIds(ids: Iterable<string | null | undefined>): Promise<Map<string, users>> {
     const unique = new Set<string>();
     for (const raw of ids) {
@@ -628,6 +681,10 @@ export class OrderService {
 
       const createdBy = req ? this.tryGetUserIdFromRequest(req) : undefined;
 
+      const enrichedParts = await this.enrichOrderPartsArray(
+        Array.isArray(checkOffer.parts) ? checkOffer.parts : [],
+      );
+
       const newOrder = await this.orderRepository.save(
         this.orderRepository.create({
           offerId: data.offerId,
@@ -637,7 +694,7 @@ export class OrderService {
           status: 'created',
           startedAt: new Date(),
           services: Array.isArray(checkOffer.services) ? checkOffer.services : [],
-          parts: Array.isArray(checkOffer.parts) ? checkOffer.parts : [],
+          parts: enrichedParts,
         })
       );
 
@@ -682,7 +739,10 @@ export class OrderService {
     const nextParts = items.parts !== undefined ? (Array.isArray(items.parts) ? items.parts : []) : prevParts;
 
     orderEntity.services = nextServices as any;
-    orderEntity.parts = nextParts as any;
+    orderEntity.parts =
+      items.parts !== undefined
+        ? await this.enrichOrderPartsArray(nextParts)
+        : nextParts;
     const saved = await this.orderRepository.save(orderEntity);
 
     await this.auditOrderItems(orderId, changedBy, {
@@ -1755,9 +1815,21 @@ export class OrderService {
         return { code: 404, message: 'Offer not found for this order' };
       }
 
+      const orderWithParts = await this.enrichOrderEntityParts(access.order);
+
+      const notes = await this.orderWorkerNoteRepository.find({
+        where: { orderId },
+        order: { createdAt: 'ASC' },
+      });
+      const usersById = await this.loadUsersByIds(notes.map((n) => n.userId));
+      const workerNotes = notes.map((note) => ({
+        ...note,
+        author: this.userRef(note.userId, usersById),
+      }));
+
       return {
         code: 200,
-        data: { order: access.order, offer },
+        data: { order: orderWithParts, offer, workerNotes },
       };
     } catch (err) {
       if (
@@ -1782,6 +1854,8 @@ export class OrderService {
         where: { id: orderEntity.offerId },
       });
 
+      const orderWithParts = await this.enrichOrderEntityParts(orderEntity);
+
       const usersById = orderEntity.createdBy
         ? await this.loadUsersByIds([orderEntity.createdBy])
         : new Map();
@@ -1790,7 +1864,7 @@ export class OrderService {
       return {
         code: 200,
         data: normalizeOrderMediaFields({
-          ...orderEntity,
+          ...orderWithParts,
           offer,
           createdByUser,
         }),

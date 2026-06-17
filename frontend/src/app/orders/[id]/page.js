@@ -126,7 +126,7 @@ const OrderDetail = ({ params }) => {
                 qty: p?.quantity ?? p?.qty ?? '',
                 unit: p?.unitsOfMeasurement ?? p?.unit ?? '',
                 price: p?.pricePerUnit ?? p?.price ?? '',
-                articleNumber: p?.articleNumber ?? '',
+                articleNumber: p?.articleNumber ?? p?.value?.articleNumber ?? '',
                 warehouse: p?.warehouse ?? '',
             }))
             .filter((x) => x.name);
@@ -150,7 +150,7 @@ const OrderDetail = ({ params }) => {
             .map((p) => ({
                 partName: p?.partName ?? p?.label ?? p?.name ?? '',
                 quantity: p?.quantity ?? p?.qty ?? 1,
-                articleNumber: p?.articleNumber ?? '',
+                articleNumber: p?.articleNumber ?? p?.value?.articleNumber ?? '',
                 warehouse: p?.warehouse ?? '',
                 pricePerUnit: p?.pricePerUnit ?? p?.price ?? null,
             }))
@@ -1018,15 +1018,27 @@ const OrderDetail = ({ params }) => {
                                 getOrderParts().length === 0 ? (
                                     <div className="text-sm text-gray-600">No parts in order</div>
                                 ) : (
-                                    <div className="space-y-2 text-sm text-black">
-                                        {getOrderParts().map((p, idx) => (
-                                            <div key={`${p.partName}-${idx}`} className="flex items-start justify-between gap-3">
-                                                <div className="font-medium">{p.partName}</div>
-                                                <div className="text-right text-gray-700 whitespace-nowrap">
-                                                    <span>{String(p.quantity || 1)}</span>
-                                                </div>
-                                            </div>
-                                        ))}
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full text-sm border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-gray-300 text-left text-gray-700">
+                                                    <th className="py-2 pr-3 font-semibold">Part</th>
+                                                    <th className="py-2 pr-3 font-semibold">Article No.</th>
+                                                    <th className="py-2 text-right font-semibold">Qty</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {getOrderParts().map((p, idx) => (
+                                                    <tr key={`${p.partName}-${idx}`} className="border-b border-gray-200 text-black">
+                                                        <td className="py-2 pr-3 font-medium">{p.partName}</td>
+                                                        <td className="py-2 pr-3 text-gray-700">{p.articleNumber || '—'}</td>
+                                                        <td className="py-2 text-right text-gray-700 whitespace-nowrap">
+                                                            {String(p.quantity || 1)}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 )
                             ) : (

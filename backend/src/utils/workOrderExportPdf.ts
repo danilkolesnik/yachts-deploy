@@ -48,15 +48,64 @@ function applyWorkOrderTranslations(template: string, lang?: string): string {
     .replace('Comment / Komentar:', `${t.COMMENT}:`);
 }
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function workerNoteCategoryLabel(category: string): string {
+  const labels: Record<string, string> = {
+    not_fit: 'Does not fit',
+    replace: 'Needs replacement',
+    missing: 'Missing',
+    other: 'Other',
+  };
+  return labels[category] || category || 'Other';
+}
+
+function buildWorkOrderComment(offer: any, workerNotes: any[] = []): string {
+  const lines: string[] = [];
+  const offerComment = String(offer?.comment ?? '').trim();
+  if (offerComment) {
+    lines.push(offerComment);
+  }
+
+  for (const note of workerNotes) {
+    const message = String(note?.message ?? '').trim();
+    if (!message) continue;
+    const category = workerNoteCategoryLabel(String(note?.category ?? 'other'));
+    const author = String(note?.author?.fullName ?? '').trim();
+    const createdAt = note?.createdAt ? new Date(note.createdAt) : null;
+    const dateStr =
+      createdAt && !isNaN(createdAt.getTime())
+        ? createdAt.toLocaleString()
+        : '';
+    const meta = [author, dateStr].filter(Boolean).join(', ');
+    lines.push(`[${category}] ${message}${meta ? ` (${meta})` : ''}`);
+  }
+
+  return lines.length > 0 ? lines.join('\n') : '—';
+}
+
+function formatWorkOrderCommentHtml(offer: any, workerNotes: any[] = []): string {
+  const text = buildWorkOrderComment(offer, workerNotes);
+  return escapeHtml(text).replace(/\n/g, '<br>');
+}
+
 export function buildWorkOrderExportHtml(data: {
   order: any;
   offer: any;
+  workerNotes?: any[];
 }): string {
   const templatePath = path.join(process.cwd(), 'documents', 'work-order.html');
   let templateString = fs.readFileSync(templatePath, 'utf8');
 
   const order = data.order || {};
   const offer = data.offer || {};
+  const workerNotes = Array.isArray(data.workerNotes) ? data.workerNotes : [];
   const language = offer.language || 'en';
   const yacht = resolveYachtFields(offer);
   const parts = Array.isArray(order.parts) ? order.parts : [];
@@ -107,7 +156,7 @@ export function buildWorkOrderExportHtml(data: {
     .replace('{{assignedWorkers}}', assignedWorkers || '—')
     .replace('{{partsTableRows}}', partsTableRows)
     .replace('{{servicesTableRows}}', servicesTableRows)
-    .replace('{{comment}}', String(offer.comment ?? '').trim() || '—');
+    .replace('{{comment}}', formatWorkOrderCommentHtml(offer, workerNotes));
 
   return applyWorkOrderTranslations(templateString, language);
 }
