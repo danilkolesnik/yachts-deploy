@@ -939,11 +939,14 @@ export class OrderService {
           );
 
           if (invoiceResult.code === 200 || invoiceResult.code === 201) {
-            const subject = 'Invoice created';
-            const message = '<p>Invoice created. Please find the attached PDF.</p>';
+            const subject = 'Proforma Invoice';
+            const message = '<p>Please find the attached proforma invoice PDF.</p>';
+            const pdfInvoice = invoiceResult.data
+              ? await this.invoiceService.enrichInvoiceForPdf(invoiceResult.data)
+              : invoiceResult.data;
             await sendEmail(
               customer.email,
-              invoiceResult.data,
+              pdfInvoice,
               'invoice',
               subject,
               message,

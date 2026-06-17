@@ -19,11 +19,11 @@ function applyInvoiceTranslations(template: string, lang?: string): string {
   const t = getTranslations(lang);
 
   return template
-    .replace('INVOICE / RAČUN', `${t.INVOICE} / ${t.INVOICE_HR}`)
+    .replace('PROFORMA INVOICE', `${t.PROFORMA_INVOICE}`)
     .replace('Place and date of issue:', `${t.PLACE_AND_DATE}:`)
-    .replace('GLAVNO SKLADIŠTE', `${t.WAREHOUSE}`)
     .replace('Remark:', `${t.REMARK}:`)
     .replace('Method of payment:', `${t.METHOD_OF_PAYMENT}:`)
+    .replace('Bank transfer', `${t.BANK_TRANSFER}`)
     .replace('Order:', `${t.ORDER}:`)
     .replace('Address:', `${t.ADDRESS}:`)
     .replace('Name:', `${t.NAME}:`)
@@ -47,10 +47,8 @@ function applyInvoiceTranslations(template: string, lang?: string): string {
     .replace('<span>DVO:</span>', `<span>${t.ISSUE_DATE_ABBR}</span>`)
     .replace('<span>Payment due:</span>', `<span>${t.PAYMENT_DUE}</span>`)
     .replace('<span>Reference number:</span>', `<span>${t.REFERENCE_NUMBER}</span>`)
-    .replace('Payment must be made to a bank account', `${t.PAYMENT_TO_BANK_ACCOUNT}`)
-    .replace('Oznaka plaćanja: Transakcijski račun', `${t.PAYMENT_MARK}`)
     .replace('Datum i vrijeme izdavanja:', `${t.ISSUE_DATETIME}:`)
-    .replace('Dokument Izdao:', `${t.DOCUMENT_ISSUED_BY}:`)
+    .replace('Document issued by:', `${t.DOCUMENT_ISSUED_BY}:`)
     .replace(
       'Društvo je upisano kod Trgovačkog suda u Pazinu MBS 130134955',
       `${t.COMPANY_REG_1}`,
@@ -128,6 +126,10 @@ export function buildInvoiceExportHtml(data: any): string {
 
   const issueDateTime = createdAt.toLocaleString('hr-HR');
 
+  const remark =
+    String(data?.remark ?? '').trim() ||
+    (data?.offerId ? `OFFER ${data.offerId}` : '');
+
   templateString = templateString
     .replace(/\{\{logoUrl\}\}/g, getLogoUrl())
     .replace('{{invoiceNumber}}', String(data?.invoiceNumber ?? ''))
@@ -135,8 +137,9 @@ export function buildInvoiceExportHtml(data: any): string {
     .replace('{{issueDate}}', formatDateHr(createdAt))
     .replace('{{paymentDueDate}}', formatDateHr(paymentDueAt))
     .replace('{{issueDateTime}}', issueDateTime)
+    .replace('{{remark}}', remark)
     .replace('{{offerIdInvoice}}', String(data?.offerId ?? ''))
-    .replace('{{orderId}}', String(data?.offerId || ''))
+    .replace('{{orderId}}', String(data?.orderId || data?.offerId || ''))
     .replace('{{customerFullName}}', String(data?.customerFullName ?? ''))
     .replace('{{yachtNameOffer}}', String(data?.yachtName ?? ''))
     .replace('{{yachtModelOffer}}', String(data?.yachtModel ?? ''))

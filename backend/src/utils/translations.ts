@@ -41,6 +41,8 @@ type TranslationKeys =
   // Invoice-specific and other labels
   | 'INVOICE'
   | 'INVOICE_HR'
+  | 'PROFORMA_INVOICE'
+  | 'BANK_TRANSFER'
   | 'PLACE_AND_DATE'
   | 'WAREHOUSE'
   | 'REMARK'
@@ -117,6 +119,8 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     VIDEO_FILE_AVAILABLE: 'Video file available at:',
     INVOICE: 'INVOICE',
     INVOICE_HR: 'RAČUN',
+    PROFORMA_INVOICE: 'PROFORMA INVOICE',
+    BANK_TRANSFER: 'Bank transfer',
     PLACE_AND_DATE: 'Place and date of issue',
     WAREHOUSE: 'MAIN WAREHOUSE',
     REMARK: 'Remark',
@@ -192,6 +196,8 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     VIDEO_FILE_AVAILABLE: 'Videodatei verfügbar unter:',
     INVOICE: 'RECHNUNG',
     INVOICE_HR: 'RAČUN',
+    PROFORMA_INVOICE: 'PROFORMA RECHNUNG',
+    BANK_TRANSFER: 'Banküberweisung',
     PLACE_AND_DATE: 'Ausstellungsort und -datum',
     WAREHOUSE: 'HAUPTLAGER',
     REMARK: 'Bemerkung',
@@ -267,6 +273,8 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     VIDEO_FILE_AVAILABLE: 'Video datoteka dostupna na:',
     INVOICE: 'RAČUN',
     INVOICE_HR: 'RAČUN',
+    PROFORMA_INVOICE: 'PROFORMA RAČUN',
+    BANK_TRANSFER: 'Bankovni transfer',
     PLACE_AND_DATE: 'Mjesto i datum izdavanja',
     WAREHOUSE: 'GLAVNO SKLADIŠTE',
     REMARK: 'Napomena',

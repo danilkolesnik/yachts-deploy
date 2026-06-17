@@ -139,6 +139,20 @@ export class InvoiceService {
     return this.createFromOffer(offerId, orderId);
   }
 
+  async enrichInvoiceForPdf(invoice: Invoice) {
+    if (!invoice?.offerId) {
+      return {
+        ...invoice,
+        remark: String((invoice as Invoice & { remark?: string }).remark ?? '').trim(),
+      };
+    }
+    const offer = await this.offerRepository.findOne({ where: { id: invoice.offerId } });
+    const remark =
+      String(offer?.comment ?? '').trim() ||
+      `OFFER ${invoice.offerId}`;
+    return { ...invoice, remark };
+  }
+
   async sendInvoiceEmail(invoiceId: string, email: string) {
     const result = await this.getById(invoiceId);
     if (result.code !== 200) {
@@ -150,9 +164,11 @@ export class InvoiceService {
       return { code: 500, message: 'Invoice data missing' };
     }
 
-    const subject = 'Invoice';
-    const message = '<p>Please find the attached invoice PDF.</p>';
-    return sendEmail(email, invoice, 'invoice', subject, message);
+    const pdfInvoice = await this.enrichInvoiceForPdf(invoice);
+
+    const subject = 'Proforma Invoice';
+    const message = '<p>Please find the attached proforma invoice PDF.</p>';
+    return sendEmail(email, pdfInvoice, 'invoice', subject, message);
   }
 
   async sendInvoiceEmailByOffer(

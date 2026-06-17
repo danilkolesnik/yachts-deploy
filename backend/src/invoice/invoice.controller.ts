@@ -33,7 +33,8 @@ export class InvoiceController {
         return res.status(500).json({ message: 'Invoice data missing' });
       }
 
-      const pdfBuffer = await createPdfBuffer(invoice, 'invoice');
+      const pdfData = await this.invoiceService.enrichInvoiceForPdf(invoice);
+      const pdfBuffer = await createPdfBuffer(pdfData, 'invoice');
 
       res.set({
         'Content-Type': 'application/pdf',
@@ -73,7 +74,8 @@ export class InvoiceController {
         return res.status(500).json({ message: 'Invoice data missing' });
       }
 
-      const pdfBuffer = await createPdfBuffer(invoice, 'invoice');
+      const pdfData = await this.invoiceService.enrichInvoiceForPdf(invoice);
+      const pdfBuffer = await createPdfBuffer(pdfData, 'invoice');
 
       res.set({
         'Content-Type': 'application/pdf',
