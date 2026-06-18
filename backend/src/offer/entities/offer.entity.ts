@@ -59,6 +59,10 @@ export class offer {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   discountAmount: number;
 
+  /** Discount percentage (0–100) applied to gross amount before VAT. */
+  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  discountPercent: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

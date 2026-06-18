@@ -50,6 +50,12 @@ export class Invoice {
   @Column({ type: 'float', default: 0 })
   totalWithTax: number;
 
+  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  discountPercent: number;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  discountAmount: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

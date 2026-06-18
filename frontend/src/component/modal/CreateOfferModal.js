@@ -52,10 +52,10 @@ const CreateOfferModal = ({
     }));
 
     return(
-        <Modal isOpen={isOpen} onClose={onClose} title="Create Offer">
+        <Modal isOpen={isOpen} onClose={onClose} title="Create Offer" size="xl" bodyClassName="max-h-[calc(100vh-10rem)] overflow-y-auto">
         <form
             onSubmit={onSubmit}
-            className="space-y-4 overflow-y-auto h-full"
+            className="space-y-4"
         >
             <div className="mb-4">
                 <label htmlFor="customer-select" className="block text-sm font-medium text-gray-700">
@@ -285,14 +285,30 @@ const CreateOfferModal = ({
             />
 
             <Input
-                label="Discount (EUR)"
-                name="discountAmount"
+                label="Discount (%)"
+                name="discountPercent"
                 type="number"
                 min="0"
+                max="100"
                 step="0.01"
-                value={formData.discountAmount ?? ''}
+                value={formData.discountPercent ?? ''}
                 onChange={handleChange}
             />
+
+            <div>
+                <label htmlFor="offer-remark" className="block text-sm font-medium text-gray-700 mb-1">
+                    Remark (payment terms)
+                </label>
+                <textarea
+                    id="offer-remark"
+                    name="comment"
+                    rows={3}
+                    value={formData.comment ?? ''}
+                    onChange={handleChange}
+                    placeholder="e.g. 50% advance payment, 50% after completing the work"
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-black text-sm"
+                />
+            </div>
 
             <Select
                 label="Status"

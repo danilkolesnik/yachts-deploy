@@ -12,10 +12,16 @@ export default function OfferTotalsSummary({ offer }) {
     if (!hasServices && !hasParts) return null;
 
     const rows = [
-        { label: 'Amount / IZNOS', value: totals.grossAmount },
-        { label: 'Discount / rabat', value: totals.discountAmount },
-        { label: 'Subtotal / UKUPNO', value: totals.subtotalAfterDiscount },
-        { label: 'VAT (25%) / PDV (25%)', value: totals.vatAmount },
+        { label: 'Amount / IZNOS', value: `${formatEuroAmount(totals.grossAmount)} €` },
+        {
+            label: 'Discount / rabat',
+            value:
+                totals.discountAmount > 0
+                    ? `${formatEuroAmount(totals.discountPercent)}% (${formatEuroAmount(totals.discountAmount)} €)`
+                    : `${formatEuroAmount(0)}% (${formatEuroAmount(0)} €)`,
+        },
+        { label: 'Subtotal / UKUPNO', value: `${formatEuroAmount(totals.subtotalAfterDiscount)} €` },
+        { label: 'VAT (25%) / PDV (25%)', value: `${formatEuroAmount(totals.vatAmount)} €` },
     ];
 
     return (
@@ -31,7 +37,7 @@ export default function OfferTotalsSummary({ offer }) {
                             {row.label}
                         </span>
                         <span className="px-4 py-2 text-black text-right flex-1 font-medium">
-                            {formatEuroAmount(row.value)} €
+                            {row.value}
                         </span>
                     </div>
                 ))}

@@ -12,6 +12,7 @@ export type OfferTotals = {
   partsTotal: number;
   servicesTotal: number;
   grossAmount: number;
+  discountPercent: number;
   discountAmount: number;
   subtotalAfterDiscount: number;
   vatAmount: number;
@@ -19,10 +20,34 @@ export type OfferTotals = {
   vatRate: number;
 };
 
+function resolveDiscount(
+  grossAmount: number,
+  discountAmount = 0,
+  discountPercent = 0,
+) {
+  const gross = parseEuroNumber(grossAmount);
+  const percent = Math.max(0, Math.min(100, parseEuroNumber(discountPercent)));
+  const amountInput = Math.max(0, parseEuroNumber(discountAmount));
+
+  let discount = 0;
+  let effectivePercent = 0;
+
+  if (percent > 0) {
+    discount = Math.min(gross, (gross * percent) / 100);
+    effectivePercent = percent;
+  } else if (amountInput > 0) {
+    discount = Math.min(gross, amountInput);
+    effectivePercent = gross > 0 ? (discount / gross) * 100 : 0;
+  }
+
+  return { discount, effectivePercent };
+}
+
 export function computeOfferTotals(
   parts: unknown,
   services: unknown,
   discountAmount = 0,
+  discountPercent = 0,
   vatRate = DEFAULT_OFFER_VAT_RATE,
 ): OfferTotals {
   const partsList = Array.isArray(parts) ? parts : [];
@@ -40,8 +65,11 @@ export function computeOfferTotals(
   );
 
   const grossAmount = partsTotal + servicesTotal;
-  const rawDiscount = parseEuroNumber(discountAmount);
-  const discount = Math.max(0, Math.min(rawDiscount, grossAmount));
+  const { discount, effectivePercent } = resolveDiscount(
+    grossAmount,
+    discountAmount,
+    discountPercent,
+  );
   const subtotalAfterDiscount = grossAmount - discount;
   const rate = Number.isFinite(vatRate) && vatRate >= 0 ? vatRate : DEFAULT_OFFER_VAT_RATE;
   const vatAmount = subtotalAfterDiscount * rate;
@@ -51,6 +79,7 @@ export function computeOfferTotals(
     partsTotal,
     servicesTotal,
     grossAmount,
+    discountPercent: effectivePercent,
     discountAmount: discount,
     subtotalAfterDiscount,
     vatAmount,

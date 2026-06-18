@@ -141,3 +141,8 @@ ALTER TABLE public.offer ADD COLUMN IF NOT EXISTS "discountAmount" numeric(12,2)
 -- Warehouse article number (catalog / offer PDF)
 ALTER TABLE public.warehouse ADD COLUMN IF NOT EXISTS "articleNumber" character varying NOT NULL DEFAULT '';
 
+-- Offer discount percent (primary input; amount derived at render)
+ALTER TABLE public.offer ADD COLUMN IF NOT EXISTS "discountPercent" numeric(5,2) NOT NULL DEFAULT 0;
+ALTER TABLE public.invoice ADD COLUMN IF NOT EXISTS "discountPercent" numeric(5,2) NOT NULL DEFAULT 0;
+ALTER TABLE public.invoice ADD COLUMN IF NOT EXISTS "discountAmount" numeric(12,2) NOT NULL DEFAULT 0;
+

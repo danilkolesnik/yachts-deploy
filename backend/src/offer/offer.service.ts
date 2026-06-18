@@ -34,6 +34,7 @@ const OFFER_FIELD_LABELS: Record<string, string> = {
   customerFullName: 'Customer',
   language: 'Language',
   discountAmount: 'Discount (EUR)',
+  discountPercent: 'Discount (%)',
   yachtName: 'Yacht name',
   yachtModel: 'Yacht model',
   countryCode: 'Country code',
@@ -457,6 +458,7 @@ export class OfferService {
           status: data.status,
           language: data.language || 'en',
           discountAmount: Math.max(0, Number(data.discountAmount) || 0),
+          discountPercent: Math.max(0, Math.min(100, Number(data.discountPercent) || 0)),
           versions: [],
           createdAt: new Date(),
         })
@@ -519,6 +521,10 @@ export class OfferService {
       discountAmount: Math.max(
         0,
         Number(data.discountAmount ?? offer.discountAmount) || 0,
+      ),
+      discountPercent: Math.max(
+        0,
+        Math.min(100, Number(data.discountPercent ?? offer.discountPercent) || 0),
       ),
       imageUrls: data.imageUrls ?? offer.imageUrls ?? [],
       videoUrls: data.videoUrls ?? offer.videoUrls ?? [],

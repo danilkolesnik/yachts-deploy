@@ -62,20 +62,23 @@ export function getPartLineTotal(part) {
 
 export const DEFAULT_OFFER_VAT_RATE = 0.25;
 
-export function computeOfferTotals(offerOrParts, servicesArg, discountAmountArg) {
+export function computeOfferTotals(offerOrParts, servicesArg, discountAmountArg, discountPercentArg) {
     let parts = [];
     let services = [];
     let discountAmount = 0;
+    let discountPercent = 0;
 
     if (Array.isArray(offerOrParts) || servicesArg !== undefined) {
         parts = Array.isArray(offerOrParts) ? offerOrParts : [];
         services = servicesArg;
         discountAmount = parseEuroNumber(discountAmountArg);
+        discountPercent = parseEuroNumber(discountPercentArg);
     } else {
         const offer = offerOrParts || {};
         parts = Array.isArray(offer.parts) ? offer.parts : [];
         services = offer.services;
         discountAmount = parseEuroNumber(offer.discountAmount);
+        discountPercent = parseEuroNumber(offer.discountPercent);
     }
 
     const partsTotal = parts.reduce(
@@ -88,7 +91,20 @@ export function computeOfferTotals(offerOrParts, servicesArg, discountAmountArg)
         0,
     );
     const grossAmount = partsTotal + servicesTotal;
-    const discount = Math.max(0, Math.min(parseEuroNumber(discountAmount), grossAmount));
+
+    const percent = Math.max(0, Math.min(100, discountPercent));
+    const amountInput = Math.max(0, parseEuroNumber(discountAmount));
+
+    let discount = 0;
+    let effectivePercent = 0;
+    if (percent > 0) {
+        discount = Math.min(grossAmount, (grossAmount * percent) / 100);
+        effectivePercent = percent;
+    } else if (amountInput > 0) {
+        discount = Math.min(grossAmount, amountInput);
+        effectivePercent = grossAmount > 0 ? (discount / grossAmount) * 100 : 0;
+    }
+
     const subtotalAfterDiscount = grossAmount - discount;
     const vatAmount = subtotalAfterDiscount * DEFAULT_OFFER_VAT_RATE;
     const grandTotal = subtotalAfterDiscount + vatAmount;
@@ -97,6 +113,7 @@ export function computeOfferTotals(offerOrParts, servicesArg, discountAmountArg)
         partsTotal,
         servicesTotal,
         grossAmount,
+        discountPercent: effectivePercent,
         discountAmount: discount,
         subtotalAfterDiscount,
         vatAmount,

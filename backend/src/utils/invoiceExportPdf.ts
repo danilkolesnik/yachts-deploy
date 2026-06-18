@@ -14,6 +14,7 @@ import {
   getServiceLineTotal,
   normalizeServices,
 } from './pdfFormatters';
+import { computeOfferTotals } from './offerTotals';
 
 function applyInvoiceTranslations(template: string, lang?: string): string {
   const t = getTranslations(lang);
@@ -21,7 +22,6 @@ function applyInvoiceTranslations(template: string, lang?: string): string {
   return template
     .replace('PROFORMA INVOICE', `${t.PROFORMA_INVOICE}`)
     .replace('Place and date of issue:', `${t.PLACE_AND_DATE}:`)
-    .replace('Remark:', `${t.REMARK}:`)
     .replace('Method of payment:', `${t.METHOD_OF_PAYMENT}:`)
     .replace('Bank transfer', `${t.BANK_TRANSFER}`)
     .replace('Order:', `${t.ORDER}:`)
@@ -37,13 +37,17 @@ function applyInvoiceTranslations(template: string, lang?: string): string {
     .replace('<span>Price EUR</span>', `<span>${t.PRICE_EUR}</span>`)
     .replace('<h2 class="work-title">Work</h2>', `<h2 class="work-title">${t.WORK}</h2>`)
     .replace('<span>Service</span>', `<span>${t.SERVICE}</span>`)
-    .replace('<div>Inventory costs</div>', `<div>${t.INVENTORY_COSTS}</div>`)
-    .replace('<div>Without tax</div>', `<div>${t.WITHOUT_TAX}</div>`)
-    .replace('<div>VAT</div>', `<div>${t.VAT}</div>`)
-    .replace('<div>Total amount</div>', `<div>${t.TOTAL_AMOUNT_TITLE}</div>`)
-    .replace('Osnovica 25 %', `${t.TAX_BASE_25}`)
-    .replace('Osnovica PDV', `${t.TAX_BASE_VAT}`)
-    .replace('PDV', `${t.VAT}`)
+    .replace('IZNOS / AMOUNT:', `${t.GROSS_AMOUNT}:`)
+    .replace('discount / rabat:', `${t.DISCOUNT}:`)
+    .replace('UKUPNO / SUBTOTAL:', `${t.SUBTOTAL_AFTER_DISCOUNT}:`)
+    .replace('PDV (25%) / VAT (25%):', `${t.VAT_25}:`)
+    .replace('TOTAL AMOUNT / SVEUKUPNI IZNOS:', `${t.TOTAL_AMOUNT}:`)
+    .replace('Remark / Napomena:', `${t.REMARK}:`)
+    .replace('BANK DETAILS / BANKOVNI DETALJI:', `${t.BANK_DETAILS}:`)
+    .replace('Beneficiary / Korisnik:', `${t.BENEFICIARY}:`)
+    .replace('Beneficiary Bank / Banka primatelj:', `${t.BENEFICIARY_BANK}:`)
+    .replace('Bank address / Adresa banke:', `${t.BANK_ADDRESS}:`)
+    .replace('SWIFT / BRZ:', `${t.SWIFT}:`)
     .replace('<span>DVO:</span>', `<span>${t.ISSUE_DATE_ABBR}</span>`)
     .replace('<span>Payment due:</span>', `<span>${t.PAYMENT_DUE}</span>`)
     .replace('<span>Reference number:</span>', `<span>${t.REFERENCE_NUMBER}</span>`)
@@ -60,21 +64,13 @@ function applyInvoiceTranslations(template: string, lang?: string): string {
     .replace('Članovi uprave: Viktor Cherednichenko', `${t.COMPANY_REG_3}`);
 }
 
-export function computeInvoiceTotals(parts: any[], services: any[]) {
-  const partsTotal = (Array.isArray(parts) ? parts : []).reduce((acc, part) => {
-    return acc + getPartQuantity(part) * getPartPricePerUnit(part);
-  }, 0);
-
-  const servicesTotal = normalizeServices(services).reduce(
-    (acc, service) => acc + getServiceLineTotal(service),
-    0,
-  );
-
-  const subtotalWithoutTax = partsTotal + servicesTotal;
-  const taxAmount = subtotalWithoutTax * 0.25;
-  const totalWithTax = subtotalWithoutTax + taxAmount;
-
-  return { partsTotal, servicesTotal, subtotalWithoutTax, taxAmount, totalWithTax };
+export function computeInvoiceTotals(
+  parts: any[],
+  services: any[],
+  discountAmount = 0,
+  discountPercent = 0,
+) {
+  return computeOfferTotals(parts, services, discountAmount, discountPercent);
 }
 
 export function buildInvoiceExportHtml(data: any): string {
@@ -83,7 +79,12 @@ export function buildInvoiceExportHtml(data: any): string {
 
   const parts = Array.isArray(data?.parts) ? data.parts : [];
   const services = normalizeServices(data?.services);
-  const totals = computeInvoiceTotals(parts, services);
+  const totals = computeInvoiceTotals(
+    parts,
+    services,
+    data?.discountAmount,
+    data?.discountPercent,
+  );
 
   const invoiceTableRows = parts
     .map((part: any, index: number) => {
@@ -126,9 +127,7 @@ export function buildInvoiceExportHtml(data: any): string {
 
   const issueDateTime = createdAt.toLocaleString('hr-HR');
 
-  const remark =
-    String(data?.remark ?? '').trim() ||
-    (data?.offerId ? `OFFER ${data.offerId}` : '');
+  const remark = String(data?.remark ?? '').trim() || '—';
 
   templateString = templateString
     .replace(/\{\{logoUrl\}\}/g, getLogoUrl())
@@ -138,7 +137,6 @@ export function buildInvoiceExportHtml(data: any): string {
     .replace('{{paymentDueDate}}', formatDateHr(paymentDueAt))
     .replace('{{issueDateTime}}', issueDateTime)
     .replace('{{remark}}', remark)
-    .replace('{{offerIdInvoice}}', String(data?.offerId ?? ''))
     .replace('{{orderId}}', String(data?.orderId || data?.offerId || ''))
     .replace('{{customerFullName}}', String(data?.customerFullName ?? ''))
     .replace('{{yachtNameOffer}}', String(data?.yachtName ?? ''))
@@ -146,11 +144,12 @@ export function buildInvoiceExportHtml(data: any): string {
     .replace('{{location}}', String(data?.location ?? ''))
     .replace('{{invoiceTableRows}}', invoiceTableRows)
     .replace('{{invoiceServicesRows}}', invoiceServicesRows)
-    .replace('{{totalPriceInvoice}}', formatMoney(totals.subtotalWithoutTax))
-    .replace('{{totalPriceTax}}', formatMoney(totals.taxAmount))
-    .replace('{{totalPriceInvoiceServicesTwo}}', formatMoney(totals.subtotalWithoutTax))
-    .replace('{{totalPriceTaxTwo}}', formatMoney(totals.taxAmount))
-    .replace('{{totalPriceInvoiceTwo}}', formatMoney(totals.totalWithTax))
+    .replace('{{grossAmount}}', formatMoney(totals.grossAmount))
+    .replace('{{discountPercent}}', formatMoney(totals.discountPercent))
+    .replace('{{discountAmount}}', formatMoney(totals.discountAmount))
+    .replace('{{subtotalAfterDiscount}}', formatMoney(totals.subtotalAfterDiscount))
+    .replace('{{vatAmount}}', formatMoney(totals.vatAmount))
+    .replace('{{grandTotal}}', formatMoney(totals.grandTotal))
     .replace('{{referenceNumber}}', String(data?.offerId ?? data?.id ?? ''));
 
   return applyInvoiceTranslations(templateString, data?.language);

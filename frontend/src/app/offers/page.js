@@ -27,7 +27,7 @@ import { getCustomerEmailForOffer } from '@/utils/customerEmail';
 import { sendOfferEmail } from '@/utils/sendOfferEmail';
 import SendEmailModal from '@/ui/SendEmailModal';
 import { isActiveOfferStatus } from '@/constants/workflowStatus';
-import { normalizeOfferPart, normalizeOfferService } from '@/utils/offerLineItems';
+import { computeOfferTotals, normalizeOfferPart, normalizeOfferService } from '@/utils/offerLineItems';
 
 const OfferPage = () => {
     const router = useRouter();
@@ -97,6 +97,7 @@ const OfferPage = () => {
         status: 'created',
         language: 'en',
         discountAmount: '',
+        discountPercent: '',
     });
 
     const [createServiceFormData, setCreateServiceFormData] = useState({
@@ -142,6 +143,7 @@ const OfferPage = () => {
         status: 'created',
         language: 'en',
         discountAmount: '',
+        discountPercent: '',
     });
 
     const [filters, setFilters] = useState({
@@ -1107,7 +1109,8 @@ const OfferPage = () => {
                 customerId: resolvedCustomerId,
                 services: normalizedServices,
                 parts: normalizedParts,
-                discountAmount: Math.max(0, Number(formData.discountAmount) || 0),
+                discountPercent: Math.max(0, Math.min(100, Number(formData.discountPercent) || 0)),
+                discountAmount: 0,
                 price: 0,
                 description: formData.comment || ''
             };
@@ -1152,6 +1155,7 @@ const OfferPage = () => {
                     status: 'created',
                     language: 'en',
                     discountAmount: '',
+        discountPercent: '',
                 });
             }
             await refreshOffersAndOrders();
@@ -1192,6 +1196,14 @@ const OfferPage = () => {
             setFilteredYachts([]);
         }
         
+        const offerTotals = computeOfferTotals(row);
+        const derivedDiscountPercent =
+            Number(row.discountPercent) > 0
+                ? String(row.discountPercent)
+                : offerTotals.discountAmount > 0
+                  ? String(offerTotals.discountPercent.toFixed(2))
+                  : '';
+
         setEditFormData({
             customerFullName: row.customerFullName,
             yachtName: row.yachtName,
@@ -1210,7 +1222,8 @@ const OfferPage = () => {
             parts: row.parts,
             status: row.status,
             language: row.language || 'en',
-            discountAmount: row.discountAmount != null ? String(row.discountAmount) : '',
+            discountAmount: '',
+            discountPercent: derivedDiscountPercent,
         });
         setEditMode(true);
         setEditId(row.id);
@@ -1489,7 +1502,8 @@ const OfferPage = () => {
                 parts: Array.isArray(editFormData.parts)
                     ? editFormData.parts.map((part) => normalizeOfferPart(part)).filter((p) => p.label)
                     : [],
-                discountAmount: Math.max(0, Number(editFormData.discountAmount) || 0),
+                discountPercent: Math.max(0, Math.min(100, Number(editFormData.discountPercent) || 0)),
+                discountAmount: 0,
             };
             const response = await axios.put(`${URL}/offer/${editId}`, offerData);
             if (hasServerBusinessError(response, "Error updating offer")) {

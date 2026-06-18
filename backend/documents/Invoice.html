@@ -46,13 +46,52 @@
             font-size: 12px;
             width: 50%;
         }
-        .bank-details {
-            margin-top: 40px;
+        .summary-block {
+            width: 100%;
+            margin-top: 16px;
             font-size: 12px;
         }
-
-
-        .table div {
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            border: 1.2px solid black;
+            border-bottom: none;
+        }
+        .summary-row:last-of-type {
+            border-bottom: 1.2px solid black;
+        }
+        .summary-row div {
+            padding: 4px;
+            width: 50%;
+        }
+        .summary-row div:nth-child(2) {
+            text-align: right;
+        }
+        .total-amount {
+            display: flex;
+            justify-content: space-between;
+            border: 1.2px solid black;
+            margin-top: 0;
+            font-size: 12px;
+            font-weight: 700;
+            width: 100%;
+        }
+        .total-amount div {
+            padding: 4px;
+        }
+        .remark-block {
+            border: 1.2px solid black;
+            padding: 10px;
+            margin-top: 16px;
+            font-size: 12px;
+            min-height: 56px;
+        }
+        .bank-details {
+            margin-top: 24px;
+            font-size: 12px;
+            border-top: 2px solid black;
+            padding-top: 12px;
+        }
             display: flex;
             justify-content: space-between;
         }
@@ -174,7 +213,6 @@
             <div>
                 <p>Place and date of issue: Pula, {{createdAt}}</p>
                 <p class="invoice-title">PROFORMA INVOICE : {{invoiceNumber}}</p>
-                <p>Remark: {{remark}}</p>
                 <p>Method of payment: Bank transfer</p>
                 <p>Order: {{orderId}}</p>
             </div>
@@ -214,37 +252,32 @@
         </div>
        
 
-        <div class="details">
-            <div class="details-item">
-                <span>
-                    Osnovica 25 %
-                </span>
-                <span>
-                    Osnovica PDV
-                    {{totalPriceInvoice}}
-                </span>
-                <span>
-                    PDV {{totalPriceTax}}
-                </span>
+        <div class="summary-block">
+            <div class="summary-row">
+                <div>IZNOS / AMOUNT:</div>
+                <div>EUR {{grossAmount}}</div>
+            </div>
+            <div class="summary-row">
+                <div>discount {{discountPercent}}% / rabat:</div>
+                <div>EUR {{discountAmount}}</div>
+            </div>
+            <div class="summary-row">
+                <div>UKUPNO / SUBTOTAL:</div>
+                <div>EUR {{subtotalAfterDiscount}}</div>
+            </div>
+            <div class="summary-row">
+                <div>PDV (25%) / VAT (25%):</div>
+                <div>EUR {{vatAmount}}</div>
             </div>
             <div class="total-amount">
-                <div>
-                    <div>Inventory costs</div>
-                    <div>0,00 EUR</div>
-                </div>
-                <div>
-                    <div>Without tax</div>
-                    <div>{{totalPriceInvoiceServicesTwo}} EUR</div>
-                </div>
-                <div>
-                    <div>VAT</div>
-                    <div>{{totalPriceTaxTwo}} EUR</div>
-                </div>
-                <div>
-                    <div>Total amount</div>
-                    <div>{{totalPriceInvoiceTwo}} EUR</div>
-                </div>
+                <div>TOTAL AMOUNT / SVEUKUPNI IZNOS:</div>
+                <div>EUR {{grandTotal}}</div>
             </div>
+        </div>
+
+        <div class="remark-block">
+            <strong>Remark / Napomena:</strong><br>
+            {{remark}}
         </div>
 
         <div class="payment">
@@ -265,6 +298,15 @@
         <div class="bank">
             <span>Datum i vrijeme izdavanja: {{issueDateTime}}</span>
             <span>Document issued by: Viktor Cherednichenko</span>
+        </div>
+
+        <div class="bank-details">
+            <strong>BANK DETAILS / BANKOVNI DETALJI:</strong><br>
+            Beneficiary / Korisnik: All Services MARINE d.o.o.<br>
+            Beneficiary Bank / Banka primatelj: ERSTE&STEIERMARKISCHE BANK d.d.<br>
+            IBAN: HR5124020061101131858<br>
+            Bank address / Adresa banke: JADRANSKA TRG 3a, 51000 RIJEKA, REPUBLIKA HRVATSKA<br>
+            SWIFT / BRZ: ESBCHR22<br>
         </div>
 
         <div class="footer">

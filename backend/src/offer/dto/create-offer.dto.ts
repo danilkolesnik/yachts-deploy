@@ -30,4 +30,5 @@ export class CreateOfferDto {
     videoUrls?: string[];
     language?: 'en' | 'de' | 'hr';
     discountAmount?: number;
+    discountPercent?: number;
 }

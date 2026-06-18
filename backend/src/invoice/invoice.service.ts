@@ -95,7 +95,12 @@ export class InvoiceService {
               : [];
 
       const yacht = this.resolveYachtFields(offerData);
-      const totals = computeInvoiceTotals(parts, services);
+      const totals = computeInvoiceTotals(
+        parts,
+        services,
+        offerData.discountAmount,
+        offerData.discountPercent,
+      );
       const createdAt = new Date();
       const paymentDueAt = new Date(createdAt.getTime() + 5 * 24 * 60 * 60 * 1000);
 
@@ -114,9 +119,11 @@ export class InvoiceService {
           parts,
           services,
           language: offerData.language || 'en',
-          subtotalWithoutTax: totals.subtotalWithoutTax,
-          taxAmount: totals.taxAmount,
-          totalWithTax: totals.totalWithTax,
+          discountPercent: Number(offerData.discountPercent) || 0,
+          discountAmount: totals.discountAmount,
+          subtotalWithoutTax: totals.subtotalAfterDiscount,
+          taxAmount: totals.vatAmount,
+          totalWithTax: totals.grandTotal,
           createdAt,
           paymentDueAt,
         }),
@@ -143,14 +150,17 @@ export class InvoiceService {
     if (!invoice?.offerId) {
       return {
         ...invoice,
-        remark: String((invoice as Invoice & { remark?: string }).remark ?? '').trim(),
+        remark: String((invoice as Invoice & { remark?: string }).remark ?? '').trim() || '—',
       };
     }
     const offer = await this.offerRepository.findOne({ where: { id: invoice.offerId } });
-    const remark =
-      String(offer?.comment ?? '').trim() ||
-      `OFFER ${invoice.offerId}`;
-    return { ...invoice, remark };
+    const remark = String(offer?.comment ?? '').trim() || '—';
+    return {
+      ...invoice,
+      remark,
+      discountPercent: Number(offer?.discountPercent ?? invoice.discountPercent) || 0,
+      discountAmount: Number(offer?.discountAmount ?? invoice.discountAmount) || 0,
+    };
   }
 
   async sendInvoiceEmail(invoiceId: string, email: string) {

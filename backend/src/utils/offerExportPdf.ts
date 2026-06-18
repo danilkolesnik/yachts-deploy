@@ -129,6 +129,7 @@ export function buildOfferExportHtml(data: any): string {
     exportData.parts,
     services,
     exportData.discountAmount,
+    exportData.discountPercent,
   );
 
   const imagesHtml =
@@ -198,6 +199,7 @@ export function buildOfferExportHtml(data: any): string {
     .replace('{{totalPriceAllServices}}', formatMoney(totalPriceAllServices))
     .replace('{{grossAmount}}', formatMoney(totals.grossAmount))
     .replace('{{discountAmount}}', formatMoney(totals.discountAmount))
+    .replace('{{discountPercent}}', formatMoney(totals.discountPercent))
     .replace('{{subtotalAfterDiscount}}', formatMoney(totals.subtotalAfterDiscount))
     .replace('{{vatAmount}}', formatMoney(totals.vatAmount))
     .replace('{{grandTotal}}', formatMoney(totals.grandTotal))
