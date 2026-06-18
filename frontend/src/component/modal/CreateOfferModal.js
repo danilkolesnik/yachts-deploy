@@ -52,11 +52,12 @@ const CreateOfferModal = ({
     }));
 
     return(
-        <Modal isOpen={isOpen} onClose={onClose} title="Create Offer" size="xl" bodyClassName="max-h-[calc(100vh-10rem)] overflow-y-auto">
+        <Modal isOpen={isOpen} onClose={onClose} title="Create Offer" size="xl" bodyClassName="!p-0">
         <form
             onSubmit={onSubmit}
-            className="space-y-4"
+            className="flex flex-col h-[70vh] max-h-[700px]"
         >
+            <div className="flex-1 overflow-y-auto px-4 pt-2 pb-4 space-y-4">
             <div className="mb-4">
                 <label htmlFor="customer-select" className="block text-sm font-medium text-gray-700">
                     Select Customer
@@ -324,7 +325,8 @@ const CreateOfferModal = ({
                 <Option value="confirmed" className="text-black">Confirmed</Option>
                 <Option value="canceled" className="text-black">Canceled</Option>
             </Select>
-            <div className="flex justify-end">
+            </div>
+            <div className="flex justify-end shrink-0 border-t border-gray-200 px-4 py-3 bg-white">
                 <Button type="button" variant="text" color="red" onClick={onClose} className="mr-1">
                     <span>Cancel</span>
                 </Button>
