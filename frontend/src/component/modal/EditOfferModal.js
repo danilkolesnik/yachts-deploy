@@ -50,11 +50,9 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
     );
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Edit Offer" size="xl" bodyClassName="max-h-[calc(100vh-10rem)] overflow-y-auto">
-        <form
-            onSubmit={onSubmit}
-            className="space-y-4"
-        >
+        <Modal isOpen={isOpen} onClose={onClose} title="Edit Offer" size="xl">
+            <div className="max-h-[70vh] overflow-y-auto pr-2 text-black">
+                <form onSubmit={onSubmit} className="space-y-4">
             <div className="mb-4">
                 <label htmlFor="customer-select" className="block text-sm font-medium text-gray-700">
                     Select Customer
@@ -187,7 +185,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     }}
                 />
             </div>
-            <Button onClick={openCreateServiceModal} color="blue">
+            <Button type="button" onClick={openCreateServiceModal} color="blue">
                 Add Service
             </Button>
             <OfferLineItemsFields
@@ -235,7 +233,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     }}
                 />
             </div>
-            <Button onClick={openCreatePartModal} color="blue">
+            <Button type="button" onClick={openCreatePartModal} color="blue">
                 Add Part
             </Button>
             <OfferLineItemsFields
@@ -285,15 +283,16 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                 <Option value="confirmed" className="text-black">Confirmed</Option>
                 <Option value="canceled" className="text-black">Canceled</Option>
             </Select>
-            <div className="flex justify-end">
-                <Button variant="text" color="red" onClick={onClose} className="mr-1">
-                    <span>Cancel</span>
-                </Button>
-                <Button color="green" type="submit">
-                    <span>Update</span>
-                </Button>
-                </div>
-            </form>
+                    <div className="flex justify-end space-x-2">
+                        <Button type="button" variant="text" color="red" onClick={onClose} className="mr-1">
+                            <span>Cancel</span>
+                        </Button>
+                        <Button color="green" type="submit">
+                            <span>Update</span>
+                        </Button>
+                    </div>
+                </form>
+            </div>
         </Modal>
     );
 };
