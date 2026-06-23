@@ -151,6 +151,7 @@ export class InvoiceService {
       return {
         ...invoice,
         remark: String((invoice as Invoice & { remark?: string }).remark ?? '').trim() || '—',
+        language: invoice.language || 'en',
       };
     }
     const offer = await this.offerRepository.findOne({ where: { id: invoice.offerId } });
@@ -158,9 +159,26 @@ export class InvoiceService {
     return {
       ...invoice,
       remark,
+      language: offer?.language || invoice.language || 'en',
       discountPercent: Number(offer?.discountPercent ?? invoice.discountPercent) || 0,
       discountAmount: Number(offer?.discountAmount ?? invoice.discountAmount) || 0,
     };
+  }
+
+  async syncLanguageWithOffer(offerId: string): Promise<void> {
+    const invoice = await this.invoiceRepository.findOne({ where: { offerId } });
+    if (!invoice) {
+      return;
+    }
+
+    const offer = await this.offerRepository.findOne({ where: { id: offerId } });
+    const nextLanguage = offer?.language || 'en';
+    if (invoice.language === nextLanguage) {
+      return;
+    }
+
+    invoice.language = nextLanguage;
+    await this.invoiceRepository.save(invoice);
   }
 
   async sendInvoiceEmail(invoiceId: string, email: string) {

@@ -44,8 +44,7 @@ function applyWorkOrderTranslations(template: string, lang?: string): string {
       `<th>${t.ARTICLE_NUMBER}</th>`,
     )
     .replace('<th>Quantity / Količina</th>', `<th>${t.QUANTITY}</th>`)
-    .replace('<th>Service / Servis</th>', `<th>${t.SERVICE}</th>`)
-    .replace('Comment / Komentar:', `${t.COMMENT}:`);
+    .replace('<th>Service / Servis</th>', `<th>${t.SERVICE}</th>`);
 }
 
 function escapeHtml(value: unknown): string {
@@ -66,12 +65,8 @@ function workerNoteCategoryLabel(category: string): string {
   return labels[category] || category || 'Other';
 }
 
-function buildWorkOrderComment(offer: any, workerNotes: any[] = []): string {
+function buildWorkOrderComment(workerNotes: any[] = []): string {
   const lines: string[] = [];
-  const offerComment = String(offer?.comment ?? '').trim();
-  if (offerComment) {
-    lines.push(offerComment);
-  }
 
   for (const note of workerNotes) {
     const message = String(note?.message ?? '').trim();
@@ -87,12 +82,25 @@ function buildWorkOrderComment(offer: any, workerNotes: any[] = []): string {
     lines.push(`[${category}] ${message}${meta ? ` (${meta})` : ''}`);
   }
 
-  return lines.length > 0 ? lines.join('\n') : '—';
+  return lines.join('\n');
 }
 
-function formatWorkOrderCommentHtml(offer: any, workerNotes: any[] = []): string {
-  const text = buildWorkOrderComment(offer, workerNotes);
-  return escapeHtml(text).replace(/\n/g, '<br>');
+function renderWorkOrderCommentBlock(
+  workerNotes: any[] = [],
+  lang?: string,
+): string {
+  const text = buildWorkOrderComment(workerNotes);
+  if (!text) {
+    return '';
+  }
+
+  const t = getTranslations(lang);
+  const html = escapeHtml(text).replace(/\n/g, '<br>');
+  return `
+            <div class="comment-block">
+                <strong>${t.COMMENT}:</strong><br>
+                ${html}
+            </div>`;
 }
 
 export function buildWorkOrderExportHtml(data: {
@@ -156,7 +164,7 @@ export function buildWorkOrderExportHtml(data: {
     .replace('{{assignedWorkers}}', assignedWorkers || '—')
     .replace('{{partsTableRows}}', partsTableRows)
     .replace('{{servicesTableRows}}', servicesTableRows)
-    .replace('{{comment}}', formatWorkOrderCommentHtml(offer, workerNotes));
+    .replace('{{commentBlock}}', renderWorkOrderCommentBlock(workerNotes, language));
 
   return applyWorkOrderTranslations(templateString, language);
 }

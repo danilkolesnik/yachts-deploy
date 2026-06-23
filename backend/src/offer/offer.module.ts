@@ -7,6 +7,7 @@ import { users } from 'src/auth/entities/users.entity';
 import { OfferHistory } from './entities/offer-history.entity';
 import { warehouse } from 'src/warehouse/entities/warehouse.entity';
 import { order } from 'src/order/entities/order.entity';
+import { InvoiceModule } from 'src/invoice/invoice.module';
 
 @Module({
   imports:[
@@ -17,6 +18,8 @@ import { order } from 'src/order/entities/order.entity';
         warehouse,
         order,
       ]),
+      InvoiceModule,
+  ],
   ],
   controllers: [OfferController],
   providers: [OfferService]

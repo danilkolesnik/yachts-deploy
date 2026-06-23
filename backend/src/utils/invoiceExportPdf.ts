@@ -5,6 +5,7 @@ import {
   formatDateHr,
   formatMoney,
   getLogoUrl,
+  getPartArticleNumber,
   getPartLabel,
   getPartPricePerUnit,
   getPartQuantity,
@@ -23,22 +24,32 @@ function applyInvoiceTranslations(template: string, lang?: string): string {
     .replace('PROFORMA INVOICE', `${t.PROFORMA_INVOICE}`)
     .replace('Place and date of issue:', `${t.PLACE_AND_DATE}:`)
     .replace('Method of payment:', `${t.METHOD_OF_PAYMENT}:`)
-    .replace('Bank transfer', `${t.BANK_TRANSFER}`)
+    .replace('Transakcijski', `${t.BANK_TRANSFER}`)
     .replace('Order:', `${t.ORDER}:`)
     .replace('Address:', `${t.ADDRESS}:`)
     .replace('Name:', `${t.NAME}:`)
     .replace('Model:', `${t.MODEL}:`)
     .replace('Location:', `${t.LOCATION_LABEL}:`)
-    .replace('<h2>Products</h2>', `<h2>${t.PRODUCTS}</h2>`)
-    .replace('<span>ID</span>', `<span>${t.ID}</span>`)
-    .replace('<span>Products</span>', `<span>${t.PRODUCTS}</span>`)
-    .replace('<span>Quantity</span>', `<span>${t.QUANTITY}</span>`)
-    .replace('<span>Price per unit EUR</span>', `<span>${t.PRICE_PER_UNIT_EUR}</span>`)
-    .replace('<span>Price EUR</span>', `<span>${t.PRICE_EUR}</span>`)
-    .replace('<h2 class="work-title">Work</h2>', `<h2 class="work-title">${t.WORK}</h2>`)
-    .replace('<span>Service</span>', `<span>${t.SERVICE}</span>`)
+    .replaceAll('<th>No.</th>', `<th>${t.NO}</th>`)
+    .replaceAll('<th>Products / Proizvodi</th>', `<th>${t.PRODUCTS}</th>`)
+    .replaceAll(
+      '<th>Article Number / Artikal</th>',
+      `<th>${t.ARTICLE_NUMBER}</th>`,
+    )
+    .replaceAll('<th>Quantity / Količina</th>', `<th>${t.QUANTITY}</th>`)
+    .replaceAll(
+      '<th>Price in EURO per pcs/ Cijena u Eurima ed/kom</th>',
+      `<th>${t.PRICE_PER_PCS}</th>`,
+    )
+    .replaceAll(
+      '<th>Price in EURO/ Cijena u Eurima</th>',
+      `<th>${t.PRICE}</th>`,
+    )
+    .replaceAll('<th>Service / Servis</th>', `<th>${t.SERVICE}</th>`)
+    .replace('Products / Proizvodi', `${t.PRODUCTS}`)
+    .replace('Provided Services / Pružene usluge:', `${t.PROVIDED_SERVICES}:`)
     .replace('IZNOS / AMOUNT:', `${t.GROSS_AMOUNT}:`)
-    .replace('discount / rabat:', `${t.DISCOUNT}:`)
+    .replace('Discount / Rabat:', `${t.DISCOUNT_LABEL}:`)
     .replace('UKUPNO / SUBTOTAL:', `${t.SUBTOTAL_AFTER_DISCOUNT}:`)
     .replace('PDV (25%) / VAT (25%):', `${t.VAT_25}:`)
     .replace('TOTAL AMOUNT / SVEUKUPNI IZNOS:', `${t.TOTAL_AMOUNT}:`)
@@ -92,13 +103,14 @@ export function buildInvoiceExportHtml(data: any): string {
       const pricePerUnit = getPartPricePerUnit(part);
       const lineTotal = quantity * pricePerUnit;
       return `
-      <div>
-        <span>${index + 1}</span>
-        <span>${getPartLabel(part)}</span>
-        <span>${quantity}</span>
-        <span>${formatMoney(pricePerUnit)}</span>
-        <span>${formatMoney(lineTotal)}</span>
-      </div>
+      <tr>
+        <td>${index + 1}</td>
+        <td>${getPartLabel(part)}</td>
+        <td>${getPartArticleNumber(part)}</td>
+        <td>${quantity}</td>
+        <td>${formatMoney(pricePerUnit)}</td>
+        <td>${formatMoney(lineTotal)}</td>
+      </tr>
     `;
     })
     .join('');
@@ -109,13 +121,13 @@ export function buildInvoiceExportHtml(data: any): string {
       const unitPrice = getServicePrice(service);
       const lineTotal = getServiceLineTotal(service);
       return `
-      <div>
-        <span>${index + 1}</span>
-        <span>${getServiceName(service)}</span>
-        <span>${quantity}</span>
-        <span>${formatMoney(unitPrice)}</span>
-        <span>${formatMoney(lineTotal)}</span>
-      </div>
+      <tr>
+        <td>${index + 1}</td>
+        <td>${getServiceName(service)}</td>
+        <td>${quantity}</td>
+        <td>${formatMoney(unitPrice)}</td>
+        <td>${formatMoney(lineTotal)}</td>
+      </tr>
     `;
     })
     .join('');

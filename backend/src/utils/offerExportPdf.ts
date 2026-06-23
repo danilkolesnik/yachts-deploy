@@ -55,7 +55,7 @@ function applyOfferTranslations(template: string, lang?: string): string {
     .replace('Provided Services / Pružene usluge:', `${t.PROVIDED_SERVICES}:`)
     .replace('<th>Service / Servis</th>', `<th>${t.SERVICE}</th>`)
     .replace('IZNOS / AMOUNT:', `${t.GROSS_AMOUNT}:`)
-    .replace('discount / rabat:', `${t.DISCOUNT}:`)
+    .replace('Discount / Rabat:', `${t.DISCOUNT_LABEL}:`)
     .replace('UKUPNO / SUBTOTAL:', `${t.SUBTOTAL_AFTER_DISCOUNT}:`)
     .replace('PDV (25%) / VAT (25%):', `${t.VAT_25}:`)
     .replace('TOTAL AMOUNT / SVEUKUPNI IZNOS:', `${t.TOTAL_AMOUNT}:`)

@@ -30,6 +30,7 @@ type TranslationKeys =
   | 'TOTAL_AMOUNT'
   | 'GROSS_AMOUNT'
   | 'DISCOUNT'
+  | 'DISCOUNT_LABEL'
   | 'SUBTOTAL_AFTER_DISCOUNT'
   | 'VAT_25'
   | 'BANK_DETAILS'
@@ -109,6 +110,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     TOTAL_AMOUNT: 'TOTAL AMOUNT',
     GROSS_AMOUNT: 'AMOUNT',
     DISCOUNT: 'discount',
+    DISCOUNT_LABEL: 'Discount / Rabat',
     SUBTOTAL_AFTER_DISCOUNT: 'SUBTOTAL',
     VAT_25: 'VAT (25%)',
     BANK_DETAILS: 'BANK DETAILS',
@@ -186,6 +188,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     TOTAL_AMOUNT: 'GESAMTBETRAG',
     GROSS_AMOUNT: 'BETRAG',
     DISCOUNT: 'Rabatt',
+    DISCOUNT_LABEL: 'Rabatt / Rabat',
     SUBTOTAL_AFTER_DISCOUNT: 'ZWISCHENSUMME',
     VAT_25: 'MwSt. (25%)',
     BANK_DETAILS: 'BANKVERBINDUNG',
@@ -263,6 +266,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     TOTAL_AMOUNT: 'SVEUKUPNI IZNOS',
     GROSS_AMOUNT: 'IZNOS',
     DISCOUNT: 'rabat',
+    DISCOUNT_LABEL: 'Popust / Rabat',
     SUBTOTAL_AFTER_DISCOUNT: 'UKUPNO',
     VAT_25: 'PDV (25%)',
     BANK_DETAILS: 'BANKOVNI DETALJI',
@@ -274,7 +278,7 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
     INVOICE: 'RAČUN',
     INVOICE_HR: 'RAČUN',
     PROFORMA_INVOICE: 'PROFORMA RAČUN',
-    BANK_TRANSFER: 'Bankovni transfer',
+    BANK_TRANSFER: 'Transakcijski',
     PLACE_AND_DATE: 'Mjesto i datum izdavanja',
     WAREHOUSE: 'GLAVNO SKLADIŠTE',
     REMARK: 'Napomena',

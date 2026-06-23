@@ -12,6 +12,7 @@ import { OfferHistory } from './entities/offer-history.entity';
 import { isEqual } from 'lodash';
 import { resolveOfferEmailRecipient } from 'src/utils/emailRecipient';
 import { order } from 'src/order/entities/order.entity';
+import { InvoiceService } from 'src/invoice/invoice.service';
 
 import getBearerToken from 'src/methods/getBearerToken';
 import { JwtPayload } from 'jsonwebtoken';
@@ -55,6 +56,7 @@ export class OfferService {
     private readonly offerHistoryRepository: Repository<OfferHistory>,
     @InjectRepository(order)
     private readonly orderRepository: Repository<order>,
+    private readonly invoiceService: InvoiceService,
   ) {}
 
   private async enrichOfferWithCustomerEmail<T extends offer | null>(offerData: T) {
@@ -714,6 +716,8 @@ export class OfferService {
       );
 
       const result = await this.offerRepository.save(updatedOffer);
+
+      await this.invoiceService.syncLanguageWithOffer(id);
 
       return {
         code: 200,

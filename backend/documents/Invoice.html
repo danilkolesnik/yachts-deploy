@@ -92,32 +92,28 @@
             border-top: 2px solid black;
             padding-top: 12px;
         }
-            display: flex;
-            justify-content: space-between;
+        table {
+            width: 100%;
+            border-collapse: collapse;
         }
-        .table div span {
-            width: 20%;
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
             font-size: 12px;
-            text-align: center;
-            font-weight: 700;
-            padding-bottom: 5px;
-            padding-top: 5px;
-            border-bottom: 2px solid black;
         }
-        .table div span:nth-child(2) {
-            width: 50%;
+        .table {
+            font-size: 12px;
         }
-
-        h2{
+        .header-table {
             font-size: 14px;
-            padding: 0px;
-            border-bottom: 2px solid black;
-            margin: 0px;
-            margin-bottom: 2px;
+            font-weight: 500;
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 4px;
         }
-        .work-title{
-            margin-top: 5px;
-            padding-bottom: 5px;
+        .work-title {
+            margin-top: 16px;
         }
 
         .details {
@@ -213,7 +209,7 @@
             <div>
                 <p>Place and date of issue: Pula, {{createdAt}}</p>
                 <p class="invoice-title">PROFORMA INVOICE : {{invoiceNumber}}</p>
-                <p>Method of payment: Bank transfer</p>
+                <p>Method of payment: Transakcijski</p>
                 <p>Order: {{orderId}}</p>
             </div>
             <div>
@@ -227,29 +223,30 @@
         </div>
 
 
-        <h2>Products</h2>
-        <div class="table">
-            <div>
-                <span>ID</span>
-                <span>Products</span>
-                <span>Quantity</span>
-                <span>Price per unit EUR</span>
-                <span>Price EUR</span>
-            </div>
+        <span class="header-table">Products / Proizvodi</span>
+        <table class="table">
+            <tr>
+                <th>No.</th>
+                <th>Products / Proizvodi</th>
+                <th>Article Number / Artikal</th>
+                <th>Quantity / Količina</th>
+                <th>Price in EURO per pcs/ Cijena u Eurima ed/kom</th>
+                <th>Price in EURO/ Cijena u Eurima</th>
+            </tr>
             {{invoiceTableRows}}
-        </div>
+        </table>
 
-        <h2 class="work-title">Work</h2>
-        <div class="table">
-            <div>
-                <span>ID</span>
-                <span>Service</span>
-                <span>Quantity</span>
-                <span>Price per unit EUR</span>
-                <span>Price EUR</span>
-            </div>
+        <span class="header-table work-title">Provided Services / Pružene usluge:</span>
+        <table class="table">
+            <tr>
+                <th>No.</th>
+                <th>Service / Servis</th>
+                <th>Quantity / Količina</th>
+                <th>Price in EURO per pcs/ Cijena u Eurima ed/kom</th>
+                <th>Price in EURO/ Cijena u Eurima</th>
+            </tr>
             {{invoiceServicesRows}}
-        </div>
+        </table>
        
 
         <div class="summary-block">
@@ -258,7 +255,7 @@
                 <div>EUR {{grossAmount}}</div>
             </div>
             <div class="summary-row">
-                <div>discount {{discountPercent}}% / rabat:</div>
+                <div>Discount / Rabat: {{discountPercent}}%</div>
                 <div>EUR {{discountAmount}}</div>
             </div>
             <div class="summary-row">
