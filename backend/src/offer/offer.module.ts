@@ -20,7 +20,6 @@ import { InvoiceModule } from 'src/invoice/invoice.module';
       ]),
       InvoiceModule,
   ],
-  ],
   controllers: [OfferController],
   providers: [OfferService]
 })
