@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useAppSelector } from "@/lib/hooks";
 import { PermissionsList } from "@/constants/permissions";
 import { can } from "@/utils/canPermission";
+import { getOrderDocumentNumber } from "@/utils/documentNumbers";
 
 export default function ClientOrdersPage() {
   const session = useAppSelector((s) => s.userData?.session ?? null);
@@ -87,8 +88,8 @@ export default function ClientOrdersPage() {
                   >
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                       <div className="text-black">
-                        <div className="text-sm text-gray-600">Order</div>
-                        <div className="font-mono">{o.id}</div>
+                        <div className="text-sm text-gray-600">Number</div>
+                        <div className="font-mono">{getOrderDocumentNumber(o)}</div>
                       </div>
                       <div className="text-black">
                         <div className="text-sm text-gray-600">Status</div>

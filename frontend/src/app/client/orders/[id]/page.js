@@ -15,6 +15,7 @@ import ImageGallery from "react-image-gallery";
 import "react-image-gallery/styles/css/image-gallery.css";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import { ORDER_MEDIA_SECTIONS, normalizeOrderMedia } from "@/constants/orderMediaSections";
+import { getOrderDocumentNumber } from "@/utils/documentNumbers";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -209,8 +210,8 @@ export default function ClientOrderDetailPage() {
           <div className="w-full space-y-4 bg-white rounded shadow-md p-4">
             <div className="flex flex-col gap-2">
               <div className="text-black">
-                <div className="text-sm text-gray-600">Order</div>
-                <div className="font-mono">{order?.id}</div>
+                <div className="text-sm text-gray-600">Number</div>
+                <div className="font-mono">{getOrderDocumentNumber(order)}</div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="text-black">
