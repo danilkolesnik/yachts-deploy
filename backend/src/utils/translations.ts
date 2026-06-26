@@ -316,8 +316,16 @@ export const translations: Record<SupportedLanguage, Record<TranslationKeys, str
   },
 };
 
+export function normalizeDocumentLanguage(lang?: string): SupportedLanguage {
+  const value = String(lang ?? '').trim().toLowerCase();
+  if (value === 'en' || value === 'de' || value === 'hr') {
+    return value;
+  }
+  return 'en';
+}
+
 export function getTranslations(lang?: string) {
-  const language = (lang as SupportedLanguage) || 'en';
+  const language = normalizeDocumentLanguage(lang);
   return translations[language] ?? translations.en;
 }
 

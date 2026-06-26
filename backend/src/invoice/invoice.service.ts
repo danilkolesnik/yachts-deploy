@@ -9,6 +9,7 @@ import generateRandomId from 'src/methods/generateRandomId';
 import { computeInvoiceTotals } from 'src/utils/invoiceExportPdf';
 import { sendEmail } from 'src/utils/sendEmail';
 import { resolveOfferEmailRecipient } from 'src/utils/emailRecipient';
+import { normalizeDocumentLanguage } from 'src/utils/translations';
 
 @Injectable()
 export class InvoiceService {
@@ -61,7 +62,13 @@ export class InvoiceService {
     try {
       const existing = await this.invoiceRepository.findOne({ where: { offerId } });
       if (existing) {
-        return { code: 200, data: existing, message: 'Invoice already exists' };
+        await this.syncLanguageWithOffer(offerId);
+        const refreshed = await this.invoiceRepository.findOne({ where: { offerId } });
+        return {
+          code: 200,
+          data: refreshed ?? existing,
+          message: 'Invoice already exists',
+        };
       }
 
       const offerData = await this.offerRepository.findOne({ where: { id: offerId } });
@@ -151,15 +158,21 @@ export class InvoiceService {
       return {
         ...invoice,
         remark: String((invoice as Invoice & { remark?: string }).remark ?? '').trim() || '—',
-        language: invoice.language || 'en',
+        language: normalizeDocumentLanguage(invoice.language),
       };
     }
     const offer = await this.offerRepository.findOne({ where: { id: invoice.offerId } });
     const remark = String(offer?.comment ?? '').trim() || '—';
+    const language = normalizeDocumentLanguage(offer?.language || invoice.language);
+
+    if (invoice.language !== language) {
+      await this.invoiceRepository.update(invoice.id, { language });
+    }
+
     return {
       ...invoice,
       remark,
-      language: offer?.language || invoice.language || 'en',
+      language,
       discountPercent: Number(offer?.discountPercent ?? invoice.discountPercent) || 0,
       discountAmount: Number(offer?.discountAmount ?? invoice.discountAmount) || 0,
     };
@@ -172,13 +185,12 @@ export class InvoiceService {
     }
 
     const offer = await this.offerRepository.findOne({ where: { id: offerId } });
-    const nextLanguage = offer?.language || 'en';
+    const nextLanguage = normalizeDocumentLanguage(offer?.language || invoice.language);
     if (invoice.language === nextLanguage) {
       return;
     }
 
-    invoice.language = nextLanguage;
-    await this.invoiceRepository.save(invoice);
+    await this.invoiceRepository.update(invoice.id, { language: nextLanguage });
   }
 
   async sendInvoiceEmail(invoiceId: string, email: string) {

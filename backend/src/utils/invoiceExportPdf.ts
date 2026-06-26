@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { getTranslations } from './translations';
+import { getTranslations, normalizeDocumentLanguage } from './translations';
 import {
   formatDateHr,
   formatMoney,
@@ -17,8 +17,12 @@ import {
 } from './pdfFormatters';
 import { computeOfferTotals } from './offerTotals';
 
+function resolveInvoiceOfferNumber(data: any): string {
+  return String(data?.offerId || data?.invoiceNumber || '').trim();
+}
+
 function applyInvoiceTranslations(template: string, lang?: string): string {
-  const t = getTranslations(lang);
+  const t = getTranslations(normalizeDocumentLanguage(lang));
 
   return template
     .replace('PROFORMA INVOICE', `${t.PROFORMA_INVOICE}`)
@@ -149,7 +153,7 @@ export function buildInvoiceExportHtml(data: any): string {
     .replace('{{paymentDueDate}}', formatDateHr(paymentDueAt))
     .replace('{{issueDateTime}}', issueDateTime)
     .replace('{{remark}}', remark)
-    .replace('{{orderId}}', String(data?.orderId || data?.offerId || ''))
+    .replace('{{orderId}}', resolveInvoiceOfferNumber(data))
     .replace('{{customerFullName}}', String(data?.customerFullName ?? ''))
     .replace('{{yachtNameOffer}}', String(data?.yachtName ?? ''))
     .replace('{{yachtModelOffer}}', String(data?.yachtModel ?? ''))
@@ -162,7 +166,10 @@ export function buildInvoiceExportHtml(data: any): string {
     .replace('{{subtotalAfterDiscount}}', formatMoney(totals.subtotalAfterDiscount))
     .replace('{{vatAmount}}', formatMoney(totals.vatAmount))
     .replace('{{grandTotal}}', formatMoney(totals.grandTotal))
-    .replace('{{referenceNumber}}', String(data?.offerId ?? data?.id ?? ''));
+    .replace('{{referenceNumber}}', resolveInvoiceOfferNumber(data));
 
-  return applyInvoiceTranslations(templateString, data?.language);
+  return applyInvoiceTranslations(
+    templateString,
+    normalizeDocumentLanguage(data?.language),
+  );
 }
