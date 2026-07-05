@@ -15,7 +15,6 @@ import { PermissionsList } from '@/constants/permissions';
 import { can } from '@/utils/canPermission';
 import {
     ARCHIVE_TABS,
-    matchesArchiveTab,
 } from '@/constants/workflowStatus';
 
 const StatusBadge = ({ status }) => (
@@ -52,7 +51,10 @@ const ArchivePageContent = () => {
     const [loading, setLoading] = useState(true);
     const [searchValue, setSearchValue] = useState('');
 
-    const canAccessArchive = can(permissions, PermissionsList.ARCHIVE_READ);
+    const canAccessArchive =
+        can(permissions, PermissionsList.ARCHIVE_READ) ||
+        canReadOffers ||
+        canReadOrders;
     const canReadOffers = can(permissions, PermissionsList.OFFERS_READ);
     const canReadOrders = can(permissions, PermissionsList.ORDERS_READ);
 
@@ -114,11 +116,25 @@ const ArchivePageContent = () => {
         try {
             const token = localStorage.getItem('token');
             const headers = { Authorization: `Bearer ${token}` };
+
+            if (activeTab === 'changes') {
+                if (canReadOffers) {
+                    const res = await axios.get(`${URL}/offer/changes/history`, { headers });
+                    setChangeHistory(res.data?.data || []);
+                } else {
+                    setChangeHistory([]);
+                }
+                setOffers([]);
+                setOrders([]);
+                return;
+            }
+
+            const bucket = activeTab;
             const requests = [];
 
             if (canReadOffers) {
                 requests.push(
-                    axios.get(`${URL}/offer`, { headers }).then((res) => {
+                    axios.get(`${URL}/offer`, { headers, params: { bucket } }).then((res) => {
                         setOffers(res.data?.data || []);
                     }),
                 );
@@ -128,7 +144,7 @@ const ArchivePageContent = () => {
 
             if (canReadOrders) {
                 requests.push(
-                    axios.get(`${URL}/orders`, { headers }).then((res) => {
+                    axios.get(`${URL}/orders`, { headers, params: { bucket } }).then((res) => {
                         setOrders(res.data?.data || []);
                     }),
                 );
@@ -136,29 +152,20 @@ const ArchivePageContent = () => {
                 setOrders([]);
             }
 
-            if (canReadOffers) {
-                requests.push(
-                    axios.get(`${URL}/offer/changes/history`, { headers }).then((res) => {
-                        setChangeHistory(res.data?.data || []);
-                    }),
-                );
-            } else {
-                setChangeHistory([]);
-            }
-
+            setChangeHistory([]);
             await Promise.all(requests);
         } catch (error) {
             console.error('Error loading archive data:', error);
         } finally {
             setLoading(false);
         }
-    }, [canReadOffers, canReadOrders]);
+    }, [canReadOffers, canReadOrders, activeTab]);
 
     useEffect(() => {
         if (session === true && canAccessArchive && (canReadOffers || canReadOrders)) {
             fetchData();
         }
-    }, [session, canAccessArchive, canReadOffers, canReadOrders, fetchData]);
+    }, [session, canAccessArchive, canReadOffers, canReadOrders, activeTab, fetchData]);
 
     useEffect(() => {
         if (!canReadOffers && canReadOrders && activeEntity === 'offers') {
@@ -173,7 +180,6 @@ const ArchivePageContent = () => {
     const filteredOffers = useMemo(() => {
         const search = searchValue.trim().toLowerCase();
         return offers.filter((offer) => {
-            if (!matchesArchiveTab(offer.status, 'offers', activeTab)) return false;
             if (!search) return true;
             return (
                 String(offer.id).includes(search) ||
@@ -181,12 +187,11 @@ const ArchivePageContent = () => {
                 offer.yachtName?.toLowerCase().includes(search)
             );
         });
-    }, [offers, activeTab, searchValue]);
+    }, [offers, searchValue]);
 
     const filteredOrders = useMemo(() => {
         const search = searchValue.trim().toLowerCase();
         return orders.filter((order) => {
-            if (!matchesArchiveTab(order.status, 'orders', activeTab)) return false;
             if (!search) return true;
             return (
                 String(order.offerId || order.id).includes(search) ||
@@ -195,7 +200,7 @@ const ArchivePageContent = () => {
                 order.offer?.yachtName?.toLowerCase().includes(search)
             );
         });
-    }, [orders, activeTab, searchValue]);
+    }, [orders, searchValue]);
 
     const filteredChanges = useMemo(() => {
         const search = searchValue.trim().toLowerCase();

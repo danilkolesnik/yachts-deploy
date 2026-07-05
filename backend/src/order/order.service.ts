@@ -42,6 +42,10 @@ import {
   normalizeOrderMediaFields,
 } from 'src/constants/order-media';
 import { buildMediaSectionsFromOrder } from 'src/utils/mediaReportExportPdf';
+import {
+  filterOrdersByBucket,
+  resolveWorkflowBucket,
+} from 'src/utils/workflowStatus';
 
 @Injectable()
 export class OrderService {
@@ -794,6 +798,7 @@ export class OrderService {
     
     try {
       const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+      const bucket = resolveWorkflowBucket(req.query?.bucket);
       const orders = await this.orderRepository.find({
         relations: ['assignedWorkers'],
         order: { createdAt: 'DESC' },
@@ -816,7 +821,8 @@ export class OrderService {
       let filteredOrders = ordersWithOffers;
 
       if (login.role === 'admin' || login.role === 'manager') {
-        return { code: 200, data: ordersWithOffers };
+        filteredOrders = filterOrdersByBucket(ordersWithOffers, bucket);
+        return { code: 200, data: filteredOrders };
       } else if (userRoles.includes(login.role)) {
         filteredOrders = ordersWithOffers.filter(order =>
           (order.assignedWorkers || []).some(
@@ -838,6 +844,8 @@ export class OrderService {
       } else {
         return { code: 403, message: 'Access denied' };
       }
+
+      filteredOrders = filterOrdersByBucket(filteredOrders, bucket);
       
       return { code: 200, data: filteredOrders };
     } catch (err) {

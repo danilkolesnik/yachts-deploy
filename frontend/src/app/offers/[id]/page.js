@@ -31,6 +31,8 @@ import {
     normalizeOfferService,
 } from '@/utils/offerLineItems';
 import OfferTotalsSummary from '@/component/OfferTotalsSummary';
+import { isActiveOfferStatus } from '@/constants/workflowStatus';
+import { toast } from 'react-toastify';
 
 const OfferDetail = ({ params }) => {
     const { id } = use(params);
@@ -52,6 +54,8 @@ const OfferDetail = ({ params }) => {
     const session = useAppSelector((s) => s.userData?.session);
     const permissions = useAppSelector((s) => s.userData?.permissions || []);
     const reduxRole = useAppSelector((s) => s.userData?.role);
+    const userId = useAppSelector((s) => s.userData?.id);
+    const [completingOffer, setCompletingOffer] = useState(false);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -92,6 +96,35 @@ const OfferDetail = ({ params }) => {
             })
             .catch((error) => console.error('Error fetching offer history:', error));
     }, [id]);
+
+    const handleCompleteOffer = async () => {
+        if (!offer || !isActiveOfferStatus(offer.status)) {
+            return;
+        }
+        if (!window.confirm(`Mark offer #${offer.id} as completed? It will appear under Archive → Completed.`)) {
+            return;
+        }
+        setCompletingOffer(true);
+        try {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const response = await axios.put(
+                `${URL}/offer/${offer.id}`,
+                { status: 'finished', userId },
+                { headers },
+            );
+            if (response.data?.code && response.data.code !== 200) {
+                throw new Error(response.data.message || 'Error completing offer');
+            }
+            toast.success('Offer marked as completed');
+            router.push('/archive?tab=completed&entity=offers');
+        } catch (error) {
+            console.error('Error completing offer:', error);
+            toast.error(error.response?.data?.message || error.message || 'Error completing offer');
+        } finally {
+            setCompletingOffer(false);
+        }
+    };
 
     const handleFileChange = (event) => {
         setSelectedFile(event.target.files[0]);
@@ -217,7 +250,16 @@ const OfferDetail = ({ params }) => {
                 <div className="flex justify-between items-center mb-6">
                     <Button color="blue" onClick={() => router.push('/offers')}>Back</Button>
                     {role !== 'user' && (
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2 justify-end">
+                            {isActiveOfferStatus(offer.status) && (
+                                <Button
+                                    color="teal"
+                                    onClick={handleCompleteOffer}
+                                    disabled={completingOffer}
+                                >
+                                    {completingOffer ? 'Completing...' : 'Mark completed'}
+                                </Button>
+                            )}
                             <Button 
                                 color="green" 
                                 onClick={handleExportPdf}
@@ -289,7 +331,7 @@ const OfferDetail = ({ params }) => {
                                     display: 'inline-block'
                                 }}
                             >
-                                {offer.status || 'N/A'}
+                                {offer.status === 'finished' ? 'Completed' : (offer.status || 'N/A')}
                             </span>
                         </div>
                         {offer.location && (

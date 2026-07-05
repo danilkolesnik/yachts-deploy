@@ -257,6 +257,7 @@ const OrderPage = () => {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(`${URL}/orders`,{
+                params: { bucket: 'active' },
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -716,7 +717,11 @@ const OrderPage = () => {
                 ) : (
                     <div className="w-full space-y-6 bg-white rounded shadow-md">
                         <div className="relative flex flex-col md:flex-row justify-between gap-4 mb-4 p-4">
-                            <div className="filters flex flex-col md:flex-row gap-4 md:gap-8">
+                        <div className="w-full md:w-auto mb-2 md:mb-0">
+                            <h1 className="text-xl font-semibold text-gray-900">Work orders</h1>
+                            <p className="text-sm text-gray-600 mt-1">Active work orders only — use Archive &amp; History for completed, cancelled, or archived.</p>
+                        </div>
+                        <div className="filters flex flex-col md:flex-row gap-4 md:gap-8 flex-1">
                                 <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-0 w-full md:w-auto">
                                     <Select
                                         label="Search by"
@@ -785,7 +790,7 @@ const OrderPage = () => {
                                 </Button>
                                     </>
                                 )}
-                                {can(permissions, PermissionsList.ARCHIVE_READ) && (
+                                {can(permissions, PermissionsList.ORDERS_READ) && (
                                 <Button onClick={() => router.push('/archive?entity=orders')} color="white" className="w-full md:w-auto border-[2px] border-[#D33] text-[#000]">
                                     <span>Archive &amp; History</span>
                                 </Button>

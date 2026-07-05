@@ -159,7 +159,7 @@ const CalendarPage = () => {
 
             if (canReadOffers) {
                 requests.push(
-                    axios.get(`${URL}/offer`, { headers }).then((res) => {
+                    axios.get(`${URL}/offer`, { headers, params: { bucket: 'active' } }).then((res) => {
                         setOffers(res.data?.data || []);
                     }),
                 );
@@ -169,7 +169,7 @@ const CalendarPage = () => {
 
             if (canReadOrders) {
                 requests.push(
-                    axios.get(`${URL}/orders`, { headers }).then((res) => {
+                    axios.get(`${URL}/orders`, { headers, params: { bucket: 'active' } }).then((res) => {
                         setOrders(res.data?.data || []);
                     }),
                 );

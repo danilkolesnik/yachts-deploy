@@ -281,6 +281,7 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                 <Option value="sent" className="text-black">Sent</Option>
                 <Option value="discussing" className="text-black">Discussing</Option>
                 <Option value="confirmed" className="text-black">Confirmed</Option>
+                <Option value="finished" className="text-black">Completed</Option>
                 <Option value="canceled" className="text-black">Canceled</Option>
             </Select>
                     <div className="flex justify-end space-x-2">

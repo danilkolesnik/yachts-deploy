@@ -98,7 +98,10 @@ function NavList({ isOpen, setIsOpen }) {
   const showOffers = can(permissions, PermissionsList.OFFERS_READ);
   const showOrders = can(permissions, PermissionsList.ORDERS_READ);
   const showCalendar = can(permissions, PermissionsList.CALENDAR_READ);
-  const showArchive = can(permissions, PermissionsList.ARCHIVE_READ);
+  const showArchive =
+    can(permissions, PermissionsList.ARCHIVE_READ) ||
+    can(permissions, PermissionsList.OFFERS_READ) ||
+    can(permissions, PermissionsList.ORDERS_READ);
   const showStaffSection = can(permissions, PermissionsList.USERS_READ);
 
   return (

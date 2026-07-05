@@ -17,6 +17,11 @@ import { InvoiceService } from 'src/invoice/invoice.service';
 import getBearerToken from 'src/methods/getBearerToken';
 import { JwtPayload } from 'jsonwebtoken';
 import * as jwt from 'jsonwebtoken';
+import {
+  filterOffersByBucket,
+  normalizeOfferStatus,
+  resolveWorkflowBucket,
+} from 'src/utils/workflowStatus';
 
 export type OfferVersionEntry = {
   versionNumber: number;
@@ -43,6 +48,13 @@ const OFFER_FIELD_LABELS: Record<string, string> = {
   videoUrls: 'Videos',
 };
 
+const TERMINAL_OFFER_STATUSES = new Set([
+  'finished',
+  'completed',
+  'canceled',
+  'closed',
+]);
+
 @Injectable()
 export class OfferService {
   constructor(
@@ -58,6 +70,36 @@ export class OfferService {
     private readonly orderRepository: Repository<order>,
     private readonly invoiceService: InvoiceService,
   ) {}
+
+  private isTerminalStatusOnlyUpdate(
+    changedFields: Record<string, { oldValue: unknown; newValue: unknown }>,
+    data: Partial<CreateOfferDto>,
+  ): boolean {
+    const keys = Object.keys(changedFields);
+    if (keys.length !== 1 || keys[0] !== 'status') {
+      return false;
+    }
+    return TERMINAL_OFFER_STATUSES.has(normalizeOfferStatus(data.status));
+  }
+
+  private applyOfferStatusSideEffects(
+    offerEntity: offer,
+    nextStatus: string,
+    savedBy: string | null,
+  ): void {
+    const status = normalizeOfferStatus(nextStatus);
+    if (status === 'finished' && !offerEntity.finishedAt) {
+      offerEntity.finishedAt = new Date();
+    }
+    if (status === 'closed') {
+      if (!offerEntity.closedAt) {
+        offerEntity.closedAt = new Date();
+      }
+      if (savedBy && !offerEntity.closedBy) {
+        offerEntity.closedBy = savedBy;
+      }
+    }
+  }
 
   private async enrichOfferWithCustomerEmail<T extends offer | null>(offerData: T) {
     if (!offerData) return offerData;
@@ -213,6 +255,25 @@ export class OfferService {
       newValue: c.newValue,
       summary: this.summarizeOfferChange(c.field, c.oldValue, c.newValue),
     }));
+
+    if (typeof parsed._revisedAsOfferId === 'string' && parsed._revisedAsOfferId) {
+      changes.unshift({
+        field: 'revision',
+        fieldLabel: 'Revision',
+        oldValue: h.offerId,
+        newValue: parsed._revisedAsOfferId,
+        summary: `Superseded by offer #${parsed._revisedAsOfferId} (moved to Archive → Archived)`,
+      });
+    }
+    if (typeof parsed._forkedFromOfferId === 'string' && parsed._forkedFromOfferId) {
+      changes.unshift({
+        field: 'revision',
+        fieldLabel: 'Revision',
+        oldValue: parsed._forkedFromOfferId,
+        newValue: h.offerId,
+        summary: `Revised copy of offer #${parsed._forkedFromOfferId}`,
+      });
+    }
 
     const dt = h.changeDate ? new Date(h.changeDate) : null;
     const authorUser = h.userId ? usersById.get(h.userId) : undefined;
@@ -592,10 +653,25 @@ export class OfferService {
         changeDescription: JSON.stringify({
           _revisedAsOfferId: newId,
           _reason: 'work_order_exists',
-          changes: changeEntries,
+          changes: [
+            ...changeEntries,
+            {
+              field: 'status',
+              oldValue: offer.status,
+              newValue: 'closed',
+            },
+          ],
         }),
       }),
     );
+
+    const previousStatus = offer.status;
+    offer.status = 'closed';
+    offer.closedAt = new Date();
+    if (savedBy) {
+      offer.closedBy = savedBy;
+    }
+    await this.offerRepository.save(offer);
 
     return {
       code: 200,
@@ -674,7 +750,7 @@ export class OfferService {
       const hasWorkOrder =
         (await this.orderRepository.count({ where: { offerId: id } })) > 0;
 
-      if (hasWorkOrder) {
+      if (hasWorkOrder && !this.isTerminalStatusOnlyUpdate(changedFields, data)) {
         return this.forkOfferAfterWorkOrderExists(
           id,
           offer,
@@ -696,6 +772,13 @@ export class OfferService {
             ? [data.services]
             : offer.services,
       });
+      if (changedFields.status && data.status != null) {
+        this.applyOfferStatusSideEffects(
+          updatedOffer,
+          String(data.status),
+          savedBy,
+        );
+      }
       updatedOffer.versions = [...existingVersions, versionEntry] as unknown as any[];
 
       const historyUserId = savedBy || data.userId || 'unknown';
@@ -847,6 +930,7 @@ export class OfferService {
         };
       }
       const login = jwt.verify(token, process.env.SECRET_KEY) as JwtPayload;
+      const bucket = resolveWorkflowBucket(req.query?.bucket);
 
       let offers;
       
@@ -866,6 +950,7 @@ export class OfferService {
             createdAt: 'DESC'
           },
         });
+        offers = filterOffersByBucket(offers, bucket);
       }
   
       const enriched = await this.enrichOffersWithCustomerEmail(offers);

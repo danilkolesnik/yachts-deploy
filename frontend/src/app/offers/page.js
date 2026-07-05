@@ -219,11 +219,10 @@ const OfferPage = () => {
             ]
         },
         history: {
-            title: "History and Confirmed Offers",
+            title: "Archive & History",
             content: [
-                "**History** - Shows finished and confirmed offers. Filter by date, year, month, boat name, or owner. Export PDF or send email from the table.",
-                "**Confirmed Offers** - Opens the list of confirmed offers.",
-                "**Export to Excel** - Downloads the current filtered list of offers."
+                "**Archive & History** — completed, cancelled, archived offers and change log (separate from the active list).",
+                "**Export to Excel** — downloads the current filtered list of active offers."
             ]
         }
     };
@@ -460,6 +459,23 @@ const OfferPage = () => {
                 >
                     Work Order
                 </button>
+            ),
+            ignoreRowClick: true,
+            button: true.toString(),
+        }] : []),
+        ...(role !== 'user' ? [{
+            name: '',
+            cell: row => (
+                isActiveOfferStatus(row.status) ? (
+                    <button
+                        type="button"
+                        onClick={() => handleCompleteOffer(row)}
+                        className="px-2 py-2 text-white rounded bg-emerald-600 hover:bg-emerald-700 transition-all duration-200"
+                        title="Mark offer as completed"
+                    >
+                        Complete
+                    </button>
+                ) : null
             ),
             ignoreRowClick: true,
             button: true.toString(),
@@ -854,6 +870,7 @@ const OfferPage = () => {
         const token = localStorage.getItem('token');
         try {
             const res = await axios.get(`${URL}/offer`,{
+                params: { bucket: 'active' },
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }   
@@ -913,6 +930,7 @@ const OfferPage = () => {
         const token = localStorage.getItem('token');
         try {
             const res = await axios.get(`${URL}/orders`, {
+                params: { bucket: 'active' },
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -1415,9 +1433,7 @@ const OfferPage = () => {
     };
 
     const findOfferRowById = (offerId) =>
-        (data || []).find((row) => row.id === offerId)
-        || (historyData || []).find((row) => row.id === offerId)
-        || (filteredHistoryData || []).find((row) => row.id === offerId);
+        (data || []).find((row) => row.id === offerId);
 
     const openEmailModalForOffer = (offerId, kind) => {
         const offer = findOfferRowById(offerId);
@@ -1465,10 +1481,6 @@ const OfferPage = () => {
             setEmailLoading(false);
             setEmailSendingLoading(prev => ({ ...prev, [selectedOfferId]: false }));
         }
-    };
-
-    const handleConfirmedOffersClick = () => {
-        router.push('/offers/confirmed');
     };
 
     const combinedParts = [...parts, ...partsUnofficially].map(part => ({
@@ -1524,6 +1536,31 @@ const OfferPage = () => {
         } catch (error) {
             console.error(error);
             showServerError(error, "Error updating offer");
+        }
+    };
+
+    const handleCompleteOffer = async (row) => {
+        if (!isActiveOfferStatus(row.status)) {
+            return;
+        }
+        if (!window.confirm(`Mark offer #${row.id} as completed? It will appear under Archive → Completed.`)) {
+            return;
+        }
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.put(
+                `${URL}/offer/${row.id}`,
+                { status: 'finished', userId: id },
+                { headers: { Authorization: `Bearer ${token}` } },
+            );
+            if (hasServerBusinessError(response, 'Error completing offer')) {
+                return;
+            }
+            toast.success('Offer marked as completed');
+            await refreshOffersAndOrders();
+        } catch (error) {
+            console.error(error);
+            showServerError(error, 'Error completing offer');
         }
     };
 
@@ -1841,6 +1878,20 @@ const OfferPage = () => {
                 ) : (
                     <div className="w-full space-y-6 bg-white rounded shadow-md">
                         <div className="relative flex flex-col lg:flex-row justify-between gap-4 mb-4 p-4">
+                            <div>
+                                <h1 className="text-xl font-semibold text-gray-900">Offers</h1>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    Active offers only — find completed, cancelled, archived, and revisions in{' '}
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push('/archive')}
+                                        className="text-[#dd3333] underline font-medium"
+                                    >
+                                        Archive &amp; History
+                                    </button>
+                                    .
+                                </p>
+                            </div>
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
                                     <div className="w-full sm:w-auto">
@@ -1892,19 +1943,11 @@ const OfferPage = () => {
                                 >
                                     Create
                                 </Button>
-                                {can(permissions, PermissionsList.ARCHIVE_READ) && (
                                 <Button 
                                     onClick={() => router.push('/archive')} 
                                     className="bg-[white] w-full sm:w-auto border-2 border-[#dd3333] text-[#000] font-medium px-4 py-2 rounded-md transition-colors duration-200"
                                 >
                                     Archive &amp; History
-                                </Button>
-                                )}
-                                <Button 
-                                    onClick={handleConfirmedOffersClick} 
-                                    className="w-full sm:w-auto bg-[#3e4a66] hover:bg-[#2d3748] text-white font-medium px-4 py-2 rounded-md transition-colors duration-200"
-                                >
-                                    Confirmed Offers
                                 </Button>
                                 <Button 
                                     className="w-full sm:w-auto bg-[#282828] hover:bg-[#1a1a1a] text-white font-medium px-4 py-2 rounded-md transition-colors duration-200" 
