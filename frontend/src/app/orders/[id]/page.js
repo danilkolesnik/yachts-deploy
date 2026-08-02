@@ -8,6 +8,7 @@ import { Tab } from '@headlessui/react';
 import Header from '@/component/header';
 import Loader from '@/ui/loader';
 import Modal from '@/ui/Modal';
+import ConfirmDialog from '@/ui/ConfirmDialog';
 import ReactPlayer from 'react-player';
 import axios from 'axios';
 import { useAppSelector } from '@/lib/hooks';
@@ -98,6 +99,7 @@ const OrderDetail = ({ params }) => {
     const [clearTimersOpen, setClearTimersOpen] = useState(false);
     const [clearTimersLoading, setClearTimersLoading] = useState(false);
     const [clearTimersConfirmed, setClearTimersConfirmed] = useState(false);
+    const [mediaToDelete, setMediaToDelete] = useState(null);
     const [assignmentReasonOpen, setAssignmentReasonOpen] = useState(false);
     const [assignmentReasonPreset, setAssignmentReasonPreset] = useState('');
     const [assignmentReasonOther, setAssignmentReasonOther] = useState('');
@@ -467,14 +469,27 @@ const OrderDetail = ({ params }) => {
         }
     };
 
-    const handleDelete = async (url, section) => {
+    const requestDeleteMedia = (url, section) => {
         if (!section) return;
+        setMediaToDelete({ url, section });
+    };
+
+    const cancelDeleteMedia = () => {
+        if (!deleting) setMediaToDelete(null);
+    };
+
+    const confirmDeleteMedia = async () => {
+        if (!mediaToDelete?.section) return;
         try {
             setDeleting(true);
-            const response = await axios.post(`${URL}/orders/${id}/delete/${section.apiTab}`, { fileUrl: url });
+            const response = await axios.post(
+                `${URL}/orders/${id}/delete/${mediaToDelete.section.apiTab}`,
+                { fileUrl: mediaToDelete.url },
+            );
 
             if (response.data.code === 200) {
                 await refreshOrderData();
+                setMediaToDelete(null);
             }
         } catch (error) {
             console.error('Error deleting file:', error);
@@ -604,7 +619,7 @@ const OrderDetail = ({ params }) => {
                                             type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleDelete(url, section);
+                                                requestDeleteMedia(url, section);
                                             }}
                                             disabled={deleting}
                                             className="absolute top-1 right-1 text-black rounded-full p-2 transition-colors disabled:opacity-50"
@@ -635,7 +650,7 @@ const OrderDetail = ({ params }) => {
                                     {can(permissions, PermissionsList.ORDERS_MEDIA_DELETE) && (
                                         <button
                                             type="button"
-                                            onClick={() => handleDelete(url, section)}
+                                            onClick={() => requestDeleteMedia(url, section)}
                                             disabled={deleting}
                                             className="absolute top-1 right-1 text-black rounded-full p-2 transition-colors disabled:opacity-50"
                                         >
@@ -1685,6 +1700,21 @@ const OrderDetail = ({ params }) => {
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                isOpen={Boolean(mediaToDelete)}
+                onClose={cancelDeleteMedia}
+                onConfirm={confirmDeleteMedia}
+                title="Confirm Deletion"
+                message={
+                    mediaToDelete?.section
+                        ? `Are you sure you want to delete this file from “${mediaToDelete.section.label}”? This action cannot be undone.`
+                        : 'Are you sure you want to delete this file? This action cannot be undone.'
+                }
+                confirmLabel="Yes, Delete"
+                cancelLabel="No, Cancel"
+                loading={deleting}
+            />
         </div>
     );
 };

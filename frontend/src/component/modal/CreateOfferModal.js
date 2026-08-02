@@ -46,9 +46,10 @@ const CreateOfferModal = ({
         })
     );
 
+    // Official warehouse (unofficially=false) → green; grey warehouse → gray
     const combinedParts = partOptions.map(part => ({
         ...part,
-        color: part.unofficially ? 'green' : 'red'
+        color: part.unofficially ? 'gray' : 'green'
     }));
 
     return(
@@ -255,12 +256,12 @@ const CreateOfferModal = ({
                         }),
                         option: (provided, state) => ({
                             ...provided,
-                            color: state.data.unofficially ? 'green' : 'gray',
+                            color: state.data.unofficially ? 'gray' : 'green',
                             backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
                         }),
                         multiValueLabel: (provided, state) => ({
                             ...provided,
-                            color: state.data.unofficially ? 'green' : 'gray',
+                            color: state.data.unofficially ? 'gray' : 'green',
                         }),
                         menuPortal: (base) => ({
                             ...base,

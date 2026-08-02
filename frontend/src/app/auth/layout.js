@@ -1,8 +1,5 @@
 import React from "react";
-export default function auth({ children }) {
-    return (
-        <div>
-            {children}
-        </div>
-    );
-  }
+
+export default function AuthLayout({ children }) {
+  return <div className="min-h-screen">{children}</div>;
+}

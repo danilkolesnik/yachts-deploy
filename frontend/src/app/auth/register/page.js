@@ -4,6 +4,11 @@ import { URL } from '@/utils/constants';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
+import { BRAND } from '@/constants/brand';
+import AuthShell from '@/component/AuthShell';
+
+const inputClass = (hasError) =>
+  `w-full px-3 py-2.5 border ${hasError ? 'border-red-500' : 'border-slate-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgba(8,50,104,0.25)] text-black bg-white`;
 
 const Register = () => {
     const router = useRouter();
@@ -29,94 +34,102 @@ const Register = () => {
                     router.push('/auth/login');
                 }
             })
-            .catch((error) => {
+            .catch(() => {
                 setErrorMessage('Network error. Please try again later.');
             });
 
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <div className="w-full max-w-md p-8 space-y-6 bg-white rounded shadow-md">
-                <h2 className="text-2xl font-bold text-center text-black">Register</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="form-group">
-                        <label className="block text-sm font-medium text-black">Email:</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => {
-                                setEmail(e.target.value);
-                                if (errorMessage) setErrorMessage('');
-                            }}
-                            required
-                            className={`w-full px-3 py-2 border ${errorMessage ? 'border-red-500' : 'border-gray-300'} rounded focus:outline-none focus:ring focus:ring-blue-200 text-black`}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label className="block text-sm font-medium text-black">Password:</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => {
-                                setPassword(e.target.value);
-                                if (errorMessage) setErrorMessage('');
-                            }}
-                            required
-                            className={`w-full px-3 py-2 border ${errorMessage ? 'border-red-500' : 'border-gray-300'} rounded focus:outline-none focus:ring focus:ring-blue-200 text-black`}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label className="block text-sm font-medium text-black">Confirm Password:</label>
-                        <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => {
-                                setConfirmPassword(e.target.value);
-                                if (errorMessage) setErrorMessage('');
-                            }}
-                            required
-                            className={`w-full px-3 py-2 border ${errorMessage ? 'border-red-500' : 'border-gray-300'} rounded focus:outline-none focus:ring focus:ring-blue-200 text-black`}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label className="block text-sm font-medium text-black">Customer Name:</label>
-                        <input
-                            type="text"
-                            value={fullName}
-                            onChange={(e) => {
-                                setFullName(e.target.value);
-                                if (errorMessage) setErrorMessage('');
-                            }}
-                            required
-                            className={`w-full px-3 py-2 border ${errorMessage ? 'border-red-500' : 'border-gray-300'} rounded focus:outline-none focus:ring focus:ring-blue-200 text-black`}
-                        />
-                    </div>
-                    {errorMessage && (
-                        <div className="text-red-500 text-sm mt-1">
-                            {errorMessage}
-                        </div>
-                    )}
-                    <button
-                        type="submit"
-                        className="w-full px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 focus:outline-none focus:ring focus:ring-blue-200"
-                    >
-                        Register
-                    </button>
-                </form>
-                <p className="text-center text-sm text-black">
+        <AuthShell
+            title="Create account"
+            subtitle="Register to access All Services Marine"
+            footer={
+                <p style={{ color: BRAND.colors.ink }}>
                     Already have an account?{' '}
-                    <Link href={'/auth/login'}>
-                    <button
-                        className="text-blue-500 hover:underline"
+                    <Link
+                        href="/auth/login"
+                        className="font-medium underline-offset-2 hover:underline"
+                        style={{ color: BRAND.colors.blue }}
                     >
                         Login
-                    </button>
                     </Link>
-                  
                 </p>
-            </div>
-        </div>
+            }
+        >
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="mb-1.5 block text-sm font-medium" style={{ color: BRAND.colors.ink }}>
+                        Email
+                    </label>
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => {
+                            setEmail(e.target.value);
+                            if (errorMessage) setErrorMessage('');
+                        }}
+                        required
+                        className={inputClass(Boolean(errorMessage))}
+                    />
+                </div>
+                <div>
+                    <label className="mb-1.5 block text-sm font-medium" style={{ color: BRAND.colors.ink }}>
+                        Password
+                    </label>
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => {
+                            setPassword(e.target.value);
+                            if (errorMessage) setErrorMessage('');
+                        }}
+                        required
+                        className={inputClass(Boolean(errorMessage))}
+                    />
+                </div>
+                <div>
+                    <label className="mb-1.5 block text-sm font-medium" style={{ color: BRAND.colors.ink }}>
+                        Confirm password
+                    </label>
+                    <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => {
+                            setConfirmPassword(e.target.value);
+                            if (errorMessage) setErrorMessage('');
+                        }}
+                        required
+                        className={inputClass(Boolean(errorMessage))}
+                    />
+                </div>
+                <div>
+                    <label className="mb-1.5 block text-sm font-medium" style={{ color: BRAND.colors.ink }}>
+                        Customer name
+                    </label>
+                    <input
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => {
+                            setFullName(e.target.value);
+                            if (errorMessage) setErrorMessage('');
+                        }}
+                        required
+                        className={inputClass(Boolean(errorMessage))}
+                    />
+                </div>
+                {errorMessage && (
+                    <div className="text-sm text-red-600">{errorMessage}</div>
+                )}
+                <button
+                    type="submit"
+                    className="w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                    style={{ backgroundColor: BRAND.colors.navy }}
+                >
+                    Register
+                </button>
+            </form>
+        </AuthShell>
     );
 };
 

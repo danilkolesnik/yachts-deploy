@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "All Services Marine",
-  description: "Yacht Service Management Program",
+  description: "Yacht Service Management — All Services Marine (a-s-m.yachts)",
   icons: {
     icon: "/favicon.ico",
   },

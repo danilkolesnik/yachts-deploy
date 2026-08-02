@@ -20,6 +20,7 @@ import { downloadInvoicePdfByOffer, sendInvoiceEmailByOffer } from '@/utils/expo
 import { getCustomerEmailForOffer } from '@/utils/customerEmail';
 import { sendOfferEmail } from '@/utils/sendOfferEmail';
 import SendEmailModal from '@/ui/SendEmailModal';
+import ConfirmDialog from '@/ui/ConfirmDialog';
 import { uploadOfferMedia, getUploadErrorMessage } from '@/utils/uploadMedia';
 import {
     formatEuroAmount,
@@ -56,6 +57,8 @@ const OfferDetail = ({ params }) => {
     const reduxRole = useAppSelector((s) => s.userData?.role);
     const userId = useAppSelector((s) => s.userData?.id);
     const [completingOffer, setCompletingOffer] = useState(false);
+    const [mediaToDelete, setMediaToDelete] = useState(null);
+    const [mediaDeleting, setMediaDeleting] = useState(false);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -163,16 +166,30 @@ const OfferDetail = ({ params }) => {
         }
     };
 
-    const handleDelete = async (url) => {
+    const requestDeleteMedia = (url) => {
+        setMediaToDelete(url);
+    };
+
+    const cancelDeleteMedia = () => {
+        if (!mediaDeleting) setMediaToDelete(null);
+    };
+
+    const confirmDeleteMedia = async () => {
+        if (!mediaToDelete) return;
+        setMediaDeleting(true);
         try {
-            await axios.post(`${URL}/upload/delete`, { url, offerId: id });
+            await axios.post(`${URL}/upload/delete`, { url: mediaToDelete, offerId: id });
             setOffer((prevOffer) => ({
                 ...prevOffer,
-                imageUrls: prevOffer.imageUrls.filter((imageUrl) => imageUrl !== url),
-                videoUrls: prevOffer.videoUrls.filter((videoUrl) => videoUrl !== url),
+                imageUrls: prevOffer.imageUrls.filter((imageUrl) => imageUrl !== mediaToDelete),
+                videoUrls: prevOffer.videoUrls.filter((videoUrl) => videoUrl !== mediaToDelete),
             }));
+            setMediaToDelete(null);
         } catch (error) {
             console.error('Error deleting file:', error);
+            toast.error('Could not delete file. Please try again.');
+        } finally {
+            setMediaDeleting(false);
         }
     };
 
@@ -596,7 +613,7 @@ const OfferDetail = ({ params }) => {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleDelete(url);
+                                                requestDeleteMedia(url);
                                             }}
                                             className="absolute top-1 right-1 text-black rounded-full p-2 transition-colors"
                                         >
@@ -623,7 +640,7 @@ const OfferDetail = ({ params }) => {
                                     />
                                     {role !== 'user' && (
                                         <button
-                                            onClick={() => handleDelete(url)}
+                                            onClick={() => requestDeleteMedia(url)}
                                             className="absolute top-1 right-1 text-black rounded-full p-2 transition-colors"
                                         >
                                             <XMarkIcon className="w-6 h-6 bg-white rounded-full p-1" />
@@ -694,6 +711,17 @@ const OfferDetail = ({ params }) => {
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                isOpen={Boolean(mediaToDelete)}
+                onClose={cancelDeleteMedia}
+                onConfirm={confirmDeleteMedia}
+                title="Confirm Deletion"
+                message="Are you sure you want to delete this file? This action cannot be undone."
+                confirmLabel="Yes, Delete"
+                cancelLabel="No, Cancel"
+                loading={mediaDeleting}
+            />
 
             <SendEmailModal
                 isOpen={emailModalOpen}

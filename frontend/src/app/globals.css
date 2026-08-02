@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap');
 @import "react-image-gallery/styles/css/image-gallery.css";
 
 @tailwind base;
@@ -6,16 +6,31 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground: #ededed;
-  }
+  --brand-navy: #083268;
+  --brand-blue: #194B8D;
+  --brand-red: #BC1819;
+  --brand-surface: #f4f7fb;
+  --brand-ink: #0f172a;
+  --brand-muted: #64748b;
+  --background: #f8fafc;
+  --foreground: #0f172a;
 }
 
 body {
   color: var(--foreground);
+  background: var(--background);
   font-family: 'Roboto', sans-serif;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  backdrop-filter: saturate(1.1) blur(6px);
+  background-color: rgba(255, 255, 255, 0.96) !important;
+}
+
+/* Material list items: tighten default padding in the top nav */
+.app-header .list-item {
+  transition: background-color 0.15s ease;
 }
