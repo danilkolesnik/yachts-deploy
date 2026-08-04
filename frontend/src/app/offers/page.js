@@ -1878,20 +1878,6 @@ const OfferPage = () => {
                 ) : (
                     <div className="w-full space-y-6 bg-white rounded shadow-md">
                         <div className="relative flex flex-col lg:flex-row justify-between gap-4 mb-4 p-4">
-                            <div>
-                                <h1 className="text-xl font-semibold text-gray-900">Offers</h1>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Active offers only — find completed, cancelled, archived, and revisions in{' '}
-                                    <button
-                                        type="button"
-                                        onClick={() => router.push('/archive')}
-                                        className="text-[#dd3333] underline font-medium"
-                                    >
-                                        Archive &amp; History
-                                    </button>
-                                    .
-                                </p>
-                            </div>
                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
                                     <div className="w-full sm:w-auto">

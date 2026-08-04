@@ -41,7 +41,7 @@ function NavItem({ href, active, icon, label, onClick, isMobile }) {
         className={`flex items-center gap-2 py-2 ${isMobile ? 'w-full justify-center' : 'pr-3'} font-medium rounded-lg hover:bg-slate-50`}
       >
         {icon}
-        <span style={{ color }}>{label}</span>
+        <span className="whitespace-nowrap" style={{ color }}>{label}</span>
       </ListItem>
     </Link>
   );
@@ -209,7 +209,7 @@ function NavList({ isOpen, setIsOpen }) {
             onClick={handleClick}
             isMobile={isMobile}
             icon={<ArchiveBoxIcon className="h-5 w-5 mr-1" style={{ color: pathname === '/warehouse' ? ACCENT : INK }} />}
-            label="Warehouse"
+            label="Grey Warehouse"
           />
           <NavItem
             href="/warehouseUnofficially"
@@ -222,7 +222,7 @@ function NavList({ isOpen, setIsOpen }) {
                 style={{ color: pathname === '/warehouseUnofficially' ? ACCENT : INK }}
               />
             }
-            label="Internal warehouse"
+            label="Official Warehouse"
           />
           <NavItem
             href="/priceList"
@@ -246,8 +246,8 @@ function NavList({ isOpen, setIsOpen }) {
         onClick={handleLogout}
         className="flex items-center gap-2 py-2 pr-3 font-semibold cursor-pointer rounded-lg hover:bg-red-50"
       >
-        <ArrowRightOnRectangleIcon className="h-5 w-5 mr-1" style={{ color: ACCENT }} />
-        <span style={{ color: ACCENT }}>Logout</span>
+        <ArrowRightOnRectangleIcon className="h-5 w-5 mr-1 shrink-0" style={{ color: ACCENT }} />
+        <span className="whitespace-nowrap" style={{ color: ACCENT }}>Logout</span>
       </ListItem>
     </List>
   );
