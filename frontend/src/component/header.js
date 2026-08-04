@@ -279,7 +279,7 @@ const Header = () => {
           />
         </div>
 
-        <div className={`${isMobile ? 'hidden' : 'flex'} flex-1 justify-end min-w-0`}>
+        <div className={`${isMobile ? 'hidden' : 'flex'} justify-end min-w-0`}>
           <NavList isOpen={isOpen} setIsOpen={setIsOpen} />
         </div>
         <div className={isMobile ? 'block' : 'hidden'}>

@@ -19,7 +19,7 @@ export default function AuthShell({ title, subtitle, children, footer }) {
         aria-hidden
       />
 
-      <div className="relative w-full max-w-md">
+      <div className="relative w-[28rem] max-w-[calc(100vw-2rem)]">
         <div className="mb-6 flex flex-col items-center text-center">
           <BrandLogo variant="auth" href={BRAND.websiteUrl} caption={BRAND.websiteLabel} />
           <p className="mt-3 text-sm" style={{ color: BRAND.colors.muted }}>
