@@ -131,9 +131,9 @@ const OrderPage = () => {
             title: "Understanding the Order Table",
             content: [
                 "**Order Number** - Unique order ID, click to view detailed information",
+                "**Yacht** - Yacht name associated with the order",
                 "**Creation Date** - Date and time when order was created",
                 "**Customer** - Name of the customer who placed the order",
-                "**Yacht** - Yacht name associated with the order",
                 "**Responsible** - Assigned employee(s) for this order",
                 "**Status** - Current workflow status (color-coded for quick identification)",
                 "**Timers** — click **Open timers** to run or pause time per work line (or a single line if the order has no service list)",
@@ -557,11 +557,11 @@ const OrderPage = () => {
                     <div className="text-blue-500 hover:underline">{getOrderDocumentNumber(row)}</div>
             </Link>
         ) },
+        { name: 'Yacht', selector: row => row.offer && row.offer.yachtName ? row.offer.yachtName : '', sortable: true },
         { name: 'Creation Date', selector: row => {
             return new Date(row.createdAt).toLocaleString();
         }, sortable: true },
         { name: 'Customer', selector: row => (row.offer && row.offer.customerFullName) ? row.offer.customerFullName : 'N/A', sortable: true },
-        { name: 'Yacht', selector: row => row.offer && row.offer.yachtName ? row.offer.yachtName : '', sortable: true },
         { name: 'Responsible', selector: row => Array.isArray(row.assignedWorkers) 
             ? row.assignedWorkers.map(worker => worker.fullName).join(', ') 
             : 'N/A', sortable: true },
@@ -685,9 +685,9 @@ const OrderPage = () => {
     const exportToExcel = async () => {
         const exportData = sortedOrders.map(row => ({
             'Order Number': getOrderDocumentNumber(row),
+            'Yacht': row.offer?.yachtName || '',
             'Creation Date': new Date(row.createdAt).toLocaleString(),
             'Customer': row.offer?.customerFullName || 'N/A',
-            'Yacht': row.offer?.yachtName || '',
             'Responsible': Array.isArray(row.assignedWorkers) ? row.assignedWorkers.map(worker => worker.fullName).join(', ') : 'N/A',
             'Status': row.status
         }));
@@ -798,9 +798,9 @@ const OrderPage = () => {
                                 <thead>
                                     <tr>
                                         <th>Order Number</th>
+                                        <th>Yacht</th>
                                         <th>Creation Date</th>
                                         <th>Customer</th>
-                                        <th>Yacht</th>
                                         <th>Responsible</th>
                                         <th>Status</th>
                                     </tr>
@@ -809,6 +809,7 @@ const OrderPage = () => {
                                     {sortedOrders.map((row) => (
                                         <tr key={row.id}>
                                             <td>{getOrderDocumentNumber(row)}</td>
+                                            <td>{row.offer?.yachtName || ''}</td>
                                             <td>{new Date(row.createdAt).toLocaleDateString('en-US', {
                                                 year: 'numeric',
                                                 month: '2-digit',
@@ -817,7 +818,6 @@ const OrderPage = () => {
                                                 minute: '2-digit'
                                             })}</td>
                                             <td>{row.offer?.customerFullName || 'N/A'}</td>
-                                            <td>{row.offer?.yachtName || ''}</td>
                                             <td>{Array.isArray(row.assignedWorkers) 
                                                 ? row.assignedWorkers.map(worker => worker.fullName).join(', ') 
                                                 : 'N/A'}</td>
