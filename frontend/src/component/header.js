@@ -36,7 +36,7 @@ const INK = BRAND.colors.ink;
 function NavItem({ href, active, icon, label, onClick, isMobile }) {
   const color = active ? ACCENT : INK;
   return (
-    <Link href={href} onClick={onClick} className="font-semibold no-underline">
+    <Link href={href} onClick={onClick} className="font-semibold no-underline shrink-0">
       <ListItem
         className={`flex items-center gap-2 py-2 ${isMobile ? 'w-full justify-center' : 'pr-3'} font-medium rounded-lg hover:bg-slate-50`}
       >
@@ -270,7 +270,7 @@ const Header = () => {
 
   return (
     <Navbar className="app-header w-full max-w-none px-4 py-2.5 rounded-none bg-white border-0 border-b border-slate-200/90 shadow-none">
-      <div className="flex w-full items-center justify-between gap-4">
+      <div className="flex w-full items-center justify-between gap-2">
         <div className="shrink-0 min-w-0">
           <BrandLogo
             variant={isMobile ? 'compact' : 'header'}
