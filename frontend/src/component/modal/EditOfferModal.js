@@ -3,13 +3,12 @@ import Input from '@/ui/Input';
 import { Button, Select, Option } from "@material-tailwind/react";
 import ReactSelect from 'react-select';
 import OfferLineItemsFields from '@/component/OfferLineItemsFields';
-import { mergeSelectedParts, mergeSelectedServices } from '@/utils/offerLineItems';
+import { getSparePartHighlightColor, mergeSelectedParts, mergeSelectedServices } from '@/utils/offerLineItems';
 
 const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, handleSelectChange, userOptions, catagoryData, partOptions, openCreateServiceModal, openCreatePartModal, openCreateCustomerModal, yachts, handleYachtSelect }) => {
-    // Official warehouse (unofficially=false) → green; grey warehouse → gray
     const combinedParts = partOptions.map(part => ({
         ...part,
-        color: part.unofficially ? 'gray' : 'green'
+        color: getSparePartHighlightColor(part)
     }));
 
     const yachtOptions = yachts.map(yacht => ({
@@ -217,12 +216,12 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                         }),
                         option: (provided, state) => ({
                             ...provided,
-                            color: state.data.unofficially ? 'gray' : 'green',
+                            color: getSparePartHighlightColor(state.data),
                             backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
                         }),
                         multiValueLabel: (provided, state) => ({
                             ...provided,
-                            color: state.data.unofficially ? 'gray' : 'green',
+                            color: getSparePartHighlightColor(state.data),
                         }),
                         menuPortal: (base) => ({
                             ...base,

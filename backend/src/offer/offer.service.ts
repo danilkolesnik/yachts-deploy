@@ -358,7 +358,11 @@ export class OfferService {
     const articleNumber =
       String(part?.articleNumber ?? '').trim() ||
       String(warehouseRow?.articleNumber ?? '').trim();
-    return { ...part, articleNumber };
+    const unofficially =
+      typeof part?.unofficially === 'boolean'
+        ? part.unofficially
+        : Boolean(warehouseRow?.unofficially);
+    return { ...part, articleNumber, unofficially };
   }
 
   private enrichOfferPartsSync(

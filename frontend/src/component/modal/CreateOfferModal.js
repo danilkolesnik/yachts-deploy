@@ -4,7 +4,7 @@ import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import ReactSelect from 'react-select';
 import OfferLineItemsFields from '@/component/OfferLineItemsFields';
-import { mergeSelectedParts, mergeSelectedServices } from '@/utils/offerLineItems';
+import { getSparePartHighlightColor, mergeSelectedParts, mergeSelectedServices } from '@/utils/offerLineItems';
 
 const CreateOfferModal = ({ 
     isOpen, 
@@ -46,10 +46,9 @@ const CreateOfferModal = ({
         })
     );
 
-    // Official warehouse (unofficially=false) → green; grey warehouse → gray
     const combinedParts = partOptions.map(part => ({
         ...part,
-        color: part.unofficially ? 'gray' : 'green'
+        color: getSparePartHighlightColor(part)
     }));
 
     return(
@@ -256,12 +255,12 @@ const CreateOfferModal = ({
                         }),
                         option: (provided, state) => ({
                             ...provided,
-                            color: state.data.unofficially ? 'gray' : 'green',
+                            color: getSparePartHighlightColor(state.data),
                             backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
                         }),
                         multiValueLabel: (provided, state) => ({
                             ...provided,
-                            color: state.data.unofficially ? 'gray' : 'green',
+                            color: getSparePartHighlightColor(state.data),
                         }),
                         menuPortal: (base) => ({
                             ...base,

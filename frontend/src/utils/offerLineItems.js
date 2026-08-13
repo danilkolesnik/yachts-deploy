@@ -34,6 +34,15 @@ export function normalizeOfferPart(part) {
     };
 }
 
+/** Official warehouse → green; grey warehouse → gray. Internal staff UI only. */
+export function getSparePartHighlightColor(part) {
+    return part?.unofficially ? 'gray' : 'green';
+}
+
+export function getSparePartHighlightStyle(part) {
+    return { color: getSparePartHighlightColor(part) };
+}
+
 export function getServiceUnitPrice(service) {
     return normalizeOfferService(service).priceInEuroWithoutVAT;
 }

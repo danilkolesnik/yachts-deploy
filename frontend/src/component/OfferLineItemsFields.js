@@ -4,6 +4,7 @@ import {
     getPartUnitPrice,
     getServiceLineTotal,
     getServiceUnitPrice,
+    getSparePartHighlightStyle,
     normalizeOfferPart,
     normalizeOfferService,
 } from '@/utils/offerLineItems';
@@ -88,9 +89,11 @@ export default function OfferLineItemsFields({ services = [], parts = [], onServ
                                 </tr>
                             </thead>
                             <tbody>
-                                {normalizedParts.map((part, index) => (
+                                {normalizedParts.map((part, index) => {
+                                    const highlightStyle = getSparePartHighlightStyle(part);
+                                    return (
                                     <tr key={`${part.label}-${index}`} className="border-t">
-                                        <td className="px-3 py-2 text-black">{part.label}</td>
+                                        <td className="px-3 py-2" style={highlightStyle}>{part.label}</td>
                                         <td className="px-3 py-2">
                                             <input
                                                 type="number"
@@ -101,14 +104,15 @@ export default function OfferLineItemsFields({ services = [], parts = [], onServ
                                                 className="w-full border rounded px-2 py-1 text-black"
                                             />
                                         </td>
-                                        <td className="px-3 py-2 text-black">
+                                        <td className="px-3 py-2" style={highlightStyle}>
                                             {formatEuroAmount(getPartUnitPrice(parts[index]))}
                                         </td>
-                                        <td className="px-3 py-2 text-black font-medium">
+                                        <td className="px-3 py-2 font-medium" style={highlightStyle}>
                                             {formatEuroAmount(getPartLineTotal(parts[index]))}
                                         </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

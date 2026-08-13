@@ -28,6 +28,7 @@ import {
     getPartUnitPrice,
     getServiceLineTotal,
     getServiceUnitPrice,
+    getSparePartHighlightStyle,
     normalizeOfferPart,
     normalizeOfferService,
 } from '@/utils/offerLineItems';
@@ -497,13 +498,14 @@ const OfferDetail = ({ params }) => {
                                 <tbody>
                                     {offer.parts.map((part, index) => {
                                         const normalized = normalizeOfferPart(part);
+                                        const highlightStyle = getSparePartHighlightStyle(normalized);
                                         return (
                                         <tr key={index}>
-                                            <td className="border border-gray-300 px-4 py-2 text-black">{normalized.label || 'N/A'}</td>
-                                            <td className="border border-gray-300 px-4 py-2 text-black">{normalized.articleNumber || '-'}</td>
-                                            <td className="border border-gray-300 px-4 py-2 text-black">{normalized.quantity}</td>
-                                            <td className="border border-gray-300 px-4 py-2 text-black">{formatEuroAmount(getPartUnitPrice(part))} €</td>
-                                            <td className="border border-gray-300 px-4 py-2 text-black font-medium">{formatEuroAmount(getPartLineTotal(part))} €</td>
+                                            <td className="border border-gray-300 px-4 py-2" style={highlightStyle}>{normalized.label || 'N/A'}</td>
+                                            <td className="border border-gray-300 px-4 py-2" style={highlightStyle}>{normalized.articleNumber || '-'}</td>
+                                            <td className="border border-gray-300 px-4 py-2" style={highlightStyle}>{normalized.quantity}</td>
+                                            <td className="border border-gray-300 px-4 py-2" style={highlightStyle}>{formatEuroAmount(getPartUnitPrice(part))} €</td>
+                                            <td className="border border-gray-300 px-4 py-2 font-medium" style={highlightStyle}>{formatEuroAmount(getPartLineTotal(part))} €</td>
                                         </tr>
                                         );
                                     })}
