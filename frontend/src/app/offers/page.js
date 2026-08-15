@@ -208,9 +208,9 @@ const OfferPage = () => {
             title: "Understanding the Offers Table",
             content: [
                 "**ID** - Click to open offer details",
+                "**Yachts** - Yacht name and model",
                 "**Date** - When the offer was created",
                 "**Customer** - Customer full name",
-                "**Yachts** - Yacht name and model",
                 "**Boat Registration** - Country/registration code",
                 "**Status** - created, confirmed, finished, etc.",
                 "**Service Category** - Services in the offer",
@@ -235,16 +235,6 @@ const OfferPage = () => {
             sortable: true,
         },
         {
-            name: 'Date',
-            selector: row => new Date(row.createdAt).toLocaleString(),
-            sortable: true,
-        },
-        {
-            name: 'Customer',
-            selector: row => row.customerFullName || '',
-            sortable: true,
-        },
-        {
             name: 'Yacht Name',
             selector: row => {
                 if (Array.isArray(row.yachts) && row.yachts.length > 0) {
@@ -254,6 +244,16 @@ const OfferPage = () => {
                 }
                 return '';
             },
+            sortable: true,
+        },
+        {
+            name: 'Date',
+            selector: row => new Date(row.createdAt).toLocaleString(),
+            sortable: true,
+        },
+        {
+            name: 'Customer',
+            selector: row => row.customerFullName || '',
             sortable: true,
         },
         {
@@ -356,16 +356,6 @@ const OfferPage = () => {
             sortable: true,
         },
         {
-            name: 'Date',
-            selector: row => new Date(row.createdAt).toLocaleString(),
-            sortable: true,
-        },
-        {
-            name: 'Customer',
-            selector: row => row.customerFullName || '',
-            sortable: true,
-        },
-        {
             name: 'Yachts',
             selector: row => {
                 if (Array.isArray(row.yachts) && row.yachts.length > 0) {
@@ -375,6 +365,16 @@ const OfferPage = () => {
                 }
                 return '';
             },
+            sortable: true,
+        },
+        {
+            name: 'Date',
+            selector: row => new Date(row.createdAt).toLocaleString(),
+            sortable: true,
+        },
+        {
+            name: 'Customer',
+            selector: row => row.customerFullName || '',
             sortable: true,
         },
         {
@@ -1614,11 +1614,11 @@ const OfferPage = () => {
     const exportToExcel = async () => {
         const exportData = filteredData.map(row => ({
             ID: row.id,
-            Date: new Date(row.createdAt).toLocaleString(),
-            Customer: row.customerFullName || '',
             'Yachts': Array.isArray(row.yachts) && row.yachts.length > 0 
                 ? row.yachts.map(yacht => `${yacht.name} - ${yacht.model}`).join(', ')
                 : (row.yachtName ? `${row.yachtName} - ${row.yachtModel}` : ''),
+            Date: new Date(row.createdAt).toLocaleString(),
+            Customer: row.customerFullName || '',
             'Boat Registration': Array.isArray(row.yachts) && row.yachts.length > 0 
                 ? row.yachts.map(yacht => yacht.countryCode).join(', ')
                 : (row.countryCode || ''),
@@ -1950,9 +1950,9 @@ const OfferPage = () => {
                                 <thead>
                                     <tr>
                                         <th>ID</th>
+                                        <th>Yachts</th>
                                         <th>Date</th>
                                         <th>Customer</th>
-                                        <th>Yachts</th>
                                         <th>Boat Registration</th>
                                         <th>Status</th>
                                         <th>Service Category</th>
@@ -1963,6 +1963,12 @@ const OfferPage = () => {
                                     {filteredData.map((row) => (
                                         <tr key={row.id}>
                                             <td>{row.id}</td>
+                                            <td>
+                                                {Array.isArray(row.yachts) && row.yachts.length > 0 
+                                                    ? row.yachts.map(yacht => `${yacht.name} - ${yacht.model}`).join(', ')
+                                                    : (row.yachtName ? `${row.yachtName} - ${row.yachtModel}` : '')
+                                                }
+                                            </td>
                                             <td>{new Date(row.createdAt).toLocaleDateString('en-US', {
                                                 year: 'numeric',
                                                 month: '2-digit',
@@ -1971,12 +1977,6 @@ const OfferPage = () => {
                                                 minute: '2-digit'
                                             })}</td>
                                             <td>{row.customerFullName || ''}</td>
-                                            <td>
-                                                {Array.isArray(row.yachts) && row.yachts.length > 0 
-                                                    ? row.yachts.map(yacht => `${yacht.name} - ${yacht.model}`).join(', ')
-                                                    : (row.yachtName ? `${row.yachtName} - ${row.yachtModel}` : '')
-                                                }
-                                            </td>
                                             <td>
                                                 {Array.isArray(row.yachts) && row.yachts.length > 0 
                                                     ? row.yachts.map(yacht => yacht.countryCode).join(', ')

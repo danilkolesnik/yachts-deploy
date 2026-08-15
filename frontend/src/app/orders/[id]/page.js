@@ -25,6 +25,7 @@ import "react-image-gallery/styles/css/image-gallery.css";
 import ReactSelect from 'react-select';
 import { downloadWorkOrderPdf } from '@/utils/exportWorkOrderPdf';
 import { getOrderDocumentNumber } from '@/utils/documentNumbers';
+import { getSparePartHighlightStyle } from '@/utils/offerLineItems';
 import { downloadMediaReportPdf } from '@/utils/exportMediaReportPdf';
 import { uploadOrderMedia, getUploadErrorMessage } from '@/utils/uploadMedia';
 import { ORDER_MEDIA_SECTIONS, normalizeOrderMedia } from '@/constants/orderMediaSections';
@@ -155,6 +156,7 @@ const OrderDetail = ({ params }) => {
                 articleNumber: p?.articleNumber ?? p?.value?.articleNumber ?? '',
                 warehouse: p?.warehouse ?? '',
                 pricePerUnit: p?.pricePerUnit ?? p?.price ?? null,
+                unofficially: Boolean(p?.unofficially),
             }))
             .filter((x) => x.partName);
     };
@@ -1043,22 +1045,27 @@ const OrderDetail = ({ params }) => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {getOrderParts().map((p, idx) => (
-                                                    <tr key={`${p.partName}-${idx}`} className="border-b border-gray-200 text-black">
-                                                        <td className="py-2 pr-3 font-medium">{p.partName}</td>
-                                                        <td className="py-2 pr-3 text-gray-700">{p.articleNumber || '—'}</td>
-                                                        <td className="py-2 text-right text-gray-700 whitespace-nowrap">
+                                                {getOrderParts().map((p, idx) => {
+                                                    const highlightStyle = getSparePartHighlightStyle(p);
+                                                    return (
+                                                    <tr key={`${p.partName}-${idx}`} className="border-b border-gray-200">
+                                                        <td className="py-2 pr-3 font-medium" style={highlightStyle}>{p.partName}</td>
+                                                        <td className="py-2 pr-3" style={highlightStyle}>{p.articleNumber || '—'}</td>
+                                                        <td className="py-2 text-right whitespace-nowrap" style={highlightStyle}>
                                                             {String(p.quantity || 1)}
                                                         </td>
                                                     </tr>
-                                                ))}
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
                                 )
                             ) : (
                                 <div className="space-y-2">
-                                    {(draftParts || []).map((p, idx) => (
+                                    {(draftParts || []).map((p, idx) => {
+                                        const highlightStyle = getSparePartHighlightStyle(p);
+                                        return (
                                         <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-2">
                                             <input
                                                 value={p?.partName ?? ''}
@@ -1067,7 +1074,8 @@ const OrderDetail = ({ params }) => {
                                                     next[idx] = { ...(next[idx] || {}), partName: e.target.value };
                                                     setDraftParts(next);
                                                 }}
-                                                className="border p-2 rounded text-black md:col-span-2"
+                                                className="border p-2 rounded md:col-span-2"
+                                                style={highlightStyle}
                                                 placeholder="Part name"
                                             />
                                             <input
@@ -1100,7 +1108,8 @@ const OrderDetail = ({ params }) => {
                                                 </button>
                                             </div>
                                         </div>
-                                    ))}
+                                        );
+                                    })}
                                     <button
                                         onClick={() => setDraftParts([...(draftParts || []), { partName: '', quantity: 1, pricePerUnit: null }])}
                                         className="text-sm text-blue-600 hover:underline"

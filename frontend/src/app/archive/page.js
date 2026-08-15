@@ -231,6 +231,11 @@ const ArchivePageContent = () => {
             ),
         },
         {
+            name: 'Yacht',
+            selector: (row) => row.yachtName || '',
+            sortable: true,
+        },
+        {
             name: 'Date',
             selector: (row) => row.createdAt,
             sortable: true,
@@ -239,11 +244,6 @@ const ArchivePageContent = () => {
         {
             name: 'Customer',
             selector: (row) => row.customerFullName || '',
-            sortable: true,
-        },
-        {
-            name: 'Yacht',
-            selector: (row) => row.yachtName || '',
             sortable: true,
         },
         {
@@ -268,6 +268,11 @@ const ArchivePageContent = () => {
             ),
         },
         {
+            name: 'Yacht',
+            selector: (row) => row.offer?.yachtName || '',
+            sortable: true,
+        },
+        {
             name: 'Created',
             selector: (row) => row.createdAt,
             sortable: true,
@@ -276,11 +281,6 @@ const ArchivePageContent = () => {
         {
             name: 'Customer',
             selector: (row) => row.offer?.customerFullName || '',
-            sortable: true,
-        },
-        {
-            name: 'Yacht',
-            selector: (row) => row.offer?.yachtName || '',
             sortable: true,
         },
         {
