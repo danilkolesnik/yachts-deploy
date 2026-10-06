@@ -14,7 +14,7 @@ export class OfferHistory {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   changeDate: Date;
 
-  @Column('text')
+  @Column({ type: 'text', default: '' })
   changeDescription: string;
 
   @CreateDateColumn()
