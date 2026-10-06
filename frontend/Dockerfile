@@ -1,20 +1,21 @@
-# Используем официальный образ Node.js
 FROM node:18
 
-# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем package.json и package-lock.json
 COPY package*.json ./
 
-# Устанавливаем зависимости
 RUN npm install --ignore-scripts
 
-# Копируем весь проект
 COPY . .
 
-# Собираем проект Next.js
+# Baked into the Next.js client bundle at build time
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SERVER_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL
+
 RUN npm run build
 
-# Запускаем Next.js в продакшн-режиме
+EXPOSE 3000
+
 CMD ["npm", "start"]

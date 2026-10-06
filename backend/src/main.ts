@@ -22,27 +22,36 @@ async function bootstrap() {
     },
   });
 
+  const normalizeOrigin = (value: string) => value.trim().replace(/\/$/, '');
+
+  const allowedOrigins = new Set<string>(
+    [
+      'http://46.225.17.97:3000',
+      'http://localhost:3000',
+      'https://g000l4c6-3000.euw.devtunnels.ms',
+      process.env.CLIENT_URL,
+      // Comma-separated list, e.g. https://staging.a-s-m.yachts,https://live.a-s-m.yachts
+      ...(process.env.CLIENT_URLS || '').split(','),
+    ]
+      .filter(Boolean)
+      .map((value) => normalizeOrigin(String(value))),
+  );
+
   app.enableCors({
     origin: (origin, callback) => {
       // Allow non-browser tools / same-origin / SSR calls
       if (!origin) return callback(null, true);
 
-      const allowed = new Set<string>([
-        'http://46.225.17.97:3000',
-        'http://localhost:3000',
-        'https://g000l4c6-3000.euw.devtunnels.ms',
-      ]);
-
-      // Support env-configured client URL(s)
-      const clientUrl = process.env.CLIENT_URL;
-      if (clientUrl) allowed.add(clientUrl);
+      const normalized = normalizeOrigin(origin);
 
       // Dev: allow any localhost port (Next often bumps ports if busy)
       const isLocalhost =
-        /^http:\/\/localhost:\d+$/i.test(origin) ||
-        /^http:\/\/127\.0\.0\.1:\d+$/i.test(origin);
+        /^http:\/\/localhost:\d+$/i.test(normalized) ||
+        /^http:\/\/127\.0\.0\.1:\d+$/i.test(normalized);
 
-      if (allowed.has(origin) || isLocalhost) return callback(null, true);
+      if (allowedOrigins.has(normalized) || isLocalhost) {
+        return callback(null, true);
+      }
       return callback(new Error(`CORS blocked for origin: ${origin}`), false);
     },
     credentials: true,
