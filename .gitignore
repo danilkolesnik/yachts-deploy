@@ -40,3 +40,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# client warehouse dumps (local import only)
+/backups/warehouse.xlsx
+/backups/warehouse*.xlsx
+/backups/warehouse-import/

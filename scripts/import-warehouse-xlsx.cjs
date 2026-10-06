@@ -1,0 +1,236 @@
+/**
+ * Parse backups/warehouse.xlsx → SQL seed for warehouse table.
+ *
+ * Mapping (client):
+ *   Internal        → Grey Warehouse     (unofficially = true)
+ *   Liquids int.    → Grey Warehouse     (unofficially = true)
+ *   Official        → Official Warehouse (unofficially = false)
+ *
+ * Usage (from repo root, needs frontend/node_modules/exceljs):
+ *   node scripts/import-warehouse-xlsx.cjs
+ *   node scripts/import-warehouse-xlsx.cjs --xlsx=backups/warehouse.xlsx --out=backups/warehouse-import/seed.sql
+ *
+ * Apply on server:
+ *   docker compose --env-file .env.staging -p yachts-staging exec -T db \
+ *     psql -U postgres -d yachts_staging < backups/warehouse-import/seed.sql
+ */
+
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+
+async function loadExcelJS() {
+  const candidates = [
+    path.join(__dirname, '../frontend/node_modules/exceljs'),
+    path.join(__dirname, '../backend/node_modules/exceljs'),
+    'exceljs',
+  ];
+  for (const c of candidates) {
+    try {
+      return require(c);
+    } catch {
+      /* try next */
+    }
+  }
+  throw new Error('exceljs not found. Run: npm --prefix frontend install');
+}
+
+function cellValue(row, col) {
+  const raw = row.getCell(col).value;
+  if (raw == null || raw === '') return '';
+  if (typeof raw === 'number') return raw;
+  if (typeof raw === 'boolean') return raw;
+  if (typeof raw === 'object') {
+    if (raw.result != null && raw.result !== '') return raw.result;
+    if (raw.text != null) return raw.text;
+    if (raw.richText) return raw.richText.map((t) => t.text).join('');
+    return '';
+  }
+  return String(raw).trim();
+}
+
+function asString(value) {
+  if (value == null || value === '') return '';
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return '';
+    return Number.isInteger(value) ? String(value) : String(value);
+  }
+  return String(value).trim();
+}
+
+function asQuantity(value) {
+  const s = asString(value);
+  if (!s) return '0';
+  const n = Number(String(s).replace(',', '.'));
+  if (!Number.isFinite(n)) return '0';
+  return String(Math.max(0, Math.round(n)));
+}
+
+function asPrice(value) {
+  const s = asString(value);
+  if (!s) return '0';
+  const n = Number(String(s).replace(',', '.'));
+  if (!Number.isFinite(n)) return '0';
+  return String(Math.round(n * 100) / 100);
+}
+
+function sqlLiteral(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+function makeId(used) {
+  for (let i = 0; i < 50; i++) {
+    const id = String(crypto.randomInt(0, 1e10)).padStart(10, '0');
+    if (!used.has(id)) {
+      used.add(id);
+      return id;
+    }
+  }
+  throw new Error('Failed to generate unique warehouse id');
+}
+
+function pushRow(rows, usedIds, part) {
+  const name = asString(part.name);
+  if (!name) return;
+  rows.push({
+    id: makeId(usedIds),
+    name,
+    quantity: asQuantity(part.quantity),
+    pricePerUnit: asPrice(part.pricePerUnit),
+    articleNumber: asString(part.articleNumber),
+    inventory: asString(part.inventory),
+    comment: asString(part.comment),
+    countryCode: '',
+    unofficially: Boolean(part.unofficially),
+  });
+}
+
+function parseInternal(sheet, usedIds) {
+  const rows = [];
+  // Name | Art. | Company | Quantity | Price | Total | Actual quantity
+  for (let r = 2; r <= sheet.rowCount; r++) {
+    const row = sheet.getRow(r);
+    const qty = cellValue(row, 7) !== '' && cellValue(row, 7) != null
+      ? cellValue(row, 7)
+      : cellValue(row, 4);
+    pushRow(rows, usedIds, {
+      name: cellValue(row, 1),
+      articleNumber: cellValue(row, 2),
+      comment: cellValue(row, 3),
+      quantity: qty,
+      pricePerUnit: cellValue(row, 5),
+      unofficially: true, // Grey
+    });
+  }
+  return rows;
+}
+
+function parseLiquids(sheet, usedIds) {
+  const rows = [];
+  // Synesis | Название | литраж | артикул | производитель | кол-во лт | кол-во шт | входящая цена | Итого | за 1л
+  for (let r = 2; r <= sheet.rowCount; r++) {
+    const row = sheet.getRow(r);
+    pushRow(rows, usedIds, {
+      inventory: cellValue(row, 1),
+      name: cellValue(row, 2),
+      articleNumber: cellValue(row, 4),
+      comment: cellValue(row, 5),
+      quantity: cellValue(row, 7),
+      pricePerUnit: cellValue(row, 8),
+      unofficially: true, // Grey (liquids)
+    });
+  }
+  return rows;
+}
+
+function parseOfficial(sheet, usedIds) {
+  const rows = [];
+  // Synesis | Название | ед. изм. | Номер артикула | Цена | Актуальное кол-во
+  for (let r = 2; r <= sheet.rowCount; r++) {
+    const row = sheet.getRow(r);
+    pushRow(rows, usedIds, {
+      inventory: cellValue(row, 1),
+      name: cellValue(row, 2),
+      comment: cellValue(row, 3),
+      articleNumber: cellValue(row, 4),
+      pricePerUnit: cellValue(row, 5),
+      quantity: cellValue(row, 6),
+      unofficially: false, // Official
+    });
+  }
+  return rows;
+}
+
+function toSql(rows) {
+  const lines = [
+    '-- Generated by scripts/import-warehouse-xlsx.cjs',
+    '-- Grey = unofficially true; Official = unofficially false',
+    'BEGIN;',
+    'DELETE FROM warehouse;',
+  ];
+
+  for (const p of rows) {
+    lines.push(
+      `INSERT INTO warehouse (id, name, quantity, "pricePerUnit", "articleNumber", inventory, comment, "countryCode", unofficially) VALUES (` +
+        `${sqlLiteral(p.id)}, ${sqlLiteral(p.name)}, ${sqlLiteral(p.quantity)}, ${sqlLiteral(p.pricePerUnit)}, ` +
+        `${sqlLiteral(p.articleNumber)}, ${sqlLiteral(p.inventory)}, ${sqlLiteral(p.comment)}, ${sqlLiteral(p.countryCode)}, ${p.unofficially});`,
+    );
+  }
+
+  lines.push('COMMIT;');
+  lines.push(
+    `-- counts: total=${rows.length} grey=${rows.filter((r) => r.unofficially).length} official=${rows.filter((r) => !r.unofficially).length}`,
+  );
+  return lines.join('\n') + '\n';
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  const xlsxArg = args.find((a) => a.startsWith('--xlsx='))?.slice(7);
+  const outArg = args.find((a) => a.startsWith('--out='))?.slice(6);
+  const xlsxPath = path.resolve(
+    xlsxArg || path.join(__dirname, '../backups/warehouse.xlsx'),
+  );
+  const outPath = path.resolve(
+    outArg || path.join(__dirname, '../backups/warehouse-import/seed.sql'),
+  );
+
+  if (!fs.existsSync(xlsxPath)) {
+    throw new Error(`Excel not found: ${xlsxPath}`);
+  }
+
+  const ExcelJS = await loadExcelJS();
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(xlsxPath);
+
+  const usedIds = new Set();
+  const internal = wb.getWorksheet('Internal');
+  const liquids = wb.getWorksheet('Liquids int.');
+  const official = wb.getWorksheet('Official');
+
+  if (!internal || !liquids || !official) {
+    throw new Error(
+      `Missing sheet(s). Found: ${wb.worksheets.map((s) => s.name).join(', ')}`,
+    );
+  }
+
+  const rows = [
+    ...parseInternal(internal, usedIds),
+    ...parseLiquids(liquids, usedIds),
+    ...parseOfficial(official, usedIds),
+  ];
+
+  const grey = rows.filter((r) => r.unofficially).length;
+  const off = rows.filter((r) => !r.unofficially).length;
+
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  fs.writeFileSync(outPath, toSql(rows), 'utf8');
+
+  console.log(`Parsed ${rows.length} parts (Grey/Internal+Liquids: ${grey}, Official: ${off})`);
+  console.log(`Wrote ${outPath}`);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
