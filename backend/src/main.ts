@@ -29,6 +29,8 @@ async function bootstrap() {
       'http://46.225.17.97:3000',
       'http://localhost:3000',
       'https://g000l4c6-3000.euw.devtunnels.ms',
+      'https://staging.a-s-m.yachts',
+      'https://live.a-s-m.yachts',
       process.env.CLIENT_URL,
       // Comma-separated list, e.g. https://staging.a-s-m.yachts,https://live.a-s-m.yachts
       ...(process.env.CLIENT_URLS || '').split(','),
@@ -52,7 +54,8 @@ async function bootstrap() {
       if (allowedOrigins.has(normalized) || isLocalhost) {
         return callback(null, true);
       }
-      return callback(new Error(`CORS blocked for origin: ${origin}`), false);
+      // Do not pass Error here — cors turns it into HTTP 500 on preflight (OPTIONS).
+      return callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
