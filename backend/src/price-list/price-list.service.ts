@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pricelist } from './entities/pricelist.entity';
 import { CreatePricelistDto } from './dto/pricelist.dto';
+import { parseEuroNumber } from 'src/utils/pdfFormatters';
 
 @Injectable()
 export class PricelistService {
@@ -23,7 +24,7 @@ export class PricelistService {
       const result = await this.pricelistRepository.save(
         this.pricelistRepository.create({
           serviceName: data.serviceName,
-          priceInEuroWithoutVAT: data.priceInEuroWithoutVAT,
+          priceInEuroWithoutVAT: parseEuroNumber(data.priceInEuroWithoutVAT),
           unitsOfMeasurement: data.unitsOfMeasurement,
           description: data.description,
         })
@@ -92,6 +93,11 @@ export class PricelistService {
       }
 
       Object.assign(pricelist, data);
+      if (data.priceInEuroWithoutVAT !== undefined) {
+        pricelist.priceInEuroWithoutVAT = parseEuroNumber(
+          data.priceInEuroWithoutVAT,
+        );
+      }
 
       const updatedPricelist = await this.pricelistRepository.save(pricelist);
 

@@ -27,7 +27,7 @@ import { getCustomerEmailForOffer } from '@/utils/customerEmail';
 import { sendOfferEmail } from '@/utils/sendOfferEmail';
 import SendEmailModal from '@/ui/SendEmailModal';
 import { isActiveOfferStatus } from '@/constants/workflowStatus';
-import { computeOfferTotals, normalizeOfferPart, normalizeOfferService } from '@/utils/offerLineItems';
+import { computeOfferTotals, normalizeOfferPart, normalizeOfferService, parseEuroNumber } from '@/utils/offerLineItems';
 
 const OfferPage = () => {
     const router = useRouter();
@@ -964,7 +964,13 @@ const OfferPage = () => {
         e.preventDefault();
         setLoadingCreateService(true);
         try {
-            const response = await axios.post(`${URL}/priceList/create`, createServiceFormData);
+            const payload = {
+                ...createServiceFormData,
+                priceInEuroWithoutVAT: parseEuroNumber(
+                    createServiceFormData.priceInEuroWithoutVAT,
+                ),
+            };
+            const response = await axios.post(`${URL}/priceList/create`, payload);
             if (hasServerBusinessError(response, "Error creating service")) {
                 return;
             }
