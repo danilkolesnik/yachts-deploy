@@ -4,6 +4,7 @@ import { getTranslations, normalizeDocumentLanguage } from './translations';
 import {
   formatDateHr,
   formatMoney,
+  formatNameWithDescription,
   getLogoUrl,
   getPartArticleNumber,
   getPartLabel,
@@ -109,7 +110,7 @@ export function buildInvoiceExportHtml(data: any): string {
       return `
       <tr>
         <td>${index + 1}</td>
-        <td>${getPartLabel(part)}</td>
+        <td>${formatNameWithDescription(getPartLabel(part), part, data?.language)}</td>
         <td>${getPartArticleNumber(part)}</td>
         <td>${quantity}</td>
         <td>${formatMoney(pricePerUnit)}</td>
@@ -127,7 +128,7 @@ export function buildInvoiceExportHtml(data: any): string {
       return `
       <tr>
         <td>${index + 1}</td>
-        <td>${getServiceName(service)}</td>
+        <td>${formatNameWithDescription(getServiceName(service, data?.language), service, data?.language)}</td>
         <td>${quantity}</td>
         <td>${formatMoney(unitPrice)}</td>
         <td>${formatMoney(lineTotal)}</td>

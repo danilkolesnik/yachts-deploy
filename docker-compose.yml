@@ -50,6 +50,7 @@ services:
       UPLOADS_DIR: /app/uploads
       ZOHO_APP_PASSWORD: ${ZOHO_APP_PASSWORD:-}
       ZOHO_EMAIL: ${ZOHO_EMAIL:-}
+      DEEPL_API_KEY: ${DEEPL_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy

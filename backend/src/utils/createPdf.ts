@@ -81,7 +81,7 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
         return exportData.services.map((service: any, index: number) => `
           <tr>
             <td>${index + 1}</td>
-            <td>${service.serviceName}</td>
+            <td>${service.serviceNameHr && String(exportData.language).toLowerCase() === 'hr' ? service.serviceNameHr : service.serviceName}</td>
             <td>1</td>
             <td>${service.priceInEuroWithoutVAT}</td>
             <td>${service.priceInEuroWithoutVAT}</td>
@@ -91,7 +91,7 @@ export async function createPdfBuffer(data: any, type: string): Promise<Buffer> 
         return `
           <tr>
             <td>1</td>
-            <td>${exportData.services.serviceName}</td>
+            <td>${exportData.services.serviceNameHr && String(exportData.language).toLowerCase() === 'hr' ? exportData.services.serviceNameHr : exportData.services.serviceName}</td>
             <td>1</td>
             <td>${exportData.services.priceInEuroWithoutVAT}</td>
             <td>${exportData.services.priceInEuroWithoutVAT}</td>

@@ -32,6 +32,7 @@ export class offer {
   @Column('json', { default: [] })
   services: {
     serviceName: string;
+    serviceNameHr?: string;
     priceInEuroWithoutVAT: number;
     quantity?: number;
     unitsOfMeasurement?: string;

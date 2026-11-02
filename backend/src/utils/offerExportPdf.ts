@@ -3,6 +3,7 @@ import * as path from 'path';
 import { getTranslations } from './translations';
 import {
   formatMoney,
+  formatNameWithDescription,
   getLogoUrl,
   getPartArticleNumber,
   getPartLabel,
@@ -89,7 +90,7 @@ export function buildOfferExportHtml(data: any): string {
       return `
       <tr>
         <td>${index + 1}</td>
-        <td>${getPartLabel(part)}</td>
+        <td>${formatNameWithDescription(getPartLabel(part), part, exportData.language)}</td>
         <td>${getPartArticleNumber(part)}</td>
         <td>${quantity}</td>
         <td>${formatMoney(pricePerUnit)}</td>
@@ -107,7 +108,7 @@ export function buildOfferExportHtml(data: any): string {
       return `
       <tr>
         <td>${index + 1}</td>
-        <td>${getServiceName(service)}</td>
+        <td>${formatNameWithDescription(getServiceName(service, exportData.language), service, exportData.language)}</td>
         <td>${quantity}</td>
         <td>${formatMoney(unitPrice)}</td>
         <td>${formatMoney(lineTotal)}</td>

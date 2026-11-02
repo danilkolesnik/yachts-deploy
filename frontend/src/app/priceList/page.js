@@ -21,6 +21,7 @@ const PriceListPage = () => {
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [formData, setFormData] = useState({
         serviceName: '',
+        serviceNameHr: '',
         priceInEuroWithoutVAT: '',
         unitsOfMeasurement: '',
         subServices: [],
@@ -193,8 +194,13 @@ const PriceListPage = () => {
 
     const columns = [
         {
-            name: 'Service Name',
+            name: 'Service Name (EN)',
             selector: row => row.serviceName,
+            sortable: true,
+        },
+        {
+            name: 'Service Name (HR)',
+            selector: row => row.serviceNameHr || '',
             sortable: true,
         },
         {
@@ -259,7 +265,10 @@ const PriceListPage = () => {
         try {
             switch (true) {
                 case formData.serviceName.trim() === '':
-                    toast.error("Error: Service name is required");
+                    toast.error("Error: Service Name (EN) is required");
+                    return;
+                case String(formData.serviceNameHr || '').trim() === '':
+                    toast.error("Error: Service Name (HR) is required");
                     return;
                 case formData.priceInEuroWithoutVAT.trim() === '':
                     toast.error("Error: Price in EURO without VAT is required");
@@ -296,6 +305,7 @@ const PriceListPage = () => {
     const handleEdit = (row) => {
         setFormData({
             serviceName: row.serviceName,
+            serviceNameHr: row.serviceNameHr || '',
             priceInEuroWithoutVAT: row.priceInEuroWithoutVAT || '',
             unitsOfMeasurement: row.unitsOfMeasurement || '',
             subServices: row.subServices || [],
@@ -365,6 +375,7 @@ const PriceListPage = () => {
     const openModal = () => {
         setFormData({
             serviceName: '',
+            serviceNameHr: '',
             priceInEuroWithoutVAT: '',
             unitsOfMeasurement: '',
             subServices: [],
@@ -458,7 +469,8 @@ const PriceListPage = () => {
 
     const exportToExcel = async () => {
         const exportData = filteredData.map(row => ({
-            'Service Name': row.serviceName || '',
+            'Service Name (EN)': row.serviceName || '',
+            'Service Name (HR)': row.serviceNameHr || '',
             'Sub-services': row.subServices && Array.isArray(row.subServices) && row.subServices.length > 0
                 ? row.subServices.map(sub => `${sub.name} (${sub.size})`).join(', ')
                 : '',
@@ -542,7 +554,8 @@ const PriceListPage = () => {
                             <table ref={tableRef} style={{ display: 'none' }}>
                                 <thead>
                                     <tr>
-                                        <th>Service Name</th>
+                                        <th>Service Name (EN)</th>
+                                        <th>Service Name (HR)</th>
                                         <th>Sub-services</th>
                                         <th>Price in EURO without VAT</th>
                                         <th>Units of Measurement</th>
@@ -552,6 +565,7 @@ const PriceListPage = () => {
                                     {filteredData.map((row) => (
                                         <tr key={row.id}>
                                             <td>{row.serviceName || ''}</td>
+                                            <td>{row.serviceNameHr || ''}</td>
                                             <td>
                                                 {row.subServices && Array.isArray(row.subServices) && row.subServices.length > 0
                                                     ? row.subServices.map(sub => `${sub.name} (${sub.size})`).join(', ')
@@ -830,12 +844,21 @@ const PriceListPage = () => {
                             </div>
                             
                             <Input
-                                label="Service Name *"
+                                label="Service Name (EN) *"
                                 name="serviceName"
                                 value={formData.serviceName}
                                 onChange={handleChange}
                                 required
                                 placeholder="e.g., Engine Maintenance, Hull Cleaning"
+                            />
+
+                            <Input
+                                label="Service Name (HR) *"
+                                name="serviceNameHr"
+                                value={formData.serviceNameHr}
+                                onChange={handleChange}
+                                required
+                                placeholder="npr. Servis motora, Čišćenje trupa"
                             />
                             
                             <div>

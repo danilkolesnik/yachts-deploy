@@ -6,16 +6,27 @@ export function parseEuroNumber(value) {
     return Number.isFinite(parsed) ? parsed : 0;
 }
 
+export function createLineKey() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    return `line-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export function normalizeOfferService(service) {
     const base = service?.value ?? service ?? {};
     const quantity = parseEuroNumber(base.quantity);
     const unitPrice = parseEuroNumber(base.priceInEuroWithoutVAT);
     return {
+        lineKey: base.lineKey || createLineKey(),
         id: base.id,
         serviceName: base.serviceName ?? '',
+        serviceNameHr: base.serviceNameHr ?? '',
         priceInEuroWithoutVAT: Number.isFinite(unitPrice) ? unitPrice : 0,
         unitsOfMeasurement: base.unitsOfMeasurement ?? '',
         quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+        descriptionEn: base.descriptionEn ?? '',
+        descriptionHr: base.descriptionHr ?? '',
     };
 }
 
@@ -24,6 +35,7 @@ export function normalizeOfferPart(part) {
     const quantity = parseEuroNumber(part?.quantity ?? part?.value?.quantity);
     const unitPrice = parseEuroNumber(part?.pricePerUnit ?? part?.value?.pricePerUnit);
     return {
+        lineKey: part?.lineKey || createLineKey(),
         value: part?.value ?? part?.id,
         label,
         partName: label,
@@ -31,6 +43,8 @@ export function normalizeOfferPart(part) {
         pricePerUnit: Number.isFinite(unitPrice) ? unitPrice : 0,
         quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
         unofficially: Boolean(part?.unofficially),
+        descriptionEn: part?.descriptionEn ?? '',
+        descriptionHr: part?.descriptionHr ?? '',
     };
 }
 
@@ -136,35 +150,117 @@ export function formatEuroAmount(value) {
     return num.toFixed(2);
 }
 
+function sameServiceIdentity(a, b) {
+    const aId = a?.id ?? a?.value?.id;
+    const bId = b?.id ?? b?.value?.id;
+    if (aId && bId) return String(aId) === String(bId);
+    const aName = a?.serviceName ?? a?.value?.serviceName;
+    const bName = b?.serviceName ?? b?.value?.serviceName;
+    return Boolean(aName) && aName === bName;
+}
+
+function samePartIdentity(a, b) {
+    if (a?.value && b?.value) return String(a.value) === String(b.value);
+    const aLabel = a?.label ?? a?.partName ?? a?.name;
+    const bLabel = b?.label ?? b?.partName ?? b?.name;
+    return Boolean(aLabel) && aLabel === bLabel;
+}
+
+/**
+ * Keep existing line instances (incl. duplicates + descriptions).
+ * Append newly selected catalog items; drop lines whose catalog id was deselected.
+ */
 export function mergeSelectedServices(previous = [], selected = []) {
-    return selected.map((item) => {
-        const base = item?.value ?? item;
-        const existing = (previous || []).find((prev) => {
-            const prevBase = prev?.value ?? prev;
-            if (prevBase?.id && base?.id) return String(prevBase.id) === String(base.id);
-            return prevBase?.serviceName === base?.serviceName;
-        });
-        const prevBase = existing?.value ?? existing;
-        return {
-            ...base,
-            quantity: Number(prevBase?.quantity) > 0 ? Number(prevBase.quantity) : 1,
-        };
-    });
+    const selectedBases = (selected || []).map((item) => item?.value ?? item);
+    const kept = (previous || []).filter((prev) =>
+        selectedBases.some((sel) => sameServiceIdentity(prev, sel)),
+    );
+
+    const keptCounts = new Map();
+    for (const line of kept) {
+        const key = String(line?.id ?? line?.serviceName ?? '');
+        keptCounts.set(key, (keptCounts.get(key) || 0) + 1);
+    }
+
+    const selectedCounts = new Map();
+    for (const sel of selectedBases) {
+        const key = String(sel?.id ?? sel?.serviceName ?? '');
+        selectedCounts.set(key, (selectedCounts.get(key) || 0) + 1);
+    }
+
+    const next = [...kept];
+    for (const sel of selectedBases) {
+        const key = String(sel?.id ?? sel?.serviceName ?? '');
+        const have = keptCounts.get(key) || 0;
+        const want = selectedCounts.get(key) || 0;
+        if (have < want) {
+            next.push({
+                ...sel,
+                lineKey: createLineKey(),
+                quantity: 1,
+                descriptionEn: '',
+                descriptionHr: '',
+            });
+            keptCounts.set(key, have + 1);
+        }
+    }
+    return next;
 }
 
 export function mergeSelectedParts(previous = [], selected = []) {
-    return (selected || []).map((option) => {
-        const existing = (previous || []).find((prev) => {
-            if (prev?.value && option?.value) {
-                return String(prev.value) === String(option.value);
-            }
-            const prevLabel = prev?.label ?? prev?.partName ?? prev?.name;
-            return prevLabel && prevLabel === option?.label;
-        });
-        return {
-            ...option,
-            articleNumber: option.articleNumber ?? existing?.articleNumber ?? '',
-            quantity: Number(existing?.quantity) > 0 ? Number(existing.quantity) : 1,
-        };
-    });
+    const selectedOptions = selected || [];
+    const kept = (previous || []).filter((prev) =>
+        selectedOptions.some((sel) => samePartIdentity(prev, sel)),
+    );
+
+    const keptCounts = new Map();
+    for (const line of kept) {
+        const key = String(line?.value ?? line?.label ?? line?.partName ?? '');
+        keptCounts.set(key, (keptCounts.get(key) || 0) + 1);
+    }
+
+    const selectedCounts = new Map();
+    for (const sel of selectedOptions) {
+        const key = String(sel?.value ?? sel?.label ?? '');
+        selectedCounts.set(key, (selectedCounts.get(key) || 0) + 1);
+    }
+
+    const next = [...kept];
+    for (const sel of selectedOptions) {
+        const key = String(sel?.value ?? sel?.label ?? '');
+        const have = keptCounts.get(key) || 0;
+        const want = selectedCounts.get(key) || 0;
+        if (have < want) {
+            next.push({
+                ...sel,
+                lineKey: createLineKey(),
+                articleNumber: sel.articleNumber ?? '',
+                quantity: 1,
+                descriptionEn: '',
+                descriptionHr: '',
+            });
+            keptCounts.set(key, have + 1);
+        }
+    }
+    return next;
+}
+
+export function duplicateOfferServiceLine(service) {
+    const normalized = normalizeOfferService(service);
+    return {
+        ...normalized,
+        lineKey: createLineKey(),
+        descriptionEn: '',
+        descriptionHr: '',
+    };
+}
+
+export function duplicateOfferPartLine(part) {
+    const normalized = normalizeOfferPart(part);
+    return {
+        ...normalized,
+        lineKey: createLineKey(),
+        descriptionEn: '',
+        descriptionHr: '',
+    };
 }

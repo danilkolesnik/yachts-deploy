@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { getTranslations } from './translations';
 import {
+  formatNameWithDescription,
   getLogoUrl,
   getPartArticleNumber,
   getPartLabel,
@@ -127,7 +128,7 @@ export function buildWorkOrderExportHtml(data: {
     .map((part: any, index: number) => `
       <tr>
         <td>${index + 1}</td>
-        <td>${getPartLabel(part)}</td>
+        <td>${formatNameWithDescription(getPartLabel(part), part, language)}</td>
         <td>${getPartArticleNumber(part)}</td>
         <td>${getPartQuantity(part)}</td>
       </tr>
@@ -138,7 +139,7 @@ export function buildWorkOrderExportHtml(data: {
     .map((service: any, index: number) => `
       <tr>
         <td>${index + 1}</td>
-        <td>${getServiceName(service)}</td>
+        <td>${formatNameWithDescription(getServiceName(service, language), service, language)}</td>
         <td>${getServiceQuantity(service)}</td>
       </tr>
     `)

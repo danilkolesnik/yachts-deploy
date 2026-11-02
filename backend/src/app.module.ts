@@ -38,6 +38,7 @@ import { OrderClientMessage } from './order/entities/order-client-message.entity
 import { OrderWorkerNote } from './order/entities/order-worker-note.entity';
 import { Invoice } from './invoice/entities/invoice.entity';
 import { InvoiceModule } from './invoice/invoice.module';
+import { TranslateModule } from './translate/translate.module';
 
 // Node 19+ already provides `globalThis.crypto` as a WebCrypto implementation.
 // Only set it for older runtimes where it doesn't exist.
@@ -139,6 +140,7 @@ createUploadDirectories();
     UploadModule,
     YachtModule,
     InvoiceModule,
+    TranslateModule,
   ],
   controllers: [AppController],
   providers: [AppService,],

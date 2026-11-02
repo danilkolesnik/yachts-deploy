@@ -20,13 +20,23 @@ export function normalizeServices(services: unknown): any[] {
   return [];
 }
 
-export function getServiceName(service: any): string {
-  return String(
+export function getServiceName(service: any, lang?: string): string {
+  const en = String(
     service?.serviceName ??
       service?.value?.serviceName ??
       service?.label ??
       '',
   );
+  const hr = String(
+    service?.serviceNameHr ?? service?.value?.serviceNameHr ?? '',
+  ).trim();
+  const normalized = String(lang ?? '')
+    .trim()
+    .toLowerCase();
+  if (normalized === 'hr' && hr) {
+    return hr;
+  }
+  return en;
 }
 
 export function getServicePrice(service: any): number {
@@ -48,6 +58,44 @@ export function getPartLabel(part: any): string {
   return String(
     part?.label ?? part?.name ?? part?.partName ?? part?.value?.label ?? '',
   );
+}
+
+function escapePdfHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** Per-line work/material note for the offer language (EN/HR; DE uses EN). */
+export function getLineDescription(item: any, lang?: string): string {
+  const normalized = String(lang ?? '')
+    .trim()
+    .toLowerCase();
+  if (normalized === 'hr') {
+    return String(
+      item?.descriptionHr ?? item?.value?.descriptionHr ?? item?.description ?? '',
+    ).trim();
+  }
+  return String(
+    item?.descriptionEn ?? item?.value?.descriptionEn ?? item?.description ?? '',
+  ).trim();
+}
+
+/** Catalog name + optional individual description for PDF table cells. */
+export function formatNameWithDescription(
+  name: string,
+  item: any,
+  lang?: string,
+): string {
+  const safeName = escapePdfHtml(name);
+  const description = getLineDescription(item, lang);
+  if (!description) {
+    return safeName;
+  }
+  const safeDescription = escapePdfHtml(description).replace(/\n/g, '<br>');
+  return `${safeName}<div style="margin-top:4px;font-size:0.9em;color:#444;">${safeDescription}</div>`;
 }
 
 export function getPartArticleNumber(part: any): string {

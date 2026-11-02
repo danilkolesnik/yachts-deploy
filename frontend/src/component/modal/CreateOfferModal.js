@@ -1,10 +1,15 @@
+import { useState } from 'react';
 import { Button, Select, Option } from "@material-tailwind/react";
 import { ClipLoader } from 'react-spinners';
 import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import ReactSelect from 'react-select';
 import OfferLineItemsFields from '@/component/OfferLineItemsFields';
-import { getSparePartHighlightColor, mergeSelectedParts, mergeSelectedServices } from '@/utils/offerLineItems';
+import {
+    createLineKey,
+    getSparePartHighlightColor,
+} from '@/utils/offerLineItems';
+import { ensureDescriptionForLanguage } from '@/utils/translateText';
 
 const CreateOfferModal = ({ 
     isOpen, 
@@ -23,33 +28,84 @@ const CreateOfferModal = ({
     yachts,
     handleYachtSelect 
 }) => {
+    const [pendingService, setPendingService] = useState(null);
+    const [pendingPart, setPendingPart] = useState(null);
+    const [languageBusy, setLanguageBusy] = useState(false);
+
     const yachtOptions = yachts.map(yacht => ({
         value: yacht,
         label: `${yacht.name} - ${yacht.model}`
     }));
 
-    const serviceOptions = catagoryData.map(category => ({
-        value: category,
-        label: `${category.serviceName} - ${category.priceInEuroWithoutVAT}€`
-    }));
-
-    const selectedServiceOptions = serviceOptions.filter(option =>
-        Array.isArray(formData.services) && formData.services.some(service => {
-            const serviceId = service?.id ?? service?.value?.id;
-            const optionId = option.value?.id;
-
-            if (serviceId && optionId) {
-                return serviceId === optionId;
-            }
-
-            return (service?.serviceName ?? service?.value?.serviceName) === option.value?.serviceName;
-        })
-    );
+    const serviceOptions = catagoryData.map(category => {
+        const name =
+            formData.language === 'hr' && category.serviceNameHr
+                ? category.serviceNameHr
+                : category.serviceName;
+        return {
+            value: category,
+            label: `${name} - ${category.priceInEuroWithoutVAT}€`,
+        };
+    });
 
     const combinedParts = partOptions.map(part => ({
         ...part,
         color: getSparePartHighlightColor(part)
     }));
+
+    const addServiceLine = () => {
+        if (!pendingService?.value) return;
+        const category = pendingService.value;
+        handleSelectChange(
+            [
+                ...(formData.services || []),
+                {
+                    ...category,
+                    lineKey: createLineKey(),
+                    quantity: 1,
+                    descriptionEn: '',
+                    descriptionHr: '',
+                },
+            ],
+            'services',
+        );
+        setPendingService(null);
+    };
+
+    const addPartLine = () => {
+        if (!pendingPart) return;
+        handleSelectChange(
+            [
+                ...(formData.parts || []),
+                {
+                    ...pendingPart,
+                    lineKey: createLineKey(),
+                    quantity: 1,
+                    descriptionEn: '',
+                    descriptionHr: '',
+                },
+            ],
+            'parts',
+        );
+        setPendingPart(null);
+    };
+
+    const handleLanguageChange = async (value) => {
+        handleSelectChange(value, 'language');
+        setLanguageBusy(true);
+        try {
+            const nextServices = await Promise.all(
+                (formData.services || []).map((s) => ensureDescriptionForLanguage(s, value)),
+            );
+            const nextParts = await Promise.all(
+                (formData.parts || []).map((p) => ensureDescriptionForLanguage(p, value)),
+            );
+            handleSelectChange(nextServices, 'services');
+            handleSelectChange(nextParts, 'parts');
+        } finally {
+            setLanguageBusy(false);
+        }
+    };
 
     return(
         <Modal isOpen={isOpen} onClose={onClose} title="Create Offer" size="xl">
@@ -170,114 +226,107 @@ const CreateOfferModal = ({
             <Select
                 label="Language"
                 value={formData.language}
-                onChange={(value) => handleSelectChange(value, 'language')}
+                onChange={handleLanguageChange}
                 required
                 className="text-black"
                 labelProps={{ className: "text-black" }}
+                disabled={languageBusy}
             >
                 <Option value="hr" className="text-black">Hrvatski</Option>
                 <Option value="en" className="text-black">English</Option>
                 <Option value="de" className="text-black">Deutsch</Option>
             </Select>
+            {languageBusy ? (
+                <p className="text-xs text-gray-500">Updating line descriptions for the new language…</p>
+            ) : null}
             <div className="mb-4">
                 <label htmlFor="services-select" className="block text-sm font-medium text-gray-700">
-                    Select Services
+                    Add service line
                 </label>
-                <ReactSelect
-                    id="services-select"
-                    isMulti
-                    options={serviceOptions}
-                    value={selectedServiceOptions}
-                    onChange={(selectedOptions) =>
-                        handleSelectChange(
-                            mergeSelectedServices(
-                                formData.services,
-                                (selectedOptions || []).map((option) => option.value),
-                            ),
-                            'services',
-                        )
-                    }
-                    placeholder="Select services..."
-                    className="mt-1"
-                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
-                    menuPlacement="auto"
-                    menuPosition="fixed"
-                    menuShouldScrollIntoView={false}
-                    styles={{
-                        control: (provided) => ({
-                            ...provided,
-                        }),
-                        option: (provided, state) => ({
-                            ...provided,
-                            color: 'black',
-                            backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
-                        }),
-                        menuPortal: (base) => ({
-                            ...base,
-                            zIndex: 9999,
-                        }),
-                        menuList: (base) => ({
-                            ...base,
-                        }),
-                    }}
-                />
+                <div className="flex flex-col md:flex-row gap-2 mt-1">
+                    <div className="flex-1">
+                        <ReactSelect
+                            id="services-select"
+                            options={serviceOptions}
+                            value={pendingService}
+                            onChange={(option) => setPendingService(option)}
+                            placeholder="Select a service to add…"
+                            isClearable
+                            isSearchable
+                            menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                            menuPlacement="auto"
+                            menuPosition="fixed"
+                            menuShouldScrollIntoView={false}
+                            styles={{
+                                control: (provided) => ({ ...provided }),
+                                option: (provided, state) => ({
+                                    ...provided,
+                                    color: 'black',
+                                    backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                                }),
+                                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                            }}
+                        />
+                    </div>
+                    <Button type="button" color="blue" onClick={addServiceLine} disabled={!pendingService}>
+                        Add line
+                    </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                    The same service can be added multiple times with different work descriptions.
+                </p>
             </div>
-            <Button type="button" onClick={openCreateServiceModal} color="blue">
-                Add Service
+            <Button type="button" onClick={openCreateServiceModal} color="blue" variant="outlined">
+                Create new catalog service
             </Button>
             <OfferLineItemsFields
                 services={formData.services}
                 parts={[]}
+                language={formData.language}
                 onServicesChange={(nextServices) => handleSelectChange(nextServices, 'services')}
                 onPartsChange={() => {}}
             />
             <div className="mb-4">
                 <label htmlFor="parts-select" className="block text-sm font-medium text-gray-700">
-                    Select Parts
+                    Add part line
                 </label>
-                <ReactSelect
-                    id="parts-select"
-                    isMulti
-                    options={combinedParts}
-                    value={formData.parts}
-                    onChange={(selectedOptions) =>
-                        handleSelectChange(mergeSelectedParts(formData.parts, selectedOptions || []), 'parts')
-                    }
-                    placeholder="Select parts..."
-                    className="mt-1"
-                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
-                    menuPlacement="auto"
-                    menuPosition="fixed"
-                    menuShouldScrollIntoView={false}
-                    styles={{
-                        control: (provided) => ({
-                            ...provided,
-                        }),
-                        option: (provided, state) => ({
-                            ...provided,
-                            color: getSparePartHighlightColor(state.data),
-                            backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
-                        }),
-                        multiValueLabel: (provided, state) => ({
-                            ...provided,
-                            color: getSparePartHighlightColor(state.data),
-                        }),
-                        menuPortal: (base) => ({
-                            ...base,
-                            zIndex: 9999,
-                        }),
-                        menuList: (base) => ({
-                            ...base,
-                        }),
-                    }}
-                />
+                <div className="flex flex-col md:flex-row gap-2 mt-1">
+                    <div className="flex-1">
+                        <ReactSelect
+                            id="parts-select"
+                            options={combinedParts}
+                            value={pendingPart}
+                            onChange={(option) => setPendingPart(option)}
+                            placeholder="Select a part to add…"
+                            isClearable
+                            isSearchable
+                            menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                            menuPlacement="auto"
+                            menuPosition="fixed"
+                            menuShouldScrollIntoView={false}
+                            styles={{
+                                control: (provided) => ({ ...provided }),
+                                option: (provided, state) => ({
+                                    ...provided,
+                                    color: getSparePartHighlightColor(state.data),
+                                    backgroundColor: state.isSelected ? '#e2e8f0' : 'white',
+                                }),
+                                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                            }}
+                        />
+                    </div>
+                    <Button type="button" color="blue" onClick={addPartLine} disabled={!pendingPart}>
+                        Add line
+                    </Button>
+                </div>
             </div>
-            <Button type="button" onClick={openCreatePartModal} color="blue">
-                Add Part
+            <Button type="button" onClick={openCreatePartModal} color="blue" variant="outlined">
+                Create new warehouse part
             </Button>
             <OfferLineItemsFields
                 services={[]}
                 parts={formData.parts}
+                language={formData.language}
                 onServicesChange={() => {}}
                 onPartsChange={(nextParts) => handleSelectChange(nextParts, 'parts')}
             />

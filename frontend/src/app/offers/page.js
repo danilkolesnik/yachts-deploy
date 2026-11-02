@@ -102,6 +102,7 @@ const OfferPage = () => {
 
     const [createServiceFormData, setCreateServiceFormData] = useState({
         serviceName: '',
+        serviceNameHr: '',
         priceInEuroWithoutVAT: '',
         unitsOfMeasurement: '',
     });
@@ -962,10 +963,20 @@ const OfferPage = () => {
 
     const createService = async (e) => {
         e.preventDefault();
+        if (!String(createServiceFormData.serviceName || '').trim()) {
+            toast.error('Service Name (EN) is required');
+            return;
+        }
+        if (!String(createServiceFormData.serviceNameHr || '').trim()) {
+            toast.error('Service Name (HR) is required');
+            return;
+        }
         setLoadingCreateService(true);
         try {
             const payload = {
                 ...createServiceFormData,
+                serviceName: String(createServiceFormData.serviceName).trim(),
+                serviceNameHr: String(createServiceFormData.serviceNameHr).trim(),
                 priceInEuroWithoutVAT: parseEuroNumber(
                     createServiceFormData.priceInEuroWithoutVAT,
                 ),
@@ -978,6 +989,7 @@ const OfferPage = () => {
             setCatagoryData(updatedCategories || []);
             setCreateServiceFormData({
                 serviceName: '',
+                serviceNameHr: '',
                 priceInEuroWithoutVAT: '',
                 unitsOfMeasurement: '',
             });
@@ -1359,7 +1371,7 @@ const OfferPage = () => {
     };
 
     const handleSelectChange = (value, name) => {
-        setFormData({ ...formData, [name]: value });
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const handlePartChange = (e) => {
@@ -1591,7 +1603,7 @@ const OfferPage = () => {
     };
 
     const handleEditSelectChange = (value, name) => {
-        setEditFormData({ ...editFormData, [name]: value });
+        setEditFormData((prev) => ({ ...prev, [name]: value }));
     };
 
     const filteredData = (data || []).filter(offer => {
@@ -2434,10 +2446,17 @@ const OfferPage = () => {
                 <Modal isOpen={createServiceModalIsOpen} onClose={closeCreateServiceModal} title="Create Service">
                     <form onSubmit={createService} className="space-y-4">
                         <Input
-                            label="Service Name"
+                            label="Service Name (EN)"
                             name="serviceName"
                             value={createServiceFormData.serviceName}
                             onChange={(e) => setCreateServiceFormData({...createServiceFormData, serviceName: e.target.value})}
+                            required
+                        />
+                        <Input
+                            label="Service Name (HR)"
+                            name="serviceNameHr"
+                            value={createServiceFormData.serviceNameHr}
+                            onChange={(e) => setCreateServiceFormData({...createServiceFormData, serviceNameHr: e.target.value})}
                             required
                         />
                         <Input

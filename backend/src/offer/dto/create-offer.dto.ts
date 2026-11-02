@@ -11,12 +11,14 @@ export class CreateOfferDto {
     services:
       | {
           serviceName: string;
+          serviceNameHr?: string;
           priceInEuroWithoutVAT: number;
           quantity?: number;
           unitsOfMeasurement?: string;
         }
       | {
           serviceName: string;
+          serviceNameHr?: string;
           priceInEuroWithoutVAT: number;
           quantity?: number;
           unitsOfMeasurement?: string;

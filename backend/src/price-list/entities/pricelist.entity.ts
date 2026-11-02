@@ -8,6 +8,10 @@ export class Pricelist {
   @Column({ default: '' })
   serviceName: string;
 
+  /** Croatian catalog title; empty falls back to serviceName (EN). */
+  @Column({ default: '' })
+  serviceNameHr: string;
+
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   priceInEuroWithoutVAT: number;
 
