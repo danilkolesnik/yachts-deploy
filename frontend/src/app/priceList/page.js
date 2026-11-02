@@ -22,6 +22,7 @@ const PriceListPage = () => {
     const [formData, setFormData] = useState({
         serviceName: '',
         serviceNameHr: '',
+        serviceCode: '',
         priceInEuroWithoutVAT: '',
         unitsOfMeasurement: '',
         subServices: [],
@@ -194,6 +195,12 @@ const PriceListPage = () => {
 
     const columns = [
         {
+            name: 'Service Code',
+            selector: row => row.serviceCode || '',
+            sortable: true,
+            width: '120px',
+        },
+        {
             name: 'Service Name (EN)',
             selector: row => row.serviceName,
             sortable: true,
@@ -306,6 +313,7 @@ const PriceListPage = () => {
         setFormData({
             serviceName: row.serviceName,
             serviceNameHr: row.serviceNameHr || '',
+            serviceCode: row.serviceCode || '',
             priceInEuroWithoutVAT: row.priceInEuroWithoutVAT || '',
             unitsOfMeasurement: row.unitsOfMeasurement || '',
             subServices: row.subServices || [],
@@ -354,15 +362,20 @@ const PriceListPage = () => {
         getData();
     }, []);
 
-    const serviceOptions = data.map(service => ({
-        value: service.id,
-        label: service.serviceName,
-    }));
+    const serviceOptions = data.map(service => {
+        const code = String(service.serviceCode || '').trim();
+        return {
+            value: service.id,
+            label: code ? `[${code}] ${service.serviceName}` : service.serviceName,
+            serviceCode: code,
+            serviceName: service.serviceName,
+        };
+    });
 
     const handleServiceChange = (selectedOption) => {
         setSelectedService(selectedOption);
         if (selectedOption) {
-            setFilteredData(data.filter(service => service.serviceName === selectedOption.label));
+            setFilteredData(data.filter(service => service.id === selectedOption.value));
         } else {
             setFilteredData(data);
         }
@@ -376,6 +389,7 @@ const PriceListPage = () => {
         setFormData({
             serviceName: '',
             serviceNameHr: '',
+            serviceCode: '',
             priceInEuroWithoutVAT: '',
             unitsOfMeasurement: '',
             subServices: [],
@@ -469,6 +483,7 @@ const PriceListPage = () => {
 
     const exportToExcel = async () => {
         const exportData = filteredData.map(row => ({
+            'Service Code': row.serviceCode || '',
             'Service Name (EN)': row.serviceName || '',
             'Service Name (HR)': row.serviceNameHr || '',
             'Sub-services': row.subServices && Array.isArray(row.subServices) && row.subServices.length > 0
@@ -510,7 +525,15 @@ const PriceListPage = () => {
                                     onChange={handleServiceChange}
                                     onInputChange={handleInputChange}
                                     inputValue={inputValue}
-                                    placeholder="Search for a service..."
+                                    filterOption={(option, rawInput) => {
+                                        const q = String(rawInput || '').trim().toLowerCase();
+                                        if (!q) return true;
+                                        const code = String(option?.data?.serviceCode || '').toLowerCase();
+                                        const name = String(option?.data?.serviceName || '').toLowerCase();
+                                        const label = String(option?.label || '').toLowerCase();
+                                        return code.includes(q) || name.includes(q) || label.includes(q);
+                                    }}
+                                    placeholder="Search by name or service code..."
                                     isClearable
                                     isSearchable
                                     menuIsOpen={inputValue.length > 0}
@@ -554,6 +577,7 @@ const PriceListPage = () => {
                             <table ref={tableRef} style={{ display: 'none' }}>
                                 <thead>
                                     <tr>
+                                        <th>Service Code</th>
                                         <th>Service Name (EN)</th>
                                         <th>Service Name (HR)</th>
                                         <th>Sub-services</th>
@@ -564,6 +588,7 @@ const PriceListPage = () => {
                                 <tbody>
                                     {filteredData.map((row) => (
                                         <tr key={row.id}>
+                                            <td>{row.serviceCode || ''}</td>
                                             <td>{row.serviceName || ''}</td>
                                             <td>{row.serviceNameHr || ''}</td>
                                             <td>
@@ -843,6 +868,14 @@ const PriceListPage = () => {
                                 </p>
                             </div>
                             
+                            <Input
+                                label="Service Code (шифр)"
+                                name="serviceCode"
+                                value={formData.serviceCode}
+                                onChange={handleChange}
+                                placeholder="e.g. Synesis / internal code"
+                            />
+
                             <Input
                                 label="Service Name (EN) *"
                                 name="serviceName"

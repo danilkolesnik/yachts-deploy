@@ -6,7 +6,10 @@ import Input from '@/ui/Input';
 import ReactSelect from 'react-select';
 import OfferLineItemsFields from '@/component/OfferLineItemsFields';
 import {
+    buildServiceSelectOptions,
     createLineKey,
+    filterServiceSelectOption,
+    findServiceOptionByExactCode,
     getSparePartHighlightColor,
 } from '@/utils/offerLineItems';
 import { ensureDescriptionForLanguage } from '@/utils/translateText';
@@ -37,21 +40,21 @@ const CreateOfferModal = ({
         label: `${yacht.name} - ${yacht.model}`
     }));
 
-    const serviceOptions = catagoryData.map(category => {
-        const name =
-            formData.language === 'hr' && category.serviceNameHr
-                ? category.serviceNameHr
-                : category.serviceName;
-        return {
-            value: category,
-            label: `${name} - ${category.priceInEuroWithoutVAT}€`,
-        };
-    });
+    const serviceOptions = buildServiceSelectOptions(catagoryData, formData.language);
 
     const combinedParts = partOptions.map(part => ({
         ...part,
         color: getSparePartHighlightColor(part)
     }));
+
+    const handleServiceInputChange = (inputValue, { action }) => {
+        if (action !== 'input-change') return inputValue;
+        const exact = findServiceOptionByExactCode(serviceOptions, inputValue);
+        if (exact) {
+            setPendingService(exact);
+        }
+        return inputValue;
+    };
 
     const addServiceLine = () => {
         if (!pendingService?.value) return;
@@ -250,7 +253,9 @@ const CreateOfferModal = ({
                             options={serviceOptions}
                             value={pendingService}
                             onChange={(option) => setPendingService(option)}
-                            placeholder="Select a service to add…"
+                            onInputChange={handleServiceInputChange}
+                            filterOption={filterServiceSelectOption}
+                            placeholder="Search by name or service code…"
                             isClearable
                             isSearchable
                             menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
@@ -273,7 +278,7 @@ const CreateOfferModal = ({
                     </Button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                    The same service can be added multiple times with different work descriptions.
+                    Search by service name or Synesis code. Exact code auto-selects the service. Same service can be added multiple times.
                 </p>
             </div>
             <Button type="button" onClick={openCreateServiceModal} color="blue" variant="outlined">

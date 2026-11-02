@@ -12,6 +12,10 @@ export class Pricelist {
   @Column({ default: '' })
   serviceNameHr: string;
 
+  /** Synesis / internal price-list service code (шифр). */
+  @Column({ default: '' })
+  serviceCode: string;
+
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   priceInEuroWithoutVAT: number;
 

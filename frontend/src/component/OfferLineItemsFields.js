@@ -101,6 +101,11 @@ export default function OfferLineItemsFields({
                                     return (
                                         <tr key={lineKey} className="border-t align-top">
                                             <td className="px-3 py-2 text-black">
+                                                {service.serviceCode ? (
+                                                    <div className="text-xs text-gray-500 font-mono">
+                                                        [{service.serviceCode}]
+                                                    </div>
+                                                ) : null}
                                                 {language === 'hr' && service.serviceNameHr
                                                     ? service.serviceNameHr
                                                     : service.serviceName}

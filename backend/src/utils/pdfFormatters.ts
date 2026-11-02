@@ -20,6 +20,12 @@ export function normalizeServices(services: unknown): any[] {
   return [];
 }
 
+export function getServiceCode(service: any): string {
+  return String(
+    service?.serviceCode ?? service?.value?.serviceCode ?? '',
+  ).trim();
+}
+
 export function getServiceName(service: any, lang?: string): string {
   const en = String(
     service?.serviceName ??
@@ -33,10 +39,9 @@ export function getServiceName(service: any, lang?: string): string {
   const normalized = String(lang ?? '')
     .trim()
     .toLowerCase();
-  if (normalized === 'hr' && hr) {
-    return hr;
-  }
-  return en;
+  const name = normalized === 'hr' && hr ? hr : en;
+  const code = getServiceCode(service);
+  return code ? `[${code}] ${name}` : name;
 }
 
 export function getServicePrice(service: any): number {

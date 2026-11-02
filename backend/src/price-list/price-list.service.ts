@@ -25,6 +25,7 @@ export class PricelistService {
         this.pricelistRepository.create({
           serviceName: data.serviceName,
           serviceNameHr: String(data.serviceNameHr ?? '').trim(),
+          serviceCode: String(data.serviceCode ?? '').trim(),
           priceInEuroWithoutVAT: parseEuroNumber(data.priceInEuroWithoutVAT),
           unitsOfMeasurement: data.unitsOfMeasurement,
           description: data.description,
@@ -96,6 +97,9 @@ export class PricelistService {
       Object.assign(pricelist, data);
       if (data.serviceNameHr !== undefined) {
         pricelist.serviceNameHr = String(data.serviceNameHr ?? '').trim();
+      }
+      if (data.serviceCode !== undefined) {
+        pricelist.serviceCode = String(data.serviceCode ?? '').trim();
       }
       if (data.priceInEuroWithoutVAT !== undefined) {
         pricelist.priceInEuroWithoutVAT = parseEuroNumber(

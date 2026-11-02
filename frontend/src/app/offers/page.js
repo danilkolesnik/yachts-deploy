@@ -103,6 +103,7 @@ const OfferPage = () => {
     const [createServiceFormData, setCreateServiceFormData] = useState({
         serviceName: '',
         serviceNameHr: '',
+        serviceCode: '',
         priceInEuroWithoutVAT: '',
         unitsOfMeasurement: '',
     });
@@ -990,6 +991,7 @@ const OfferPage = () => {
             setCreateServiceFormData({
                 serviceName: '',
                 serviceNameHr: '',
+                serviceCode: '',
                 priceInEuroWithoutVAT: '',
                 unitsOfMeasurement: '',
             });
@@ -2445,6 +2447,13 @@ const OfferPage = () => {
                 </Modal>
                 <Modal isOpen={createServiceModalIsOpen} onClose={closeCreateServiceModal} title="Create Service">
                     <form onSubmit={createService} className="space-y-4">
+                        <Input
+                            label="Service Code (шифр)"
+                            name="serviceCode"
+                            value={createServiceFormData.serviceCode}
+                            onChange={(e) => setCreateServiceFormData({...createServiceFormData, serviceCode: e.target.value})}
+                            placeholder="Synesis / internal code"
+                        />
                         <Input
                             label="Service Name (EN)"
                             name="serviceName"

@@ -22,12 +22,57 @@ export function normalizeOfferService(service) {
         id: base.id,
         serviceName: base.serviceName ?? '',
         serviceNameHr: base.serviceNameHr ?? '',
+        serviceCode: base.serviceCode ?? '',
         priceInEuroWithoutVAT: Number.isFinite(unitPrice) ? unitPrice : 0,
         unitsOfMeasurement: base.unitsOfMeasurement ?? '',
         quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
         descriptionEn: base.descriptionEn ?? '',
         descriptionHr: base.descriptionHr ?? '',
     };
+}
+
+/** React-select options for offer service picker (search by name or Synesis code). */
+export function buildServiceSelectOptions(categories = [], language = 'en') {
+    return (categories || []).map((category) => {
+        const name =
+            language === 'hr' && category.serviceNameHr
+                ? category.serviceNameHr
+                : category.serviceName;
+        const code = String(category.serviceCode || '').trim();
+        const price = category.priceInEuroWithoutVAT;
+        const label = code
+            ? `[${code}] ${name} - ${price}€`
+            : `${name} - ${price}€`;
+        return {
+            value: category,
+            label,
+            serviceCode: code,
+            serviceName: String(category.serviceName || ''),
+            serviceNameHr: String(category.serviceNameHr || ''),
+        };
+    });
+}
+
+/** Match typed text against service code or EN/HR names. */
+export function filterServiceSelectOption(option, rawInput) {
+    const q = String(rawInput || '').trim().toLowerCase();
+    if (!q) return true;
+    const code = String(option?.data?.serviceCode || option?.data?.value?.serviceCode || '').toLowerCase();
+    const en = String(option?.data?.serviceName || option?.data?.value?.serviceName || '').toLowerCase();
+    const hr = String(option?.data?.serviceNameHr || option?.data?.value?.serviceNameHr || '').toLowerCase();
+    const label = String(option?.label || '').toLowerCase();
+    return code.includes(q) || en.includes(q) || hr.includes(q) || label.includes(q);
+}
+
+/** Exact code match (case-insensitive) for auto-select when user types a cipher. */
+export function findServiceOptionByExactCode(options = [], rawInput) {
+    const q = String(rawInput || '').trim().toLowerCase();
+    if (!q) return null;
+    return (
+        options.find(
+            (opt) => String(opt.serviceCode || '').trim().toLowerCase() === q,
+        ) || null
+    );
 }
 
 export function normalizeOfferPart(part) {
