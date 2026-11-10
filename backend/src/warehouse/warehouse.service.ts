@@ -18,6 +18,34 @@ export class WarehouseService {
     private readonly usersRepository: Repository<users>,
     ){}
 
+    private normalizePartKey(value?: string) {
+        return String(value ?? '').trim().toLowerCase();
+    }
+
+    private warehouseLabel(unofficially: boolean) {
+        return unofficially ? 'Grey Warehouse' : 'Official Warehouse';
+    }
+
+    private duplicateMessage(existing: warehouse) {
+        const place = this.warehouseLabel(Boolean(existing.unofficially));
+        const article = String(existing.articleNumber || '').trim();
+        const articleBit = article ? `, article ${article}` : ', no article number';
+        return `Part already exists in ${place}: ${existing.name}${articleBit}, qty ${existing.quantity}`;
+    }
+
+    private async findSamePart(name: string, articleNumber: string, excludeId?: string) {
+        const qb = this.warehouseModule
+            .createQueryBuilder('w')
+            .where('LOWER(TRIM(w.name)) = :name', { name: this.normalizePartKey(name) })
+            .andWhere("LOWER(TRIM(COALESCE(w.articleNumber, ''))) = :article", {
+                article: this.normalizePartKey(articleNumber),
+            });
+        if (excludeId) {
+            qb.andWhere('w.id != :id', { id: excludeId });
+        }
+        return qb.getOne();
+    }
+
     async create(data: CreateWareHourehDto, userId?: string) {
         if (!data.name || !data.quantity) {
           return {
@@ -27,13 +55,14 @@ export class WarehouseService {
         }
     
         try {
+          const name = String(data.name).trim();
+          const articleNumber = String(data.articleNumber || '').trim();
+          const existing = await this.findSamePart(name, articleNumber);
 
-          const checkPart = await this.warehouseModule.findOne({ where: { name: data.name } });
-
-          if (checkPart) {
+          if (existing) {
             return {
               code: 400,
-              message: 'Part already exists',
+              message: this.duplicateMessage(existing),
             };
           }
           const generateId = generateRandomId();
@@ -41,10 +70,10 @@ export class WarehouseService {
           const result = await this.warehouseModule.save(
             this.warehouseModule.create({
               id: generateId,
-              name: data.name,
+              name,
               quantity: data.quantity,
               pricePerUnit: data.pricePerUnit,
-              articleNumber: data.articleNumber || '',
+              articleNumber,
               comment: data.comment,
               countryCode: data.countryCode,
               unofficially: data.unofficially,
@@ -142,6 +171,20 @@ export class WarehouseService {
             }
 
             const oldQuantityNumber = parseInt(String(warehouse.quantity), 10) || 0;
+
+            const nextName = data.name != null ? String(data.name).trim() : warehouse.name;
+            const nextArticle = data.articleNumber != null
+                ? String(data.articleNumber).trim()
+                : String(warehouse.articleNumber || '');
+            const existing = await this.findSamePart(nextName, nextArticle, id);
+            if (existing) {
+                return {
+                    code: 400,
+                    message: this.duplicateMessage(existing),
+                };
+            }
+            if (data.name != null) data.name = nextName;
+            if (data.articleNumber != null) data.articleNumber = nextArticle;
 
             Object.assign(warehouse, data);
 

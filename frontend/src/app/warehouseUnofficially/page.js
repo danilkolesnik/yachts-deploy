@@ -9,7 +9,7 @@ import { Button, Select, Option } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import { PencilIcon, TrashIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/solid';
 import Header from '@/component/header';
-import SearchInput from '@/component/search';
+import SearchInput, { partMatchesQuery } from '@/component/search';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import ExcelJS from 'exceljs';
@@ -32,6 +32,7 @@ const WarehouseUnofficiallyPage = () => {
     });
     const [filteredData, setFilteredData] = useState([]);
     const [search, setSearch] = useState('');
+    const [selectedId, setSelectedId] = useState(null);
     const [editMode, setEditMode] = useState(false);
     const [editId, setEditId] = useState(null);
     const [helpModalOpen, setHelpModalOpen] = useState(false);
@@ -157,7 +158,7 @@ const WarehouseUnofficiallyPage = () => {
             title: "Searching and Exporting Official Inventory",
             content: [
                 "**Search Function:**",
-                "• Search by part name, or comments",
+                "• Search by part name or article number",
                 "• Real-time filtering as you type",
                 "• Select from dropdown for precise matching",
                 "",
@@ -426,8 +427,9 @@ const WarehouseUnofficiallyPage = () => {
     };
 
     const handleSearchSelect = (item) => {
-        setSearch(item.name);
-        setFilteredData([item]);
+        setSelectedId(item.id);
+        const article = String(item.articleNumber || '').trim();
+        setSearch(article || item.name || '');
     };
 
     const handleHistoryClick = () => {
@@ -467,13 +469,12 @@ const WarehouseUnofficiallyPage = () => {
     }, []);
 
     useEffect(() => {
-        const result = data.filter(item => 
-            (item.name && item.name.toLowerCase().includes(search.toLowerCase())) ||
-            (item.countryCode && item.countryCode.toLowerCase().includes(search.toLowerCase())) ||
-            (item.serviceCategory?.serviceName && item.serviceCategory.serviceName.toLowerCase().includes(search.toLowerCase()))
-        );
-        setFilteredData(result);
-    }, [search, data])
+        const matched = (data || []).filter((item) => partMatchesQuery(item, search));
+        const result = selectedId
+            ? matched.filter((item) => item.id === selectedId)
+            : matched;
+        setFilteredData(result.length || !selectedId ? result : matched);
+    }, [search, data, selectedId])
 
     return (
         <>
@@ -487,7 +488,15 @@ const WarehouseUnofficiallyPage = () => {
                 <div className="w-full space-y-6 bg-white rounded shadow-md">
                     <div className="relative flex flex-col md:flex-row justify-between gap-4 mb-4 p-4">
                         <div className="w-full md:w-auto">
-                            <SearchInput search={search} setSearch={setSearch} filteredData={filteredData} onSearchSelect={handleSearchSelect} />
+                            <SearchInput
+                                search={search}
+                                setSearch={(value) => {
+                                    setSelectedId(null);
+                                    setSearch(value);
+                                }}
+                                filteredData={selectedId ? (data || []).filter((item) => partMatchesQuery(item, search)) : filteredData}
+                                onSearchSelect={handleSearchSelect}
+                            />
                         </div>
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                             {/* Help Button */}
