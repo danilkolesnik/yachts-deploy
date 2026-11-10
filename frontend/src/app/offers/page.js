@@ -199,8 +199,8 @@ const OfferPage = () => {
             content: [
                 "**Required:** At least one yacht must be selected.",
                 "**Step-by-Step:**",
-                "• Select customer (full name) to load their yachts",
-                "• Select one or more yachts",
+                "• Select one or more yachts from the full list",
+                "• Customer is filled from the yacht owner",
                 "• Add services from the price list (optional)",
                 "• Add parts from official or unofficial warehouse, or type a material that is not in stock (optional)",
                 "• Add comment if needed, then click Create",
@@ -1419,11 +1419,15 @@ const OfferPage = () => {
                     yacht.userId === selectedCustomer.id || yacht.userName === selectedCustomer.fullName
                 );
                 setFilteredYachts(customerYachts);
-                setFormData((prev) => ({ ...prev, customerId: selectedCustomer.id }));
             } else {
                 setFilteredYachts([]);
-                setFormData((prev) => ({ ...prev, customerId: '' }));
             }
+            setFormData((prev) => ({
+                ...prev,
+                customerFullName: value,
+                customerId: selectedCustomer?.id || '',
+            }));
+            return;
         }
         
         setFormData({ ...formData, [name]: value });
@@ -1721,24 +1725,34 @@ const OfferPage = () => {
     };
 
     const handleYachtSelect = (selectedYachts) => {
-        if (selectedYachts && Array.isArray(selectedYachts)) {
-            setFormData({
-                ...formData,
-                yachts: selectedYachts.map(yacht => ({
-                    id: yacht.id,
-                    name: yacht.name,
-                    model: yacht.model,
-                    countryCode: yacht.countryCode || '',
-                    userId: yacht.userId || '',
-                    userName: yacht.userName || ''
-                }))
-            });
-        } else {
-            setFormData({
-                ...formData,
-                yachts: []
-            });
+        const mapped = (Array.isArray(selectedYachts) ? selectedYachts : []).map(yacht => ({
+            id: yacht.id,
+            name: yacht.name,
+            model: yacht.model,
+            countryCode: yacht.countryCode || '',
+            userId: yacht.userId || '',
+            userName: yacht.userName || ''
+        }));
+
+        if (editModalIsOpen) {
+            setEditFormData((prev) => ({ ...prev, yachts: mapped }));
+            return;
         }
+
+        const owner = mapped.find((yacht) => yacht.userId || yacht.userName);
+        const matchedUser = owner
+            ? users.find((user) =>
+                (owner.userId && user.id === owner.userId) ||
+                (owner.userName && user.fullName === owner.userName)
+            )
+            : null;
+
+        setFormData((prev) => ({
+            ...prev,
+            yachts: mapped,
+            customerId: matchedUser?.id || owner?.userId || '',
+            customerFullName: matchedUser?.fullName || owner?.userName || '',
+        }));
     };
 
     useEffect(() => {
@@ -2341,7 +2355,7 @@ const OfferPage = () => {
                     openCreatePartModal={() => openCreatePartModal(true)}
                     openCreateCustomerModal={openCreateCustomerModal}
                     loading={loadingCreateOffer}
-                    yachts={formData.customerFullName ? filteredYachts : []}
+                    yachts={yachts}
                     handleYachtSelect={handleYachtSelect}
                 />
                 

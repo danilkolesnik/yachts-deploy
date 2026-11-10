@@ -36,10 +36,15 @@ const CreateOfferModal = ({
     const [pendingPart, setPendingPart] = useState(null);
     const [languageBusy, setLanguageBusy] = useState(false);
 
-    const yachtOptions = yachts.map(yacht => ({
+    const yachtOptions = (yachts || []).map(yacht => ({
         value: yacht,
         label: `${yacht.name} - ${yacht.model}`
     }));
+
+    const isSameYacht = (a, b) => {
+        if (a?.id && b?.id) return String(a.id) === String(b.id);
+        return a?.name === b?.name && a?.model === b?.model;
+    };
 
     const serviceOptions = buildServiceSelectOptions(catagoryData, formData.language);
 
@@ -116,8 +121,47 @@ const CreateOfferModal = ({
             <div className="max-h-[70vh] overflow-y-auto pr-2 text-black">
                 <form onSubmit={onSubmit} className="space-y-4">
             <div className="mb-4">
+                <label htmlFor="yacht-select" className="block text-sm font-medium text-gray-700">
+                    Select Yacht(s)
+                </label>
+                <ReactSelect
+                    id="yacht-select"
+                    options={yachtOptions}
+                    value={yachtOptions.filter(option =>
+                        (formData.yachts || []).some(yacht => isSameYacht(yacht, option.value))
+                    )}
+                    onChange={selectedOptions => handleYachtSelect(selectedOptions?.map(option => option.value) || [])}
+                    placeholder="Search yachts..."
+                    isClearable
+                    isSearchable
+                    isMulti
+                    className="mt-1"
+                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
+                    menuPlacement="auto"
+                    menuPosition="fixed"
+                    menuShouldScrollIntoView={false}
+                    styles={{
+                        control: (provided) => ({
+                            ...provided,
+                        }),
+                        option: (provided, state) => ({
+                            ...provided,
+                            color: 'black',
+                            backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                        }),
+                        menuList: (base) => ({
+                            ...base,
+                        }),
+                    }}
+                />
+            </div>
+            <div className="mb-4">
                 <label htmlFor="customer-select" className="block text-sm font-medium text-gray-700">
-                    Select Customer
+                    Customer
                 </label>
                 <ReactSelect
                     id="customer-select"
@@ -125,9 +169,8 @@ const CreateOfferModal = ({
                     value={userOptions.find(option => option.label === formData.customerFullName) || null}
                     onChange={selectedOption => {
                         handleChange({ target: { name: 'customerFullName', value: selectedOption ? selectedOption.label : '' } });
-                        // Reset selected yachts when customer changes
                     }}
-                    placeholder="Select a customer..."
+                    placeholder="Filled from the selected yacht"
                     isClearable
                     isSearchable
                     className="mb-2"
@@ -157,6 +200,9 @@ const CreateOfferModal = ({
                         }),
                     }}
                 />
+                <p className="text-xs text-gray-500 mb-2">
+                    Chosen automatically from the yacht owner. Change it only if the yacht has no linked customer.
+                </p>
                 <Button 
                     type="button"
                     onClick={openCreateCustomerModal} 
@@ -166,45 +212,6 @@ const CreateOfferModal = ({
                 >
                     Add New Customer
                 </Button>
-            </div>
-            <div className="mb-4">
-                <label htmlFor="yacht-select" className="block text-sm font-medium text-gray-700">
-                    Select Yacht(s)
-                </label>
-                <ReactSelect
-                    id="yacht-select"
-                    options={yachtOptions}
-                    value={yachtOptions.filter(option => 
-                        formData.yachts.some(yacht => yacht.name === option.value.name && yacht.model === option.value.model)
-                    )}
-                    onChange={selectedOptions => handleYachtSelect(selectedOptions?.map(option => option.value) || [])}
-                    placeholder={formData.customerFullName ? "Select yachts..." : "First select a customer..."}
-                    isClearable
-                    isSearchable
-                    isMulti
-                    className="mt-1"
-                    menuPortalTarget={typeof window !== 'undefined' ? document.body : null}
-                    menuPlacement="auto"
-                    menuPosition="fixed"
-                    menuShouldScrollIntoView={false}
-                    styles={{
-                        control: (provided) => ({
-                            ...provided,
-                        }),
-                        option: (provided, state) => ({
-                            ...provided,
-                            color: 'black',
-                            backgroundColor: state.isSelected ? '#e2e8f0' : state.isFocused ? '#cbd5e0' : 'white',
-                        }),
-                        menuPortal: (base) => ({
-                            ...base,
-                            zIndex: 9999,
-                        }),
-                        menuList: (base) => ({
-                            ...base,
-                        }),
-                    }}
-                />
             </div>
             <Input
                 label="Boat Registration"
