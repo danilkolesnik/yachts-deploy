@@ -27,7 +27,7 @@ import { getCustomerEmailForOffer } from '@/utils/customerEmail';
 import { sendOfferEmail } from '@/utils/sendOfferEmail';
 import SendEmailModal from '@/ui/SendEmailModal';
 import { isActiveOfferStatus } from '@/constants/workflowStatus';
-import { computeOfferTotals, normalizeOfferPart, normalizeOfferService, parseEuroNumber } from '@/utils/offerLineItems';
+import { computeOfferTotals, createLineKey, normalizeOfferPart, normalizeOfferService, parseEuroNumber } from '@/utils/offerLineItems';
 import { getLineDescription } from '@/utils/translateText';
 
 const OfferPage = () => {
@@ -108,6 +108,7 @@ const OfferPage = () => {
         priceInEuroWithoutVAT: '',
         unitsOfMeasurement: '',
     });
+    const [saveServiceToPriceList, setSaveServiceToPriceList] = useState(false);
 
     const [createPartFormData, setCreatePartFormData] = useState({
         name: '',
@@ -896,7 +897,7 @@ const OfferPage = () => {
 
     const getDataCatagory = async () => {
         try {
-            const res = await axios.get(`${URL}/priceList`);
+            const res = await axios.get(`${URL}/pricelist`);
             return res.data.data;
         } catch (error) {
             console.error(error);
@@ -973,6 +974,29 @@ const OfferPage = () => {
         }
     };
 
+    const emptyCreateServiceForm = {
+        serviceName: '',
+        serviceNameHr: '',
+        serviceCode: '',
+        priceInEuroWithoutVAT: '',
+        unitsOfMeasurement: '',
+    };
+
+    const appendServiceToOpenOffer = (line) => {
+        const append = (prev) => ({
+            ...prev,
+            services: [
+                ...(Array.isArray(prev.services) ? prev.services : []),
+                line,
+            ],
+        });
+        if (editModalIsOpen) {
+            setEditFormData(append);
+            return;
+        }
+        setFormData(append);
+    };
+
     const createService = async (e) => {
         e.preventDefault();
         if (!String(createServiceFormData.serviceName || '').trim()) {
@@ -985,29 +1009,49 @@ const OfferPage = () => {
         }
         setLoadingCreateService(true);
         try {
-            const payload = {
-                ...createServiceFormData,
+            const draft = {
                 serviceName: String(createServiceFormData.serviceName).trim(),
                 serviceNameHr: String(createServiceFormData.serviceNameHr).trim(),
+                serviceCode: String(createServiceFormData.serviceCode || '').trim(),
                 priceInEuroWithoutVAT: parseEuroNumber(
                     createServiceFormData.priceInEuroWithoutVAT,
                 ),
+                unitsOfMeasurement: createServiceFormData.unitsOfMeasurement || '',
             };
-            const response = await axios.post(`${URL}/priceList/create`, payload);
-            if (hasServerBusinessError(response, "Error creating service")) {
-                return;
+            let saved = draft;
+            if (saveServiceToPriceList) {
+                const response = await axios.post(`${URL}/pricelist/create`, draft);
+                if (hasServerBusinessError(response, "Error creating service")) {
+                    return;
+                }
+                saved = response?.data?.data || draft;
+                const updatedCategories = await getDataCatagory();
+                if (Array.isArray(updatedCategories)) {
+                    setCatagoryData(updatedCategories);
+                }
             }
-            const updatedCategories = await getDataCatagory();
-            setCatagoryData(updatedCategories || []);
-            setCreateServiceFormData({
-                serviceName: '',
-                serviceNameHr: '',
-                serviceCode: '',
-                priceInEuroWithoutVAT: '',
-                unitsOfMeasurement: '',
+            appendServiceToOpenOffer({
+                id: saved.id,
+                serviceName: saved.serviceName || draft.serviceName,
+                serviceNameHr: saved.serviceNameHr || draft.serviceNameHr,
+                serviceCode: saved.serviceCode || draft.serviceCode,
+                priceInEuroWithoutVAT: parseEuroNumber(
+                    saved.priceInEuroWithoutVAT ?? draft.priceInEuroWithoutVAT,
+                ),
+                unitsOfMeasurement: saved.unitsOfMeasurement || draft.unitsOfMeasurement,
+                lineKey: createLineKey(),
+                quantity: 1,
+                descriptionEn: '',
+                descriptionHr: '',
             });
+            setCreateServiceFormData(emptyCreateServiceForm);
+            setSaveServiceToPriceList(false);
             setCreateServiceModalIsOpen(false);
-            toast.success("Service created successfully");
+            toast.success(
+                saveServiceToPriceList
+                    ? "Service added to this offer and the price list"
+                    : "Service added to this offer",
+            );
         } catch (error) {
             console.error(error);
             showServerError(error, "Error creating service");
@@ -1333,10 +1377,12 @@ const OfferPage = () => {
     };
 
     const openCreateServiceModal = () => {
+        setSaveServiceToPriceList(false);
         setCreateServiceModalIsOpen(true);
     };
 
     const closeCreateServiceModal = () => {
+        setSaveServiceToPriceList(false);
         setCreateServiceModalIsOpen(false);
     };
 
@@ -2498,12 +2544,26 @@ const OfferPage = () => {
                             <Option className="text-black" value="pcs.">pcs. (pieces)</Option>
                             <Option className="text-black" value="hrs.">hrs. (hours)</Option>
                         </Select>
+                        <label className="flex items-start gap-2 text-sm text-black cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="mt-1"
+                                checked={saveServiceToPriceList}
+                                onChange={(e) => setSaveServiceToPriceList(e.target.checked)}
+                            />
+                            <span>
+                                <span className="font-medium">Save to price list</span>
+                                <span className="block text-xs text-gray-600">
+                                    Off by default. The service is added only to this offer unless you also save it to the company price list.
+                                </span>
+                            </span>
+                        </label>
                         <div className="flex justify-end">
                             <Button type="button" variant="text" color="red" onClick={closeCreateServiceModal} className="mr-1">
                                 <span>Cancel</span>
                             </Button>
                             <Button color="green" type="submit" disabled={loadingCreateService}>
-                                {loadingCreateService ? <ClipLoader size={13} color={"#123abc"} /> : <span>Create</span>}
+                                {loadingCreateService ? <ClipLoader size={13} color={"#123abc"} /> : <span>Add to offer</span>}
                             </Button>
                         </div>
                     </form>

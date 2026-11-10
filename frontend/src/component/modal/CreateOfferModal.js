@@ -282,7 +282,7 @@ const CreateOfferModal = ({
                 </p>
             </div>
             <Button type="button" onClick={openCreateServiceModal} color="blue" variant="outlined">
-                Create new catalog service
+                Create new service
             </Button>
             <OfferLineItemsFields
                 services={formData.services}
