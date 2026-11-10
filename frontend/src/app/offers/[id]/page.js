@@ -34,7 +34,16 @@ import {
 } from '@/utils/offerLineItems';
 import OfferTotalsSummary from '@/component/OfferTotalsSummary';
 import { isActiveOfferStatus } from '@/constants/workflowStatus';
+import { getLineDescription } from '@/utils/translateText';
 import { toast } from 'react-toastify';
+
+function LineDescription({ item, language }) {
+    const text = getLineDescription(item, language);
+    if (!text) return null;
+    return (
+        <div className="mt-1 text-sm text-gray-600 whitespace-pre-wrap">{text}</div>
+    );
+}
 
 const OfferDetail = ({ params }) => {
     const { id } = use(params);
@@ -435,11 +444,14 @@ const OfferDetail = ({ params }) => {
                                             const normalized = normalizeOfferService(service);
                                             return (
                                                 <tr key={index}>
-                                                    <td className="border border-gray-300 px-4 py-2 text-black">
-                                                        {normalized.serviceName}
-                                                        {normalized.unitsOfMeasurement
-                                                            ? ` (${normalized.unitsOfMeasurement})`
-                                                            : ''}
+                                                    <td className="border border-gray-300 px-4 py-2 text-black align-top">
+                                                        <div>
+                                                            {normalized.serviceName}
+                                                            {normalized.unitsOfMeasurement
+                                                                ? ` (${normalized.unitsOfMeasurement})`
+                                                                : ''}
+                                                        </div>
+                                                        <LineDescription item={normalized} language={offer.language} />
                                                     </td>
                                                     <td className="border border-gray-300 px-4 py-2 text-black">
                                                         {normalized.quantity}
@@ -458,8 +470,9 @@ const OfferDetail = ({ params }) => {
                                             const normalized = normalizeOfferService(offer.services || {});
                                             return (
                                                 <tr>
-                                                    <td className="border border-gray-300 px-4 py-2 text-black">
-                                                        {normalized.serviceName}
+                                                    <td className="border border-gray-300 px-4 py-2 text-black align-top">
+                                                        <div>{normalized.serviceName}</div>
+                                                        <LineDescription item={normalized} language={offer.language} />
                                                     </td>
                                                     <td className="border border-gray-300 px-4 py-2 text-black">
                                                         {normalized.quantity}
@@ -501,7 +514,10 @@ const OfferDetail = ({ params }) => {
                                         const highlightStyle = getSparePartHighlightStyle(normalized);
                                         return (
                                         <tr key={index}>
-                                            <td className="border border-gray-300 px-4 py-2" style={highlightStyle}>{normalized.label || 'N/A'}</td>
+                                            <td className="border border-gray-300 px-4 py-2 align-top" style={highlightStyle}>
+                                                <div>{normalized.label || 'N/A'}</div>
+                                                <LineDescription item={normalized} language={offer.language} />
+                                            </td>
                                             <td className="border border-gray-300 px-4 py-2" style={highlightStyle}>{normalized.articleNumber || '-'}</td>
                                             <td className="border border-gray-300 px-4 py-2" style={highlightStyle}>{normalized.quantity}</td>
                                             <td className="border border-gray-300 px-4 py-2" style={highlightStyle}>{formatEuroAmount(getPartUnitPrice(part))} €</td>

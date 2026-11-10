@@ -28,6 +28,7 @@ import { sendOfferEmail } from '@/utils/sendOfferEmail';
 import SendEmailModal from '@/ui/SendEmailModal';
 import { isActiveOfferStatus } from '@/constants/workflowStatus';
 import { computeOfferTotals, normalizeOfferPart, normalizeOfferService, parseEuroNumber } from '@/utils/offerLineItems';
+import { getLineDescription } from '@/utils/translateText';
 
 const OfferPage = () => {
     const router = useRouter();
@@ -672,6 +673,16 @@ const OfferPage = () => {
     };
 
     const handlePrintOffer = (row) => {
+        const escapeHtml = (value) =>
+            String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        const lineNote = (item) => {
+            const text = getLineDescription(item, row.language);
+            if (!text) return '';
+            return `<div style="margin-top:4px;font-size:0.9em;color:#444;">${escapeHtml(text).replace(/\n/g, '<br>')}</div>`;
+        };
         // Create a print-friendly version of the offer
         const printContent = `
             <html>
@@ -745,12 +756,12 @@ const OfferPage = () => {
                                 ${Array.isArray(row.services) && row.services.length > 0 ? 
                                     row.services.map(service => `
                                         <tr>
-                                            <td>${service.serviceName || service.label || ''}</td>
+                                            <td>${escapeHtml(service.serviceName || service.label || '')}${lineNote(service)}</td>
                                             <td>${service.priceInEuroWithoutVAT || '0'} €</td>
                                         </tr>
                                     `).join('') : `
                                     <tr>
-                                        <td>${row.services?.serviceName || ''}</td>
+                                        <td>${escapeHtml(row.services?.serviceName || '')}${lineNote(row.services)}</td>
                                         <td>${row.services?.priceInEuroWithoutVAT || '0'} €</td>
                                     </tr>
                                 `}
@@ -772,7 +783,7 @@ const OfferPage = () => {
                                 ${Array.isArray(row.parts) && row.parts.length > 0 ? 
                                     row.parts.map(part => `
                                         <tr>
-                                            <td>${part.label || part.name || ''}</td>
+                                            <td>${escapeHtml(part.label || part.name || '')}${lineNote(part)}</td>
                                             <td>${part.quantity || 1}</td>
                                             <td>${part.pricePerUnit || '0'} €</td>
                                         </tr>
