@@ -216,6 +216,14 @@ export class OrderService {
     part: any,
     warehouseById: Map<string, warehouse>,
   ) {
+    if (part?.offWarehouse) {
+      return {
+        ...part,
+        value: '',
+        articleNumber: String(part?.articleNumber ?? '').trim(),
+        unofficially: false,
+      };
+    }
     const partId = this.resolvePartWarehouseId(part);
     const warehouseRow = partId ? warehouseById.get(partId) : undefined;
     const articleNumber =

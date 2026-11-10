@@ -4,6 +4,7 @@ import Input from '@/ui/Input';
 import { Button, Select, Option } from "@material-tailwind/react";
 import ReactSelect from 'react-select';
 import OfferLineItemsFields from '@/component/OfferLineItemsFields';
+import ManualOfferPartForm from '@/component/ManualOfferPartForm';
 import {
     buildServiceSelectOptions,
     createLineKey,
@@ -271,9 +272,14 @@ const EditOfferModal = ({ isOpen, onClose, onSubmit, formData, handleChange, han
                     </Button>
                 </div>
             </div>
-            <Button type="button" onClick={openCreatePartModal} color="blue">
-                Add Part
+            <Button type="button" onClick={openCreatePartModal} color="blue" variant="outlined">
+                Create new warehouse part
             </Button>
+            <ManualOfferPartForm
+                onAdd={(line) =>
+                    handleSelectChange([...(formData.parts || []), line], 'parts')
+                }
+            />
             <OfferLineItemsFields
                 services={[]}
                 parts={formData.parts}

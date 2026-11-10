@@ -153,10 +153,12 @@ const OrderDetail = ({ params }) => {
             .map((p) => ({
                 partName: p?.partName ?? p?.label ?? p?.name ?? '',
                 quantity: p?.quantity ?? p?.qty ?? 1,
+                unitsOfMeasurement: p?.unitsOfMeasurement ?? p?.unit ?? '',
                 articleNumber: p?.articleNumber ?? p?.value?.articleNumber ?? '',
                 warehouse: p?.warehouse ?? '',
                 pricePerUnit: p?.pricePerUnit ?? p?.price ?? null,
                 unofficially: Boolean(p?.unofficially),
+                offWarehouse: Boolean(p?.offWarehouse),
             }))
             .filter((x) => x.partName);
     };
@@ -1052,7 +1054,7 @@ const OrderDetail = ({ params }) => {
                                                         <td className="py-2 pr-3 font-medium" style={highlightStyle}>{p.partName}</td>
                                                         <td className="py-2 pr-3" style={highlightStyle}>{p.articleNumber || '—'}</td>
                                                         <td className="py-2 text-right whitespace-nowrap" style={highlightStyle}>
-                                                            {String(p.quantity || 1)}
+                                                            {String(p.quantity || 1)}{p.unitsOfMeasurement ? ` ${p.unitsOfMeasurement}` : ''}
                                                         </td>
                                                     </tr>
                                                     );

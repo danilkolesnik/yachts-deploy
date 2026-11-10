@@ -5,6 +5,7 @@ import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
 import ReactSelect from 'react-select';
 import OfferLineItemsFields from '@/component/OfferLineItemsFields';
+import ManualOfferPartForm from '@/component/ManualOfferPartForm';
 import {
     buildServiceSelectOptions,
     createLineKey,
@@ -328,6 +329,11 @@ const CreateOfferModal = ({
             <Button type="button" onClick={openCreatePartModal} color="blue" variant="outlined">
                 Create new warehouse part
             </Button>
+            <ManualOfferPartForm
+                onAdd={(line) =>
+                    handleSelectChange([...(formData.parts || []), line], 'parts')
+                }
+            />
             <OfferLineItemsFields
                 services={[]}
                 parts={formData.parts}

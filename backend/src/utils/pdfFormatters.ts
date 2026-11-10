@@ -114,6 +114,12 @@ export function getPartQuantity(part: any): number {
   return quantity > 0 ? quantity : 1;
 }
 
+export function formatPartQuantity(part: any): string {
+  const quantity = getPartQuantity(part);
+  const unit = String(part?.unitsOfMeasurement ?? part?.unit ?? '').trim();
+  return unit ? `${quantity} ${escapePdfHtml(unit)}` : String(quantity);
+}
+
 export function getPartPricePerUnit(part: any): number {
   return parseEuroNumber(part?.pricePerUnit ?? part?.value?.pricePerUnit);
 }

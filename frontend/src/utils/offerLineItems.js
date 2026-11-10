@@ -79,22 +79,28 @@ export function normalizeOfferPart(part) {
     const label = part?.label ?? part?.partName ?? part?.name ?? '';
     const quantity = parseEuroNumber(part?.quantity ?? part?.value?.quantity);
     const unitPrice = parseEuroNumber(part?.pricePerUnit ?? part?.value?.pricePerUnit);
+    const offWarehouse = Boolean(part?.offWarehouse);
     return {
         lineKey: part?.lineKey || createLineKey(),
-        value: part?.value ?? part?.id,
+        value: offWarehouse ? '' : (part?.value ?? part?.id ?? ''),
         label,
         partName: label,
-        articleNumber: part?.articleNumber ?? part?.value?.articleNumber ?? '',
+        articleNumber: offWarehouse
+            ? ''
+            : (part?.articleNumber ?? part?.value?.articleNumber ?? ''),
         pricePerUnit: Number.isFinite(unitPrice) ? unitPrice : 0,
         quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
-        unofficially: Boolean(part?.unofficially),
+        unitsOfMeasurement: String(part?.unitsOfMeasurement ?? part?.unit ?? '').trim(),
+        unofficially: offWarehouse ? false : Boolean(part?.unofficially),
+        offWarehouse,
         descriptionEn: part?.descriptionEn ?? '',
         descriptionHr: part?.descriptionHr ?? '',
     };
 }
 
-/** Official warehouse → green; grey warehouse → gray. Internal staff UI only. */
+/** Official warehouse → green; grey warehouse → gray. Off-warehouse lines stay black. */
 export function getSparePartHighlightColor(part) {
+    if (part?.offWarehouse) return '#111827';
     return part?.unofficially ? 'gray' : 'green';
 }
 

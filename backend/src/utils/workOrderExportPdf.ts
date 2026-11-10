@@ -6,7 +6,7 @@ import {
   getLogoUrl,
   getPartArticleNumber,
   getPartLabel,
-  getPartQuantity,
+  formatPartQuantity,
   getServiceName,
   getServiceQuantity,
   normalizeServices,
@@ -130,7 +130,7 @@ export function buildWorkOrderExportHtml(data: {
         <td>${index + 1}</td>
         <td>${formatNameWithDescription(getPartLabel(part), part, language)}</td>
         <td>${getPartArticleNumber(part)}</td>
-        <td>${getPartQuantity(part)}</td>
+        <td>${formatPartQuantity(part)}</td>
       </tr>
     `)
     .join('');

@@ -202,7 +202,7 @@ const OfferPage = () => {
                 "• Select customer (full name) to load their yachts",
                 "• Select one or more yachts",
                 "• Add services from the price list (optional)",
-                "• Add parts from official or unofficial warehouse (optional)",
+                "• Add parts from official or unofficial warehouse, or type a material that is not in stock (optional)",
                 "• Add comment if needed, then click Create",
                 "",
                 "You can create new services or parts from the modal via the links."
@@ -785,7 +785,7 @@ const OfferPage = () => {
                                     row.parts.map(part => `
                                         <tr>
                                             <td>${escapeHtml(part.label || part.name || '')}${lineNote(part)}</td>
-                                            <td>${part.quantity || 1}</td>
+                                            <td>${part.quantity || 1}${part.unitsOfMeasurement ? ` ${escapeHtml(part.unitsOfMeasurement)}` : ''}</td>
                                             <td>${part.pricePerUnit || '0'} €</td>
                                         </tr>
                                     `).join('') : `

@@ -83,6 +83,7 @@ export default function ClientOrderDetailPage() {
       .map((p) => ({
         partName: p?.partName ?? p?.label ?? p?.name ?? "",
         quantity: p?.quantity ?? p?.qty ?? 1,
+        unitsOfMeasurement: p?.unitsOfMeasurement ?? p?.unit ?? "",
         articleNumber: p?.articleNumber ?? "",
         warehouse: p?.warehouse ?? "",
       }))
@@ -268,7 +269,9 @@ export default function ClientOrderDetailPage() {
                           <div key={`${p.partName}-${idx}`} className="flex items-start justify-between gap-3">
                             <div className="font-medium">{p.partName}</div>
                             <div className="text-right text-gray-700 whitespace-nowrap">
-                              <span>{String(p.quantity || 1)}</span>
+                              <span>
+                                {String(p.quantity || 1)} {p.unitsOfMeasurement || ""}
+                              </span>
                             </div>
                           </div>
                         ))}

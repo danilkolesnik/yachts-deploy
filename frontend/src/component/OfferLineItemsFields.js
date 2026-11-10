@@ -11,6 +11,7 @@ import {
     getSparePartHighlightStyle,
     normalizeOfferPart,
     normalizeOfferService,
+    parseEuroNumber,
 } from '@/utils/offerLineItems';
 import {
     getLineDescription,
@@ -209,7 +210,13 @@ export default function OfferLineItemsFields({
                                     return (
                                         <tr key={lineKey} className="border-t align-top">
                                             <td className="px-3 py-2" style={highlightStyle}>
-                                                {part.label}
+                                                <div>{part.label}</div>
+                                                {part.unitsOfMeasurement ? (
+                                                    <div className="text-xs text-gray-500">{part.unitsOfMeasurement}</div>
+                                                ) : null}
+                                                {part.offWarehouse ? (
+                                                    <div className="text-xs text-gray-500">Not in warehouse</div>
+                                                ) : null}
                                             </td>
                                             <td className="px-3 py-2">
                                                 <textarea
@@ -230,14 +237,14 @@ export default function OfferLineItemsFields({
                                             <td className="px-3 py-2">
                                                 <input
                                                     type="number"
-                                                    min="1"
-                                                    step="1"
+                                                    min="0.01"
+                                                    step="any"
                                                     value={part.quantity}
-                                                    onChange={(e) =>
-                                                        updatePartField(index, {
-                                                            quantity: Math.max(1, Number(e.target.value) || 1),
-                                                        })
-                                                    }
+                                                    onChange={(e) => {
+                                                        const next = parseEuroNumber(e.target.value);
+                                                        if (!(next > 0)) return;
+                                                        updatePartField(index, { quantity: next });
+                                                    }}
                                                     className="w-full border rounded px-2 py-1 text-black"
                                                 />
                                             </td>

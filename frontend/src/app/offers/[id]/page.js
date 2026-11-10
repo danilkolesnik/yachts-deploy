@@ -519,7 +519,10 @@ const OfferDetail = ({ params }) => {
                                                 <LineDescription item={normalized} language={offer.language} />
                                             </td>
                                             <td className="border border-gray-300 px-4 py-2" style={highlightStyle}>{normalized.articleNumber || '-'}</td>
-                                            <td className="border border-gray-300 px-4 py-2" style={highlightStyle}>{normalized.quantity}</td>
+                                            <td className="border border-gray-300 px-4 py-2" style={highlightStyle}>
+                                                {normalized.quantity}
+                                                {normalized.unitsOfMeasurement ? ` ${normalized.unitsOfMeasurement}` : ''}
+                                            </td>
                                             <td className="border border-gray-300 px-4 py-2" style={highlightStyle}>{formatEuroAmount(getPartUnitPrice(part))} €</td>
                                             <td className="border border-gray-300 px-4 py-2 font-medium" style={highlightStyle}>{formatEuroAmount(getPartLineTotal(part))} €</td>
                                         </tr>

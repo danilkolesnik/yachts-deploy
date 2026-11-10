@@ -9,6 +9,7 @@ import {
   getPartArticleNumber,
   getPartLabel,
   getPartPricePerUnit,
+  formatPartQuantity,
   getPartQuantity,
   getServiceName,
   getServicePrice,
@@ -112,7 +113,7 @@ export function buildInvoiceExportHtml(data: any): string {
         <td>${index + 1}</td>
         <td>${formatNameWithDescription(getPartLabel(part), part, data?.language)}</td>
         <td>${getPartArticleNumber(part)}</td>
-        <td>${quantity}</td>
+        <td>${formatPartQuantity(part)}</td>
         <td>${formatMoney(pricePerUnit)}</td>
         <td>${formatMoney(lineTotal)}</td>
       </tr>
