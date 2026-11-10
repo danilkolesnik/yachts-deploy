@@ -12,15 +12,11 @@ export function partMatchesQuery(item, query) {
     return fields.some((value) => String(value || '').toLowerCase().includes(q));
 }
 
-const DROPDOWN_LIMIT = 12;
-
 const SearchInput = ({ search, setSearch, filteredData, onSearchSelect }) => {
     const [open, setOpen] = useState(false);
     const wrapRef = useRef(null);
     const query = String(search || '').trim();
     const matches = Array.isArray(filteredData) ? filteredData : [];
-    const visible = matches.slice(0, DROPDOWN_LIMIT);
-    const hiddenCount = Math.max(0, matches.length - visible.length);
 
     useEffect(() => {
         const onPointerDown = (event) => {
@@ -38,7 +34,7 @@ const SearchInput = ({ search, setSearch, filteredData, onSearchSelect }) => {
     };
 
     return (
-        <div className="relative" ref={wrapRef}>
+        <div className="relative z-[9999]" ref={wrapRef}>
             <input
                 type="text"
                 placeholder="Search by name or article number…"
@@ -56,11 +52,11 @@ const SearchInput = ({ search, setSearch, filteredData, onSearchSelect }) => {
                 className="px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-blue-200 text-black w-full md:w-80"
             />
             {open && query && (
-                <div className="absolute w-full md:w-96 top-full mt-1 bg-white border border-gray-300 rounded shadow-lg z-30 max-h-64 overflow-y-auto">
-                    {visible.length === 0 ? (
+                <div className="absolute z-[9999] w-full md:w-96 top-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-[70vh] overflow-y-auto overscroll-contain">
+                    {matches.length === 0 ? (
                         <div className="px-4 py-2 text-sm text-gray-500">No matches</div>
                     ) : (
-                        visible.map((item) => (
+                        matches.map((item) => (
                             <button
                                 key={item.id || `${item.name}-${item.articleNumber}`}
                                 type="button"
@@ -82,11 +78,6 @@ const SearchInput = ({ search, setSearch, filteredData, onSearchSelect }) => {
                                 </div>
                             </button>
                         ))
-                    )}
-                    {hiddenCount > 0 && (
-                        <div className="px-4 py-2 text-xs text-gray-500 bg-gray-50">
-                            {hiddenCount} more. Keep typing to narrow the list.
-                        </div>
                     )}
                 </div>
             )}
