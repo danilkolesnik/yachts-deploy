@@ -73,6 +73,7 @@ const UsersPage = () => {
     const [profilePermissionsDirty, setProfilePermissionsDirty] = useState(false);
     const [profileUser, setProfileUser] = useState(null);
     const [profileForm, setProfileForm] = useState({
+        email: '',
         fullName: '',
         dateOfBirth: '',
         phone: '',
@@ -150,8 +151,12 @@ const UsersPage = () => {
     const submitCreate = async () => {
         setCreating(true);
         try {
-            if (!createForm.email || !createForm.fullName) {
-                toast.error('Email and full name are required');
+            if (!String(createForm.fullName || '').trim()) {
+                toast.error('Full name is required');
+                return;
+            }
+            if (createType !== 'client' && !String(createForm.email || '').trim()) {
+                toast.error('Email is required');
                 return;
             }
 
@@ -375,6 +380,7 @@ const UsersPage = () => {
             contractEnd: '',
             position: '',
             notes: '',
+            email: '',
             responsibilityAreasText: '',
         });
         setProfileLoading(false);
@@ -402,6 +408,7 @@ const UsersPage = () => {
                     setProfileSelectedPermissions([]);
                 }
                 setProfileForm({
+                    email: user.email || '',
                     fullName: profile.fullName || user.fullName || '',
                     dateOfBirth: profile.dateOfBirth || '',
                     phone: profile.phone || '',
@@ -420,6 +427,7 @@ const UsersPage = () => {
                 setProfileSelectedPermissions([]);
                 setProfileForm((prev) => ({
                     ...prev,
+                    email: user.email || '',
                     fullName: user.fullName || '',
                 }));
             }
@@ -542,6 +550,7 @@ const UsersPage = () => {
 
             const payload = isClient
                 ? {
+                      email: String(profileForm.email || '').trim(),
                       fullName: profileForm.fullName,
                       phone: profileForm.phone,
                       secondaryPhone: profileForm.secondaryPhone,
@@ -576,14 +585,18 @@ const UsersPage = () => {
                 setUsers((prev) =>
                     prev.map((u) =>
                         u.id === profileUser.id
-                            ? { ...u, fullName: profileForm.fullName || u.fullName }
+                            ? {
+                                  ...u,
+                                  fullName: profileForm.fullName || u.fullName,
+                                  email: isClient ? String(profileForm.email || '').trim() : u.email,
+                              }
                             : u
                     )
                 );
                 closeProfileModal();
             } else {
                 console.error('Failed to save employee profile:', response.data.message);
-                toast.error('Failed to save employee profile');
+                toast.error(response.data.message || 'Failed to save profile');
             }
         } catch (error) {
             console.error('Error saving employee profile:', error);
@@ -773,11 +786,11 @@ const UsersPage = () => {
                         {profileUser?.role === 'client' ? (
                             <>
                                 <Input
-                                    label="Email"
+                                    label="Email (optional)"
                                     name="email"
-                                    value={profileUser?.email || ''}
-                                    disabled
-                                    onChange={() => {}}
+                                    type="email"
+                                    value={profileForm.email || ''}
+                                    onChange={handleProfileChange}
                                 />
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Input
@@ -996,7 +1009,14 @@ const UsersPage = () => {
                     }
                 >
                     <div className="space-y-4 max-h-[70vh] overflow-y-auto">
-                        <Input label="Email" name="email" value={createForm.email} onChange={handleCreateChange} required />
+                        <Input
+                            label={createType === 'client' ? 'Email (optional)' : 'Email'}
+                            name="email"
+                            type="email"
+                            value={createForm.email}
+                            onChange={handleCreateChange}
+                            required={createType !== 'client'}
+                        />
                         <Input label="Full name" name="fullName" value={createForm.fullName} onChange={handleCreateChange} required />
 
                         {createType !== 'client' && (

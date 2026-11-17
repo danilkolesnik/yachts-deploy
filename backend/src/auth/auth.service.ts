@@ -69,25 +69,29 @@ export class AuthService {
     }
 
     async createClient(data: CreateAuthDto) {
-      if (!data.email || !data.fullName) {
+      const fullName = String(data.fullName || '').trim();
+      const email = String(data.email || '').trim();
+      if (!fullName) {
         return {
           code: 400,
-          message: 'Not all arguments',
+          message: 'Full name is required',
         };
       }
 
       const genaratePassword = generateRandomId();
 
       try {
-        const checkUser = await this.usersModule.findOne({
-          where: { email: data.email },
-        });
+        if (email) {
+          const checkUser = await this.usersModule.findOne({
+            where: { email },
+          });
 
-        if (checkUser) {
-          return {
-            code: 409,
-            message: 'This user already exists',
-          };
+          if (checkUser) {
+            return {
+              code: 409,
+              message: 'This user already exists',
+            };
+          }
         }
 
         const generateId = generateRandomId();
@@ -96,8 +100,8 @@ export class AuthService {
           this.usersModule.create({
             id: generateId,
             role: Role.CLIENT,
-            email: data.email,
-            fullName: data.fullName,
+            email,
+            fullName,
             password: bcrypt.hashSync(genaratePassword),
           }),
         );

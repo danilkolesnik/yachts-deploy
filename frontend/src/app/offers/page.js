@@ -1899,8 +1899,8 @@ const OfferPage = () => {
         setCreateCustomerLoading(true);
         try {
             const customerData = {
-                email: createCustomerFormData.email,
-                fullName: createCustomerFormData.fullName
+                email: String(createCustomerFormData.email || '').trim(),
+                fullName: String(createCustomerFormData.fullName || '').trim(),
             };
             
             const customerResponse = await axios.post(`${URL}/auth/register/client`, customerData);
@@ -1952,7 +1952,7 @@ const OfferPage = () => {
             }
         } catch (error) {
             console.error('Error creating customer and yacht:', error);
-            toast.error("Error creating customer and yacht. Please try again.");
+            toast.error(error?.message || "Error creating customer and yacht. Please try again.");
         } finally {
             setCreateCustomerLoading(false);
         }
@@ -2735,12 +2735,11 @@ const OfferPage = () => {
                                 <h3 className="text-lg font-semibold text-black">Customer Information</h3>
                             </div>
                             <Input
-                                label="Email"
+                                label="Email (optional)"
                                 name="email"
                                 type="email"
                                 value={createCustomerFormData.email}
                                 onChange={handleCustomerChange}
-                                required
                             />
                             <Input
                                 label="Customer Name"

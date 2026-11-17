@@ -183,6 +183,23 @@ export class UsersService {
         return { code: 404, message: 'User not found' };
       }
 
+      if (typeof (data as any)?.email === 'string') {
+        const nextEmail = String((data as any).email).trim();
+        if (nextEmail) {
+          const taken = await this.usersRepository.findOne({ where: { email: nextEmail } });
+          if (taken && taken.id !== user.id) {
+            return { code: 409, message: 'This email is already used' };
+          }
+        }
+        if (user.email !== nextEmail) {
+          const before = { email: user.email };
+          user.email = nextEmail;
+          await this.usersRepository.save(user);
+          await this.audit(userId, 'user', { before, after: { email: nextEmail } }, changedBy);
+        }
+        delete (data as any).email;
+      }
+
       // Keep `users.fullName` in sync with profile fullName so that `/users` list
       // shows the updated name after refresh.
       if (typeof (data as any)?.fullName === 'string' && (data as any).fullName.trim()) {
