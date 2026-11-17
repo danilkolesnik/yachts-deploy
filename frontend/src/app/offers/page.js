@@ -2558,6 +2558,7 @@ const OfferPage = () => {
                             <Option className="text-black" value="">Select...</Option>
                             <Option className="text-black" value="pcs.">pcs. (pieces)</Option>
                             <Option className="text-black" value="hrs.">hrs. (hours)</Option>
+                            <Option className="text-black" value="km">km (kilometers)</Option>
                         </Select>
                         <label className="flex items-start gap-2 text-sm text-black cursor-pointer">
                             <input

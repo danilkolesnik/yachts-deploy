@@ -55,7 +55,7 @@ const PriceListPage = () => {
                 "**Service Name** - Main service or category name",
                 "**Sub-services** - Detailed services within the main category",
                 "**Price in EURO without VAT** - Price excluding VAT in Euros",
-                "**Units of Measurement** - How the service is measured (pcs., hrs.)",
+                "**Units of Measurement** - How the service is measured (pcs., hrs., km)",
                 "**Actions** - Edit or delete service records",
                 "",
                 "**Important:** Click on column headers to sort the table"
@@ -93,9 +93,14 @@ const PriceListPage = () => {
                 "• Labor or consulting services",
                 "• Services charged per hour",
                 "",
+                "**km (kilometers)** - Used for:",
+                "• Distance-based services",
+                "• Travel charged by the total distance, including the return trip",
+                "",
                 "**Selecting the correct unit:**",
                 "• Choose 'pcs.' for fixed-price services",
                 "• Choose 'hrs.' for time-based services",
+                "• Choose 'km' for distance-based services",
                 "• This affects how offers calculate total costs"
             ]
         },
@@ -145,7 +150,7 @@ const PriceListPage = () => {
                 "**Required Fields:**",
                 "• Service Name - Descriptive name of service",
                 "• Price in Euro excl. VAT - Must use proper format",
-                "• Units of Measurement - Select pcs. or hrs.",
+                "• Units of Measurement - Select pcs., hrs., or km",
                 "",
                 "**Creating New Service:**",
                 "1. Click 'Create' button",
@@ -928,6 +933,7 @@ const PriceListPage = () => {
                                 <Option className="text-black" value="">Select...</Option>
                                 <Option className="text-black" value="pcs.">pcs. (pieces)</Option>
                                 <Option className="text-black" value="hrs.">hrs. (hours)</Option>
+                                <Option className="text-black" value="km">km (kilometers)</Option>
                             </Select>
 
                             {/* Sub-services Section */}
