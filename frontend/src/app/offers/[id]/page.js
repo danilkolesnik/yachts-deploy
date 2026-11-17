@@ -396,6 +396,12 @@ const OfferDetail = ({ params }) => {
                                             <span className="font-semibold text-gray-800">Boat Registration:</span>
                                             <span className="text-black ml-2">{yacht.countryCode || 'N/A'}</span>
                                         </div>
+                                        {yacht.location && (
+                                            <div>
+                                                <span className="font-semibold text-gray-800">Location:</span>
+                                                <span className="text-black ml-2">{yacht.location}</span>
+                                            </div>
+                                        )}
                                         {yacht.userName && (
                                             <div>
                                                 <span className="font-semibold text-gray-800">Owner:</span>

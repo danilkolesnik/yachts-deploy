@@ -1912,6 +1912,7 @@ const OfferPage = () => {
                     name: createCustomerFormData.yachtName,
                     model: createCustomerFormData.yachtModel,
                     countryCode: createCustomerFormData.countryCode,
+                    location: String(createCustomerFormData.location || '').trim(),
                     repairTime: createCustomerFormData.repairTime || '',
                     owner: createCustomerFormData.owner || '',
                     ownerEmail: createCustomerFormData.ownerEmail || '',
@@ -2778,6 +2779,13 @@ const OfferPage = () => {
                                 value={createCustomerFormData.countryCode}
                                 onChange={handleCustomerChange}
                                 required
+                            />
+                            <Input
+                                label="Location"
+                                name="location"
+                                value={createCustomerFormData.location}
+                                onChange={handleCustomerChange}
+                                placeholder="Port, marina, or city and country"
                             />
                             
                             <div className="space-y-4 border-t pt-4">

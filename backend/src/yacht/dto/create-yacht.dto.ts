@@ -3,6 +3,7 @@ export class CreateYachtDto {
   model: string;
   repairTime?: string;
   countryCode?: string;
+  location?: string;
   // legacy fields (kept for backward compatibility with existing DB rows)
   ownerContacts?: string;
   engineHours?: number;

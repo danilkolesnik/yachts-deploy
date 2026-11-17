@@ -36,6 +36,7 @@ const YachtsPage = () => {
         model: '',
         repairTime: '',
         countryCode:'',
+        location: '',
         owner: '',
         ownerEmail: '',
         ownerPhone: '',
@@ -70,6 +71,7 @@ const YachtsPage = () => {
                 "**Date** - Date when the yacht record was created",
                 "**Name** - Yacht's given name",
                 "**Model** - Yacht model/manufacturer",
+                "**Location** - Port, marina, or city and country",
                 "**Owner Contacts** - Owner name and contact details (email, phone, address)",
                 "**Engine Hours** - Engine running hours for each motor",
                 "**Actions** - Edit or delete yacht records"
@@ -82,6 +84,9 @@ const YachtsPage = () => {
                 "• Yacht Name - Unique identifier for the yacht",
                 "• Model - Manufacturer and model information",
                 "• Boat Registration - Official registration number",
+                "",
+                "**Location (Optional):**",
+                "• Port, marina, or city and country — enter any text",
                 "",
                 "**Owner Contacts Section (Optional):**",
                 "• Owner - Name of the yacht owner",
@@ -186,6 +191,12 @@ const YachtsPage = () => {
             name: 'Model',
             selector: row => row.model,
             sortable: true,
+        },
+        {
+            name: 'Location',
+            selector: row => row.location || '-',
+            sortable: true,
+            wrap: true,
         },
         {
             name: 'Owner Contacts',
@@ -302,6 +313,7 @@ const YachtsPage = () => {
                     model: '', 
                     repairTime: '', 
                     countryCode:'', 
+                    location: '',
                     owner: '',
                     ownerEmail: '',
                     ownerPhone: '',
@@ -337,6 +349,7 @@ const YachtsPage = () => {
     const handleEdit = (yacht) => {
         const initializedYacht = {
             ...yacht,
+            location: yacht.location || '',
             owner: yacht.owner || '',
             ownerEmail: yacht.ownerEmail || '',
             ownerPhone: yacht.ownerPhone || '',
@@ -511,6 +524,8 @@ const YachtsPage = () => {
                 return yacht.name?.toLowerCase().includes(searchValue);
             case 'model':
                 return yacht.model?.toLowerCase().includes(searchValue);
+            case 'location':
+                return yacht.location?.toLowerCase().includes(searchValue);
             default:
                 return true;
         }
@@ -539,6 +554,7 @@ const YachtsPage = () => {
                                     >
                                         <Option className="text-black" value="name">Name</Option>
                                         <Option className="text-black" value="model">Model</Option>
+                                        <Option className="text-black" value="location">Location</Option>
                                     </Select>
                                     <input
                                         type="text"
@@ -777,6 +793,7 @@ const YachtsPage = () => {
                         model: '', 
                         repairTime: '', 
                         countryCode:'', 
+                        location: '',
                         owner: '',
                         ownerEmail: '',
                         ownerPhone: '',
@@ -852,6 +869,13 @@ const YachtsPage = () => {
                             value={formData.countryCode}
                             onChange={handleChange}
                             required
+                        />
+                        <Input
+                            label="Location"
+                            name="location"
+                            value={formData.location}
+                            onChange={handleChange}
+                            placeholder="Port, marina, or city and country"
                         />
                         
                         {/* Owner Contacts Section */}
@@ -1127,6 +1151,13 @@ const YachtsPage = () => {
                             value={editingYacht?.countryCode || ''}
                             onChange={handleEditChange}
                             required
+                        />
+                        <Input
+                            label="Location"
+                            name="location"
+                            value={editingYacht?.location || ''}
+                            onChange={handleEditChange}
+                            placeholder="Port, marina, or city and country"
                         />
                         
                         {/* Owner Contacts Section */}
