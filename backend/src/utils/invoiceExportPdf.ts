@@ -17,13 +17,13 @@ import {
   getServiceLineTotal,
   normalizeServices,
 } from './pdfFormatters';
-import { computeOfferTotals } from './offerTotals';
+import { computeOfferTotals, formatVatRateLabel, normalizeVatRate } from './offerTotals';
 
 function resolveInvoiceOfferNumber(data: any): string {
   return String(data?.offerId || data?.invoiceNumber || '').trim();
 }
 
-function applyInvoiceTranslations(template: string, lang?: string): string {
+function applyInvoiceTranslations(template: string, lang?: string, vatRate?: unknown): string {
   const t = getTranslations(normalizeDocumentLanguage(lang));
 
   return template
@@ -57,7 +57,7 @@ function applyInvoiceTranslations(template: string, lang?: string): string {
     .replace('IZNOS / AMOUNT:', `${t.GROSS_AMOUNT}:`)
     .replace('Discount / Rabat:', `${t.DISCOUNT_LABEL}:`)
     .replace('UKUPNO / SUBTOTAL:', `${t.SUBTOTAL_AFTER_DISCOUNT}:`)
-    .replace('PDV (25%) / VAT (25%):', `${t.VAT_25}:`)
+    .replace('PDV (25%) / VAT (25%):', `${formatVatRateLabel(lang, vatRate)}:`)
     .replace('TOTAL AMOUNT / SVEUKUPNI IZNOS:', `${t.TOTAL_AMOUNT}:`)
     .replace('Remark / Napomena:', `${t.REMARK}:`)
     .replace('BANK DETAILS / BANKOVNI DETALJI:', `${t.BANK_DETAILS}:`)
@@ -86,8 +86,15 @@ export function computeInvoiceTotals(
   services: any[],
   discountAmount = 0,
   discountPercent = 0,
+  vatRate?: unknown,
 ) {
-  return computeOfferTotals(parts, services, discountAmount, discountPercent);
+  return computeOfferTotals(
+    parts,
+    services,
+    discountAmount,
+    discountPercent,
+    normalizeVatRate(vatRate),
+  );
 }
 
 export function buildInvoiceExportHtml(data: any): string {
@@ -101,6 +108,7 @@ export function buildInvoiceExportHtml(data: any): string {
     services,
     data?.discountAmount,
     data?.discountPercent,
+    data?.vatRate,
   );
 
   const invoiceTableRows = parts
@@ -173,5 +181,6 @@ export function buildInvoiceExportHtml(data: any): string {
   return applyInvoiceTranslations(
     templateString,
     normalizeDocumentLanguage(data?.language),
+    totals.vatRate,
   );
 }

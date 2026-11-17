@@ -136,23 +136,39 @@ export function getPartLineTotal(part) {
 
 export const DEFAULT_OFFER_VAT_RATE = 0.25;
 
-export function computeOfferTotals(offerOrParts, servicesArg, discountAmountArg, discountPercentArg) {
+export function normalizeVatRate(value) {
+    if (value === null || value === undefined || value === '') return DEFAULT_OFFER_VAT_RATE;
+    const rate = Number(value);
+    if (!Number.isFinite(rate)) return DEFAULT_OFFER_VAT_RATE;
+    if (rate === 0) return 0;
+    if (rate === 25 || Math.abs(rate - 0.25) < 0.001) return 0.25;
+    return DEFAULT_OFFER_VAT_RATE;
+}
+
+export function vatRateLabel(value) {
+    return `${Math.round(normalizeVatRate(value) * 100)}% VAT`;
+}
+
+export function computeOfferTotals(offerOrParts, servicesArg, discountAmountArg, discountPercentArg, vatRateArg) {
     let parts = [];
     let services = [];
     let discountAmount = 0;
     let discountPercent = 0;
+    let vatRate = DEFAULT_OFFER_VAT_RATE;
 
     if (Array.isArray(offerOrParts) || servicesArg !== undefined) {
         parts = Array.isArray(offerOrParts) ? offerOrParts : [];
         services = servicesArg;
         discountAmount = parseEuroNumber(discountAmountArg);
         discountPercent = parseEuroNumber(discountPercentArg);
+        vatRate = normalizeVatRate(vatRateArg);
     } else {
         const offer = offerOrParts || {};
         parts = Array.isArray(offer.parts) ? offer.parts : [];
         services = offer.services;
         discountAmount = parseEuroNumber(offer.discountAmount);
         discountPercent = parseEuroNumber(offer.discountPercent);
+        vatRate = normalizeVatRate(offer.vatRate);
     }
 
     const partsTotal = parts.reduce(
@@ -180,7 +196,7 @@ export function computeOfferTotals(offerOrParts, servicesArg, discountAmountArg,
     }
 
     const subtotalAfterDiscount = grossAmount - discount;
-    const vatAmount = subtotalAfterDiscount * DEFAULT_OFFER_VAT_RATE;
+    const vatAmount = subtotalAfterDiscount * vatRate;
     const grandTotal = subtotalAfterDiscount + vatAmount;
 
     return {
@@ -191,6 +207,7 @@ export function computeOfferTotals(offerOrParts, servicesArg, discountAmountArg,
         discountAmount: discount,
         subtotalAfterDiscount,
         vatAmount,
+        vatRate,
         grandTotal,
     };
 }

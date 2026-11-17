@@ -3,7 +3,7 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
-import DataTable from 'react-data-table-component';
+import ScrollableDataTable from '@/ui/ScrollableDataTable';
 import { Button } from '@material-tailwind/react';
 import Link from 'next/link';
 import Header from '@/component/header';
@@ -474,7 +474,7 @@ const ArchivePageContent = () => {
                         />
                     </div>
 
-                    <DataTable
+                    <ScrollableDataTable
                         columns={tableColumns}
                         data={tableData}
                         progressPending={loading}

@@ -14,6 +14,8 @@ import {
     getSparePartHighlightColor,
 } from '@/utils/offerLineItems';
 import { ensureDescriptionForLanguage } from '@/utils/translateText';
+import { normalizeVatRate } from '@/utils/offerLineItems';
+import OfferTotalsSummary from '@/component/OfferTotalsSummary';
 import { PAYMENT_METHODS } from '@/utils/paymentMethod';
 
 const CreateOfferModal = ({ 
@@ -265,6 +267,17 @@ const CreateOfferModal = ({
                     </Option>
                 ))}
             </Select>
+            <Select
+                label="VAT"
+                value={normalizeVatRate(formData.vatRate) === 0 ? '0' : '0.25'}
+                onChange={(value) => handleSelectChange(value, 'vatRate')}
+                required
+                className="text-black"
+                labelProps={{ className: "text-black" }}
+            >
+                <Option value="0.25" className="text-black">25% VAT</Option>
+                <Option value="0" className="text-black">0% VAT</Option>
+            </Select>
             <div className="mb-4">
                 <label htmlFor="services-select" className="block text-sm font-medium text-gray-700">
                     Add service line
@@ -374,6 +387,7 @@ const CreateOfferModal = ({
                 value={formData.discountPercent ?? ''}
                 onChange={handleChange}
             />
+            <OfferTotalsSummary offer={formData} />
 
             <div>
                 <label htmlFor="offer-remark" className="block text-sm font-medium text-gray-700 mb-1">

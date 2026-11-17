@@ -7,6 +7,7 @@ import { order } from 'src/order/entities/order.entity';
 import { users } from 'src/auth/entities/users.entity';
 import generateRandomId from 'src/methods/generateRandomId';
 import { computeInvoiceTotals } from 'src/utils/invoiceExportPdf';
+import { normalizeVatRate } from 'src/utils/offerTotals';
 import { sendEmail } from 'src/utils/sendEmail';
 import { resolveOfferEmailRecipient } from 'src/utils/emailRecipient';
 import { normalizeDocumentLanguage } from 'src/utils/translations';
@@ -107,6 +108,7 @@ export class InvoiceService {
         services,
         offerData.discountAmount,
         offerData.discountPercent,
+        offerData.vatRate,
       );
       const createdAt = new Date();
       const paymentDueAt = new Date(createdAt.getTime() + 5 * 24 * 60 * 60 * 1000);
@@ -175,6 +177,7 @@ export class InvoiceService {
       language,
       discountPercent: Number(offer?.discountPercent ?? invoice.discountPercent) || 0,
       discountAmount: Number(offer?.discountAmount ?? invoice.discountAmount) || 0,
+      vatRate: normalizeVatRate(offer?.vatRate),
     };
   }
 

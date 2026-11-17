@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import DataTable from 'react-data-table-component';
+import ScrollableDataTable from '@/ui/ScrollableDataTable';
 import Loader from '@/ui/loader';
 import Header from '@/component/header';
 import { URL } from '@/utils/constants';
@@ -96,7 +96,7 @@ const WarehouseHistoryPage = () => {
                 </div>
             ) : (
                 <div className="w-full space-y-6 bg-white rounded shadow-md">
-                    <DataTable
+                    <ScrollableDataTable
                         columns={columns}
                         data={data}
                         pagination

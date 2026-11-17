@@ -22,6 +22,7 @@ import {
   normalizeOfferStatus,
   resolveWorkflowBucket,
 } from 'src/utils/workflowStatus';
+import { normalizeVatRate } from 'src/utils/offerTotals';
 
 export type OfferVersionEntry = {
   versionNumber: number;
@@ -47,6 +48,7 @@ const OFFER_FIELD_LABELS: Record<string, string> = {
   customerFullName: 'Customer',
   language: 'Language',
   paymentMethod: 'Payment method',
+  vatRate: 'VAT rate',
   discountAmount: 'Discount (EUR)',
   discountPercent: 'Discount (%)',
   yachtName: 'Yacht name',
@@ -541,6 +543,7 @@ export class OfferService {
           status: data.status,
           language: data.language || 'en',
           paymentMethod: normalizePaymentMethod(data.paymentMethod),
+          vatRate: normalizeVatRate(data.vatRate),
           discountAmount: Math.max(0, Number(data.discountAmount) || 0),
           discountPercent: Math.max(0, Math.min(100, Number(data.discountPercent) || 0)),
           versions: [],
@@ -603,6 +606,7 @@ export class OfferService {
       status: data.status ?? offer.status,
       language: data.language ?? offer.language,
       paymentMethod: normalizePaymentMethod(data.paymentMethod ?? offer.paymentMethod),
+      vatRate: normalizeVatRate(data.vatRate ?? offer.vatRate),
       discountAmount: Math.max(
         0,
         Number(data.discountAmount ?? offer.discountAmount) || 0,
@@ -722,6 +726,15 @@ export class OfferService {
         const newValue: unknown = (data as Record<string, unknown>)[key];
         if (newValue === undefined) continue;
 
+        if (key === 'vatRate') {
+          const oldRate = normalizeVatRate(oldValue);
+          const newRate = normalizeVatRate(newValue);
+          if (oldRate !== newRate) {
+            changedFields[key] = { oldValue: oldRate, newValue: newRate };
+          }
+          continue;
+        }
+
         if (typeof oldValue === 'object' && typeof newValue === 'object') {
           if (!isEqual(oldValue, newValue)) {
             changedFields[key] = { oldValue, newValue };
@@ -788,6 +801,7 @@ export class OfferService {
         ...data,
         ...yachtData,
         paymentMethod: normalizePaymentMethod(data.paymentMethod ?? offer.paymentMethod),
+        vatRate: normalizeVatRate(data.vatRate ?? offer.vatRate),
         ...(enrichedParts !== undefined ? { parts: enrichedParts } : {}),
         services: Array.isArray(data.services)
           ? data.services

@@ -22,6 +22,59 @@ body {
   font-family: 'Roboto', sans-serif;
 }
 
+/* Keep list tables inside the window so a mouse can grab the horizontal bar. */
+.app-data-table {
+  width: 100%;
+  max-width: 100%;
+}
+
+.app-data-table div:has(> .rdt_Table) {
+  overflow-x: scroll !important;
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  scrollbar-color: #334155 #e2e8f0;
+}
+
+.app-data-table div:has(> .rdt_Table)::-webkit-scrollbar {
+  height: 16px;
+  width: 14px;
+}
+
+.app-data-table div:has(> .rdt_Table)::-webkit-scrollbar-thumb {
+  background: #334155;
+  border: 3px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.app-data-table div:has(> .rdt_Table)::-webkit-scrollbar-track {
+  background: #e2e8f0;
+}
+
+.app-data-table div:has(> .rdt_Table)::-webkit-scrollbar-corner {
+  background: #e2e8f0;
+}
+
+.app-data-table .rdt_TableHead {
+  z-index: 4;
+}
+
+.app-data-table [data-column-id="row-actions"] {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: #ffffff;
+  box-shadow: -8px 0 10px -8px rgba(15, 23, 42, 0.45);
+}
+
+.app-data-table .rdt_TableHead [data-column-id="row-actions"] {
+  z-index: 6;
+  background: #ffffff;
+}
+
+.app-data-table .rdt_TableRow:hover [data-column-id="row-actions"] {
+  background: #eeeeee;
+}
+
 .app-header {
   position: sticky;
   top: 0;

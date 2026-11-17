@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import DataTable from 'react-data-table-component';
+import ScrollableDataTable from '@/ui/ScrollableDataTable';
 import Loader from '@/ui/loader';
 import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
@@ -236,7 +236,9 @@ const WarehouseUnofficiallyPage = () => {
             sortable: true,
         },
         {
+            id: 'row-actions',
             name: 'Actions',
+            width: '96px',
             cell: row => (
                 <div className="flex space-x-2">
                     <button
@@ -543,7 +545,7 @@ const WarehouseUnofficiallyPage = () => {
                                 ))}
                             </tbody>
                         </table>
-                        <DataTable
+                        <ScrollableDataTable
                             columns={columns}
                             data={filteredData}
                             pagination

@@ -8,6 +8,25 @@ import {
 
 export const DEFAULT_OFFER_VAT_RATE = 0.25;
 
+export function normalizeVatRate(value: unknown): number {
+  if (value === null || value === undefined || value === '') {
+    return DEFAULT_OFFER_VAT_RATE;
+  }
+  const rate = Number(value);
+  if (!Number.isFinite(rate)) return DEFAULT_OFFER_VAT_RATE;
+  if (rate === 0) return 0;
+  if (rate === 25 || Math.abs(rate - 0.25) < 0.001) return 0.25;
+  return DEFAULT_OFFER_VAT_RATE;
+}
+
+export function formatVatRateLabel(language: string | undefined, rate: unknown): string {
+  const percent = Math.round(normalizeVatRate(rate) * 100);
+  const lang = String(language || 'en').toLowerCase();
+  if (lang.startsWith('hr')) return `PDV (${percent}%)`;
+  if (lang.startsWith('de')) return `MwSt. (${percent}%)`;
+  return `VAT (${percent}%)`;
+}
+
 export type OfferTotals = {
   partsTotal: number;
   servicesTotal: number;
@@ -71,7 +90,7 @@ export function computeOfferTotals(
     discountPercent,
   );
   const subtotalAfterDiscount = grossAmount - discount;
-  const rate = Number.isFinite(vatRate) && vatRate >= 0 ? vatRate : DEFAULT_OFFER_VAT_RATE;
+  const rate = normalizeVatRate(vatRate);
   const vatAmount = subtotalAfterDiscount * rate;
   const grandTotal = subtotalAfterDiscount + vatAmount;
 

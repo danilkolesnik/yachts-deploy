@@ -4,7 +4,7 @@ import { Button, Select, Option } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import Header from '@/component/header';
 import axios from 'axios';
-import DataTable from 'react-data-table-component';
+import ScrollableDataTable from '@/ui/ScrollableDataTable';
 import { PencilIcon, TrashIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/solid';
 import { toast } from 'react-toastify'; 
 import Modal from '@/ui/Modal';
@@ -223,7 +223,9 @@ const YachtsPage = () => {
             sortable: true,
         },
         {
+            id: 'row-actions',
             name: 'Actions',
+            width: '96px',
             cell: row => (
                 <div className="flex space-x-2">
                     <button
@@ -581,7 +583,7 @@ const YachtsPage = () => {
                             </div>
                         </div>
                         <div className="overflow-x-auto">
-                            <DataTable
+                            <ScrollableDataTable
                                 columns={columns}
                                 data={filteredData}
                                 pagination

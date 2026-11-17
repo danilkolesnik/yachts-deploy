@@ -21,7 +21,10 @@ export default function OfferTotalsSummary({ offer }) {
                     : `${formatEuroAmount(0)}% (${formatEuroAmount(0)} €)`,
         },
         { label: 'Subtotal / UKUPNO', value: `${formatEuroAmount(totals.subtotalAfterDiscount)} €` },
-        { label: 'VAT (25%) / PDV (25%)', value: `${formatEuroAmount(totals.vatAmount)} €` },
+        {
+            label: `VAT (${Math.round(totals.vatRate * 100)}%) / PDV (${Math.round(totals.vatRate * 100)}%)`,
+            value: `${formatEuroAmount(totals.vatAmount)} €`,
+        },
     ];
 
     return (

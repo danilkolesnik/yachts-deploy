@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import Header from '@/component/header';
 import SearchInput, { partMatchesQuery } from '@/component/search';
-import DataTable from 'react-data-table-component';
+import ScrollableDataTable from '@/ui/ScrollableDataTable';
 import Loader from '@/ui/loader';
 import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
@@ -228,7 +228,9 @@ const WarehousePage = () => {
             sortable: true,
         },
         {
+            id: 'row-actions',
             name: 'Actions',
+            width: '96px',
             cell: row => (
                 <div className="flex space-x-2">
                     <button
@@ -525,7 +527,7 @@ const WarehousePage = () => {
                                     ))}
                             </tbody>
                         </table>
-                        <DataTable
+                        <ScrollableDataTable
                             columns={columns}
                             data={filteredData}
                             pagination

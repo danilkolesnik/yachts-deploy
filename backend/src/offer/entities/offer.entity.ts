@@ -60,6 +60,10 @@ export class offer {
   @Column({ default: 'tba' })
   paymentMethod: string;
 
+  /** 0.25 = 25% VAT, 0 = no VAT. */
+  @Column({ type: 'decimal', precision: 4, scale: 2, default: 0.25 })
+  vatRate: number;
+
   /** Discount in EUR applied before VAT (rabat). */
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   discountAmount: number;

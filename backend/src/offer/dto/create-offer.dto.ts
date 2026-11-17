@@ -32,6 +32,7 @@ export class CreateOfferDto {
     videoUrls?: string[];
     language?: 'en' | 'de' | 'hr';
     paymentMethod?: 'cash' | 'invoice' | 'tba';
+    vatRate?: number;
     discountAmount?: number;
     discountPercent?: number;
 }

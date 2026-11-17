@@ -19,6 +19,7 @@ import { downloadOfferPdf } from '@/utils/exportOfferPdf';
 import { downloadInvoicePdfByOffer, sendInvoiceEmailByOffer } from '@/utils/exportInvoicePdf';
 import { getCustomerEmailForOffer } from '@/utils/customerEmail';
 import { paymentMethodLabel } from '@/utils/paymentMethod';
+import { vatRateLabel } from '@/utils/offerLineItems';
 import { sendOfferEmail } from '@/utils/sendOfferEmail';
 import SendEmailModal from '@/ui/SendEmailModal';
 import ConfirmDialog from '@/ui/ConfirmDialog';
@@ -377,6 +378,10 @@ const OfferDetail = ({ params }) => {
                         <div className="flex items-start">
                             <span className="font-semibold text-gray-800 pr-2 min-w-[120px]">Payment:</span>
                             <span className="text-black">{paymentMethodLabel(offer.paymentMethod)}</span>
+                        </div>
+                        <div className="flex items-start">
+                            <span className="font-semibold text-gray-800 pr-2 min-w-[120px]">VAT:</span>
+                            <span className="text-black">{vatRateLabel(offer.vatRate)}</span>
                         </div>
                     </div>
                 </div>

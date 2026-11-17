@@ -17,9 +17,9 @@ import {
   normalizeServices,
   resolveYachtFields,
 } from './pdfFormatters';
-import { computeOfferTotals } from './offerTotals';
+import { computeOfferTotals, formatVatRateLabel, normalizeVatRate } from './offerTotals';
 
-function applyOfferTranslations(template: string, lang?: string): string {
+function applyOfferTranslations(template: string, lang?: string, vatRate?: unknown): string {
   const t = getTranslations(lang);
 
   return template
@@ -59,7 +59,7 @@ function applyOfferTranslations(template: string, lang?: string): string {
     .replace('IZNOS / AMOUNT:', `${t.GROSS_AMOUNT}:`)
     .replace('Discount / Rabat:', `${t.DISCOUNT_LABEL}:`)
     .replace('UKUPNO / SUBTOTAL:', `${t.SUBTOTAL_AFTER_DISCOUNT}:`)
-    .replace('PDV (25%) / VAT (25%):', `${t.VAT_25}:`)
+    .replace('PDV (25%) / VAT (25%):', `${formatVatRateLabel(lang, vatRate)}:`)
     .replace('TOTAL AMOUNT / SVEUKUPNI IZNOS:', `${t.TOTAL_AMOUNT}:`)
     .replace('BANK DETAILS / BANKOVNI DETALJI:', `${t.BANK_DETAILS}:`)
     .replace('Beneficiary / Korisnik:', `${t.BENEFICIARY}:`)
@@ -132,6 +132,7 @@ export function buildOfferExportHtml(data: any): string {
     services,
     exportData.discountAmount,
     exportData.discountPercent,
+    normalizeVatRate(exportData.vatRate),
   );
 
   const imagesHtml =
@@ -209,5 +210,5 @@ export function buildOfferExportHtml(data: any): string {
     .replace('{{imagesSection}}', imagesHtml)
     .replace('{{videosSection}}', videosHtml);
 
-  return applyOfferTranslations(templateString, exportData.language);
+  return applyOfferTranslations(templateString, exportData.language, totals.vatRate);
 }

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import { PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/solid';
-import DataTable from 'react-data-table-component';
+import ScrollableDataTable from '@/ui/ScrollableDataTable';
 import Loader from '@/ui/loader';
 import Header from '@/component/header';
 import axios from 'axios';
@@ -154,7 +154,7 @@ const OrdersHistoryPage = () => {
                     </div>
 
                     <div className="flex justify-center items-center">
-                        <DataTable
+                        <ScrollableDataTable
                             columns={columns}
                             data={filteredHistory}
                             className="min-w-full border-collapse"

@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import DataTable from 'react-data-table-component';
+import ScrollableDataTable from '@/ui/ScrollableDataTable';
 import { Select, Option, Button } from "@material-tailwind/react";
 import { URL } from '@/utils/constants';
 import { useAppSelector } from '@/lib/hooks';
@@ -624,7 +624,9 @@ const OrderPage = () => {
             can(permissions, PermissionsList.ORDERS_ASSIGNMENT_MANAGE) ||
             can(permissions, PermissionsList.ORDERS_DELETE)) && role !== 'user'
             ? [{
+            id: 'row-actions',
             name: 'Actions',
+            width: '140px',
             cell: row => (
                 <div className="flex space-x-2">
                     {can(permissions, PermissionsList.ORDERS_STATUS_CHANGE) && (
@@ -826,7 +828,7 @@ const OrderPage = () => {
                                     ))}
                                 </tbody>
                             </table>
-                            <DataTable
+                            <ScrollableDataTable
                                 columns={columns}
                                 data={sortedOrders}
                                 pagination

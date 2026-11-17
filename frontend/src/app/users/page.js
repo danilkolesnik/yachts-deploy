@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import DataTable from 'react-data-table-component';
+import ScrollableDataTable from '@/ui/ScrollableDataTable';
 import Loader from '@/ui/loader';
 import Header from '@/component/header';
 import { URL } from '@/utils/constants';
@@ -317,7 +317,9 @@ const UsersPage = () => {
             sortable: true,
         },
         {
+            id: 'row-actions',
             name: 'Actions',
+            width: '120px',
             cell: row => (
                 <div className="flex space-x-2">
                     {!isSelfUser(row) ? (
@@ -718,7 +720,7 @@ const UsersPage = () => {
                             </div>
                         </div>
                         <div className="overflow-x-auto">
-                            <DataTable
+                            <ScrollableDataTable
                                 columns={columns}
                                 data={filteredUsers}
                                 pagination

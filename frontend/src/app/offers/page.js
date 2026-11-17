@@ -10,7 +10,7 @@ import { PermissionsList } from '@/constants/permissions';
 import { can } from '@/utils/canPermission';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import DataTable from 'react-data-table-component';
+import ScrollableDataTable from '@/ui/ScrollableDataTable';
 import Loader from '@/ui/loader';
 import Modal from '@/ui/Modal';
 import Input from '@/ui/Input';
@@ -28,7 +28,7 @@ import { getCustomerEmailForOffer } from '@/utils/customerEmail';
 import { sendOfferEmail } from '@/utils/sendOfferEmail';
 import SendEmailModal from '@/ui/SendEmailModal';
 import { isActiveOfferStatus } from '@/constants/workflowStatus';
-import { computeOfferTotals, createLineKey, normalizeOfferPart, normalizeOfferService, parseEuroNumber } from '@/utils/offerLineItems';
+import { computeOfferTotals, createLineKey, normalizeOfferPart, normalizeOfferService, normalizeVatRate, parseEuroNumber, vatRateLabel } from '@/utils/offerLineItems';
 import { getLineDescription } from '@/utils/translateText';
 
 const OfferPage = () => {
@@ -99,6 +99,7 @@ const OfferPage = () => {
         status: 'created',
         language: 'en',
         paymentMethod: 'tba',
+        vatRate: '0.25',
         discountAmount: '',
         discountPercent: '',
     });
@@ -149,6 +150,7 @@ const OfferPage = () => {
         status: 'created',
         language: 'en',
         paymentMethod: 'tba',
+        vatRate: '0.25',
         discountAmount: '',
         discountPercent: '',
     });
@@ -205,6 +207,7 @@ const OfferPage = () => {
                 "• Select one or more yachts from the full list",
                 "• Customer is filled from the yacht owner",
                 "• Choose a payment method: Cash, Invoice, or TBA if it will be decided later",
+                "• Choose 25% VAT or 0% VAT. The total is recalculated from the selected rate",
                 "• Add services from the price list (optional)",
                 "• Add parts from official or unofficial warehouse, or type a material that is not in stock (optional)",
                 "• Add comment if needed, then click Create",
@@ -433,27 +436,6 @@ const OfferPage = () => {
             sortable: true,
         },
         ...(role !== 'user' ? [{
-            name: 'Actions',
-            cell: row => (
-                <div className="flex space-x-2">
-                    <button
-                        onClick={() => handleEdit(row)}
-                        className="text-blue-500 hover:text-blue-700"
-                    >
-                        <PencilIcon className="w-5 h-5" />
-                    </button>
-                    <button
-                        onClick={() => handleDelete(row.id)}
-                        className="text-red-500 hover:text-red-700"
-                    >
-                        <TrashIcon className="w-5 h-5" />
-                    </button>
-                </div>
-            ),
-            ignoreRowClick: true,
-            button: true.toString(),
-        }] : []),
-        ...(role !== 'user' ? [{
             name: '',
             cell: row => (
                 <button
@@ -563,6 +545,31 @@ const OfferPage = () => {
                 >
                     {emailSendingLoading[row.id] ? 'Sending...' : 'Send Invoice'}
                 </button>
+            ),
+            ignoreRowClick: true,
+            button: true.toString(),
+        }] : []),
+        ...(role !== 'user' ? [{
+            id: 'row-actions',
+            name: 'Actions',
+            width: '96px',
+            cell: row => (
+                <div className="flex space-x-2">
+                    <button
+                        onClick={() => handleEdit(row)}
+                        className="text-blue-500 hover:text-blue-700"
+                        title="Edit offer"
+                    >
+                        <PencilIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                        onClick={() => handleDelete(row.id)}
+                        className="text-red-500 hover:text-red-700"
+                        title="Delete offer"
+                    >
+                        <TrashIcon className="w-5 h-5" />
+                    </button>
+                </div>
             ),
             ignoreRowClick: true,
             button: true.toString(),
@@ -725,6 +732,7 @@ const OfferPage = () => {
                         <p><strong>Customer:</strong> ${row.customerFullName || ''}</p>
                         <p><strong>Status:</strong> <span class="status" style="${statusStyles[row.status]?.backgroundColor ? `background-color: ${statusStyles[row.status].backgroundColor}; color: ${statusStyles[row.status].color}` : ''}">${row.status}</span></p>
                         <p><strong>Payment:</strong> ${paymentMethodLabel(row.paymentMethod)}</p>
+                        <p><strong>VAT:</strong> ${vatRateLabel(row.vatRate)}</p>
                     </div>
 
                     <div class="section">
@@ -1215,6 +1223,7 @@ const OfferPage = () => {
                 services: normalizedServices,
                 parts: normalizedParts,
                 discountPercent: Math.max(0, Math.min(100, Number(formData.discountPercent) || 0)),
+                vatRate: normalizeVatRate(formData.vatRate),
                 discountAmount: 0,
                 price: 0,
                 description: formData.comment || ''
@@ -1260,6 +1269,7 @@ const OfferPage = () => {
                     status: 'created',
                     language: 'en',
                     paymentMethod: 'tba',
+                    vatRate: '0.25',
                     discountAmount: '',
         discountPercent: '',
                 });
@@ -1329,6 +1339,7 @@ const OfferPage = () => {
             status: row.status,
             language: row.language || 'en',
             paymentMethod: row.paymentMethod || 'tba',
+            vatRate: normalizeVatRate(row.vatRate) === 0 ? '0' : '0.25',
             discountAmount: '',
             discountPercent: derivedDiscountPercent,
         });
@@ -1610,6 +1621,7 @@ const OfferPage = () => {
                     ? editFormData.parts.map((part) => normalizeOfferPart(part)).filter((p) => p.label)
                     : [],
                 discountPercent: Math.max(0, Math.min(100, Number(editFormData.discountPercent) || 0)),
+                vatRate: normalizeVatRate(editFormData.vatRate),
                 discountAmount: 0,
             };
             const response = await axios.put(`${URL}/offer/${editId}`, offerData);
@@ -2101,7 +2113,7 @@ const OfferPage = () => {
                                     ))}
                                 </tbody>
                             </table>
-                            <DataTable
+                            <ScrollableDataTable
                                 columns={columns}
                                 data={filteredData}
                                 pagination
@@ -2323,7 +2335,8 @@ const OfferPage = () => {
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
-                                <DataTable
+                                <ScrollableDataTable
+                                    scrollHeight="45vh"
                                     columns={historyColumns}
                                     data={filteredHistoryData}
                                     pagination
@@ -2409,6 +2422,10 @@ const OfferPage = () => {
                                         <div>
                                             <span className="font-medium">Payment: </span>
                                             <span>{paymentMethodLabel(selectedRow.paymentMethod)}</span>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">VAT: </span>
+                                            <span>{vatRateLabel(selectedRow.vatRate)}</span>
                                         </div>
                                         <div>
                                             <span className="font-medium">Customer: </span>
