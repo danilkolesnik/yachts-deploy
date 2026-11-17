@@ -10,6 +10,7 @@ import { PermissionsList } from '@/constants/permissions';
 import { can } from '@/utils/canPermission';
 import { BRAND } from '@/constants/brand';
 import AuthShell from '@/component/AuthShell';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 
 const inputClass = (hasError) =>
   `w-full px-3 py-2.5 border ${hasError ? 'border-red-500' : 'border-slate-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-[rgba(8,50,104,0.25)] text-black bg-white`;
@@ -19,6 +20,7 @@ const Login = () => {
     const dispatch = useAppDispatch();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
     const getLandingRoute = (role, permissions) => {
@@ -117,16 +119,30 @@ const Login = () => {
                     <label className="mb-1.5 block text-sm font-medium" style={{ color: BRAND.colors.ink }}>
                         Password
                     </label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => {
-                            setPassword(e.target.value);
-                            if (errorMessage) setErrorMessage('');
-                        }}
-                        required
-                        className={inputClass(Boolean(errorMessage))}
-                    />
+                    <div className="relative">
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={(e) => {
+                                setPassword(e.target.value);
+                                if (errorMessage) setErrorMessage('');
+                            }}
+                            required
+                            className={`${inputClass(Boolean(errorMessage))} pr-10`}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword((visible) => !visible)}
+                            className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 hover:text-slate-700"
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                            {showPassword ? (
+                                <EyeSlashIcon className="h-5 w-5" aria-hidden="true" />
+                            ) : (
+                                <EyeIcon className="h-5 w-5" aria-hidden="true" />
+                            )}
+                        </button>
+                    </div>
                 </div>
                 {errorMessage && (
                     <div className="text-sm text-red-600">{errorMessage}</div>
