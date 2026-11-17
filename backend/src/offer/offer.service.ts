@@ -30,6 +30,13 @@ export type OfferVersionEntry = {
   snapshot: Record<string, unknown>;
 };
 
+const PAYMENT_METHODS = new Set(['cash', 'invoice', 'tba']);
+
+function normalizePaymentMethod(value: unknown): 'cash' | 'invoice' | 'tba' {
+  const key = String(value ?? '').trim().toLowerCase();
+  return PAYMENT_METHODS.has(key) ? (key as 'cash' | 'invoice' | 'tba') : 'tba';
+}
+
 const OFFER_FIELD_LABELS: Record<string, string> = {
   status: 'Status',
   services: 'Services',
@@ -39,6 +46,7 @@ const OFFER_FIELD_LABELS: Record<string, string> = {
   comment: 'Comment',
   customerFullName: 'Customer',
   language: 'Language',
+  paymentMethod: 'Payment method',
   discountAmount: 'Discount (EUR)',
   discountPercent: 'Discount (%)',
   yachtName: 'Yacht name',
@@ -532,6 +540,7 @@ export class OfferService {
           parts: enrichedParts,
           status: data.status,
           language: data.language || 'en',
+          paymentMethod: normalizePaymentMethod(data.paymentMethod),
           discountAmount: Math.max(0, Number(data.discountAmount) || 0),
           discountPercent: Math.max(0, Math.min(100, Number(data.discountPercent) || 0)),
           versions: [],
@@ -593,6 +602,7 @@ export class OfferService {
       parts: enrichedParts ?? offer.parts,
       status: data.status ?? offer.status,
       language: data.language ?? offer.language,
+      paymentMethod: normalizePaymentMethod(data.paymentMethod ?? offer.paymentMethod),
       discountAmount: Math.max(
         0,
         Number(data.discountAmount ?? offer.discountAmount) || 0,
@@ -777,6 +787,7 @@ export class OfferService {
       const updatedOffer = Object.assign(offer, {
         ...data,
         ...yachtData,
+        paymentMethod: normalizePaymentMethod(data.paymentMethod ?? offer.paymentMethod),
         ...(enrichedParts !== undefined ? { parts: enrichedParts } : {}),
         services: Array.isArray(data.services)
           ? data.services

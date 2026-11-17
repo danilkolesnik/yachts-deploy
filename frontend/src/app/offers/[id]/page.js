@@ -18,6 +18,7 @@ import { can } from '@/utils/canPermission';
 import { downloadOfferPdf } from '@/utils/exportOfferPdf';
 import { downloadInvoicePdfByOffer, sendInvoiceEmailByOffer } from '@/utils/exportInvoicePdf';
 import { getCustomerEmailForOffer } from '@/utils/customerEmail';
+import { paymentMethodLabel } from '@/utils/paymentMethod';
 import { sendOfferEmail } from '@/utils/sendOfferEmail';
 import SendEmailModal from '@/ui/SendEmailModal';
 import ConfirmDialog from '@/ui/ConfirmDialog';
@@ -373,6 +374,10 @@ const OfferDetail = ({ params }) => {
                                 <span className="text-black">{offer.language.toUpperCase()}</span>
                             </div>
                         )}
+                        <div className="flex items-start">
+                            <span className="font-semibold text-gray-800 pr-2 min-w-[120px]">Payment:</span>
+                            <span className="text-black">{paymentMethodLabel(offer.paymentMethod)}</span>
+                        </div>
                     </div>
                 </div>
 

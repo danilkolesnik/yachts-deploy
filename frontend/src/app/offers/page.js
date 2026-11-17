@@ -18,6 +18,7 @@ import Header from '@/component/header';
 import ReactSelect from 'react-select';
 import Link from 'next/link';
 import CreateOfferModal from '@/component/modal/CreateOfferModal';
+import { paymentMethodLabel } from '@/utils/paymentMethod';
 import EditOfferModal from '@/component/modal/EditOfferModal';
 import ExcelJS from 'exceljs';
 import { ClipLoader } from 'react-spinners';
@@ -97,6 +98,7 @@ const OfferPage = () => {
         parts: [],
         status: 'created',
         language: 'en',
+        paymentMethod: 'tba',
         discountAmount: '',
         discountPercent: '',
     });
@@ -146,6 +148,7 @@ const OfferPage = () => {
         parts: [],
         status: 'created',
         language: 'en',
+        paymentMethod: 'tba',
         discountAmount: '',
         discountPercent: '',
     });
@@ -201,6 +204,7 @@ const OfferPage = () => {
                 "**Step-by-Step:**",
                 "• Select one or more yachts from the full list",
                 "• Customer is filled from the yacht owner",
+                "• Choose a payment method: Cash, Invoice, or TBA if it will be decided later",
                 "• Add services from the price list (optional)",
                 "• Add parts from official or unofficial warehouse, or type a material that is not in stock (optional)",
                 "• Add comment if needed, then click Create",
@@ -217,6 +221,7 @@ const OfferPage = () => {
                 "**Customer** - Customer full name",
                 "**Boat Registration** - Country/registration code",
                 "**Status** - created, confirmed, finished, etc.",
+                "**Payment** - Cash, Invoice, or TBA (To Be Advised)",
                 "**Service Category** - Services in the offer",
                 "**Parts** - Parts in the offer",
                 "**Actions** - Edit, Delete, Work Order, Export PDF, Send Email"
@@ -402,6 +407,12 @@ const OfferPage = () => {
                 {row.status} 
             </span>
         ) },
+        {
+            name: 'Payment',
+            selector: row => paymentMethodLabel(row.paymentMethod),
+            sortable: true,
+            wrap: true,
+        },
         {
             name: 'Service Category',
             selector: row => {
@@ -713,6 +724,7 @@ const OfferPage = () => {
                         <p><strong>Date:</strong> ${new Date(row.createdAt).toLocaleString()}</p>
                         <p><strong>Customer:</strong> ${row.customerFullName || ''}</p>
                         <p><strong>Status:</strong> <span class="status" style="${statusStyles[row.status]?.backgroundColor ? `background-color: ${statusStyles[row.status].backgroundColor}; color: ${statusStyles[row.status].color}` : ''}">${row.status}</span></p>
+                        <p><strong>Payment:</strong> ${paymentMethodLabel(row.paymentMethod)}</p>
                     </div>
 
                     <div class="section">
@@ -1247,6 +1259,7 @@ const OfferPage = () => {
                     parts: [],
                     status: 'created',
                     language: 'en',
+                    paymentMethod: 'tba',
                     discountAmount: '',
         discountPercent: '',
                 });
@@ -1315,6 +1328,7 @@ const OfferPage = () => {
             parts: row.parts,
             status: row.status,
             language: row.language || 'en',
+            paymentMethod: row.paymentMethod || 'tba',
             discountAmount: '',
             discountPercent: derivedDiscountPercent,
         });
@@ -2391,6 +2405,10 @@ const OfferPage = () => {
                                         <div>
                                             <span className="font-medium">Status: </span>
                                             <span>{selectedRow.status}</span>
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Payment: </span>
+                                            <span>{paymentMethodLabel(selectedRow.paymentMethod)}</span>
                                         </div>
                                         <div>
                                             <span className="font-medium">Customer: </span>

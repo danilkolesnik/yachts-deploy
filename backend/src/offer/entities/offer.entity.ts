@@ -56,6 +56,10 @@ export class offer {
   @Column({ default: 'en' })
   language: string;
 
+  /** cash | invoice | tba */
+  @Column({ default: 'tba' })
+  paymentMethod: string;
+
   /** Discount in EUR applied before VAT (rabat). */
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   discountAmount: number;

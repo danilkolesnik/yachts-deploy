@@ -14,6 +14,7 @@ import {
     getSparePartHighlightColor,
 } from '@/utils/offerLineItems';
 import { ensureDescriptionForLanguage } from '@/utils/translateText';
+import { PAYMENT_METHODS } from '@/utils/paymentMethod';
 
 const CreateOfferModal = ({ 
     isOpen, 
@@ -250,6 +251,20 @@ const CreateOfferModal = ({
             {languageBusy ? (
                 <p className="text-xs text-gray-500">Updating line descriptions for the new language…</p>
             ) : null}
+            <Select
+                label="Payment method"
+                value={formData.paymentMethod || 'tba'}
+                onChange={(value) => handleSelectChange(value, 'paymentMethod')}
+                required
+                className="text-black"
+                labelProps={{ className: "text-black" }}
+            >
+                {PAYMENT_METHODS.map((method) => (
+                    <Option key={method.value} value={method.value} className="text-black">
+                        {method.label}
+                    </Option>
+                ))}
+            </Select>
             <div className="mb-4">
                 <label htmlFor="services-select" className="block text-sm font-medium text-gray-700">
                     Add service line
